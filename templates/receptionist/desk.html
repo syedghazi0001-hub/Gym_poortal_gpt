@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Receptionist Terminal — {{ gym_settings.gym_name }}{% endblock %}
+{% block page_title %}Front Desk Attendance Terminal{% endblock %}
+
+{% block content %}
+<div class="grid-cols-2 mb-6">
+  <!-- Scanner Console -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title">Live QR Scanner</h3>
+        <p class="card-subtitle">Scan member digital badges for instant attendance verification.</p>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button id="btn-toggle-camera" class="btn btn-outline btn-sm">🔄 Switch Camera</button>
+        <button id="btn-start-camera" class="btn btn-primary btn-sm">▶ Start Camera</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <!-- Camera Viewport -->
+      <div class="scanner-viewport">
+        <video id="scanner-video" class="scanner-video" playsinline autoplay muted></video>
+        <div class="scanner-laser"></div>
+        <div class="scanner-reticle"></div>
+      </div>
+
+      <!-- Result Banner -->
+      <div id="scan-result" style="margin-top:20px; min-height:64px;">
+        <div class="alert alert-info">
+          Position member QR code badge within the frame. Verification occurs automatically.
+        </div>
+      </div>
+
+      <!-- Manual Token / Search Fallback -->
+      <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border-subtle);">
+        <label class="form-label" style="font-size:0.82rem; text-transform:uppercase; color:var(--text-muted);">
+          Manual Token or Code Entry
+        </label>
+        <div style="display:flex; gap:10px;">
+          <input type="text" id="manual-token-input" class="form-input" placeholder="Enter QR token (e.g. GYM-A1B2...)">
+          <button id="btn-submit-token" class="btn btn-secondary">Verify</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manual Member Search & Check-in Fallback -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title">Manual Member Check-in</h3>
+        <p class="card-subtitle">If camera is unavailable or member forgot phone badge.</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="form-group">
+        <label class="form-label">Search Member by Name, Phone, or ID</label>
+        <input type="text" id="member-search-input" class="form-input" placeholder="Type name or phone number..." autocomplete="off">
+      </div>
+
+      <div id="search-results-list" style="display:flex; flex-direction:column; gap:8px; max-height:360px; overflow-y:auto;">
+        <div style="color:var(--text-muted); font-size:0.88rem; text-align:center; padding:32px 0;">
+          Start typing above to search active gym members.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Today's Live Attendance Feed -->
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h3 class="card-title">Today's Check-in Log ({{ today_records|length }})</h3>
+      <p class="card-subtitle">{{ today_date }}</p>
+    </div>
+    <a href="{{ url_for('receptionist.attendance') }}" class="btn btn-outline btn-sm">Full Attendance View →</a>
+  </div>
+  <div class="card-body" style="padding:0;">
+    {% if today_records %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Member Name</th>
+              <th>Member Code</th>
+              <th>Contact Phone</th>
+              <th>Time</th>
+              <th>Method</th>
+              <th>Verified By</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in today_records %}
+              <tr>
+                <td style="font-weight:600;">{{ r.full_name }}</td>
+                <td><code>{{ r.member_code }}</code></td>
+                <td>{{ r.phone }}</td>
+                <td><strong>{{ r.check_in_time|date_format("%I:%M:%S %p") }}</strong></td>
+                <td><span class="badge badge-neutral">{{ r.method }}</span></td>
+                <td><small>{{ r.recorded_by_name or 'Desk' }}</small></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p class="empty-title">No Check-ins Yet Today</p>
+        <p class="empty-desc">Check-ins scanned or entered today will appear here immediately.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/scanner.js') }}"></script>
+<script>
+  let scannerInstance = null;
+
+  document.addEventListener("DOMContentLoaded", () => {
+    scannerInstance = new GymScanner({
+      videoId: "scanner-video",
+      resultId: "scan-result"
+    });
+
+    const startBtn = document.getElementById("btn-start-camera");
+    const toggleBtn = document.getElementById("btn-toggle-camera");
+
+    if (startBtn) {
+      startBtn.addEventListener("click", () => {
+        if (!scannerInstance.isScanning) {
+          scannerInstance.startCamera();
+          startBtn.textContent = "⏹ Stop Camera";
+          startBtn.classList.replace("btn-primary", "btn-secondary");
+        } else {
+          scannerInstance.stopCamera();
+          startBtn.textContent = "▶ Start Camera";
+          startBtn.classList.replace("btn-secondary", "btn-primary");
+        }
+      });
+    }
+
+    if (toggleBtn) {
+      toggleBtn.addEventListener("click", () => {
+        scannerInstance.toggleCamera();
+      });
+    }
+
+    // Manual token entry
+    const tokenInput = document.getElementById("manual-token-input");
+    const submitTokenBtn = document.getElementById("btn-submit-token");
+    if (submitTokenBtn && tokenInput) {
+      submitTokenBtn.addEventListener("click", () => {
+        const val = tokenInput.value.trim();
+        if (val) {
+          scannerInstance.submitToken(val);
+          tokenInput.value = "";
+        }
+      });
+    }
+
+    // Member search autocomplete
+    const searchInput = document.getElementById("member-search-input");
+    const resultsContainer = document.getElementById("search-results-list");
+
+    let debounceTimer = null;
+    if (searchInput) {
+      searchInput.addEventListener("input", (e) => {
+        clearTimeout(debounceTimer);
+        const q = e.target.value.trim();
+        if (q.length < 2) {
+          resultsContainer.innerHTML = '<div style="color:var(--text-muted); font-size:0.88rem; text-align:center; padding:20px 0;">Start typing to search active members.</div>';
+          return;
+        }
+
+        debounceTimer = setTimeout(async () => {
+          try {
+            const resp = await fetch(`/api/members/search?q=${encodeURIComponent(q)}`);
+            if (resp.ok) {
+              const members = await resp.json();
+              if (members.length === 0) {
+                resultsContainer.innerHTML = '<div style="color:var(--text-muted); font-size:0.88rem; text-align:center; padding:20px 0;">No active members found.</div>';
+                return;
+              }
+
+              let html = "";
+              members.forEach((m) => {
+                html += `
+                  <div style="background:var(--bg-surface-2); padding:12px 16px; border-radius:var(--radius-md); display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                      <div style="font-weight:600; font-size:0.95rem;">${m.name}</div>
+                      <div style="font-size:0.8rem; color:var(--text-muted);">${m.code} • 📞 ${m.phone}</div>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="submitManualAttendance('${m.id}')">
+                      ✓ Check In
+                    </button>
+                  </div>
+                `;
+              });
+              resultsContainer.innerHTML = html;
+            }
+          } catch (err) {
+            console.error("Search error:", err);
+          }
+        }, 250);
+      });
+    }
+  });
+</script>
+{% endblock %}

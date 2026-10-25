@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}{{ member.full_name }} ({{ member.member_code }}) — {{ gym_settings.gym_name }}{% endblock %}
+{% block page_title %}Member 360° Profile{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+  <div>
+    <h2 style="font-size:1.4rem; font-weight:700;">{{ member.full_name }}</h2>
+    <div style="display:flex; gap:10px; align-items:center; margin-top:4px;">
+      <code>{{ member.member_code }}</code>
+      <span>•</span>
+      <span style="color:var(--text-muted);">Username: @{{ member.username }}</span>
+      <span>•</span>
+      {% if member.membership_status == 'active' %}
+        <span class="badge badge-active">Active</span>
+      {% else %}
+        <span class="badge badge-danger">{{ member.membership_status }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div style="display:flex; gap:10px;">
+    <button onclick="window.print()" class="btn btn-secondary">
+      🖨️ Print Badge
+    </button>
+    <a href="{{ url_for('owner.edit_member', member_id=member.id) }}" class="btn btn-secondary">
+      ✏️ Edit Profile
+    </a>
+    <button onclick="openModal('record-payment-modal')" class="btn btn-primary">
+      💳 Record Fee
+    </button>
+  </div>
+</div>
+
+<!-- Digital Member Badge & Key Info Card -->
+<div class="grid-cols-2 mb-6">
+  <!-- Digital Membership Badge (Printable) -->
+  <div class="member-badge-card" id="printable-badge">
+    <div class="badge-header">
+      <div class="badge-gym-brand">{{ gym_settings.gym_name }}</div>
+      <div class="badge-status-pill">{{ member.membership_status|upper }}</div>
+    </div>
+    <div class="badge-body">
+      <div class="badge-qr-container">
+        <img src="{{ qr_data_uri }}" alt="QR Code" class="badge-qr-img">
+      </div>
+      <div class="badge-details">
+        <div class="badge-member-name">{{ member.full_name }}</div>
+        <div class="badge-member-code">{{ member.member_code }}</div>
+        <div class="badge-meta-grid">
+          <div>
+            <div class="badge-meta-label">Plan</div>
+            <div class="badge-meta-val">{{ member.membership_plan }}</div>
+          </div>
+          <div>
+            <div class="badge-meta-label">Expires</div>
+            <div class="badge-meta-val">{{ member.membership_end_date|date_format("%b %d, %Y") }}</div>
+          </div>
+          <div>
+            <div class="badge-meta-label">Trainer</div>
+            <div class="badge-meta-val">{{ member.trainer_name or 'None' }}</div>
+          </div>
+          <div>
+            <div class="badge-meta-label">Monthly Fee</div>
+            <div class="badge-meta-val">{{ member.monthly_fee|currency(gym_settings.currency) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:20px; text-align:right;">
+      <form method="POST" action="{{ url_for('owner.regenerate_qr', member_id=member.id) }}" onsubmit="return confirm('Revoke and regenerate QR token? The old badge will stop working.');" style="display:inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn-outline btn-sm" style="font-size:0.75rem;">
+          🔄 Revoke & Regenerate QR
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Attendance & Engagement Stats -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Attendance Statistics</h3>
+      <span class="badge badge-neutral">{{ stats.streak }} Day Streak 🔥</span>
+    </div>
+    <div class="card-body">
+      <div class="grid-cols-3 mb-6" style="grid-template-columns: repeat(3, 1fr);">
+        <div style="text-align:center; padding:12px; background:var(--bg-surface-2); border-radius:var(--radius-md);">
+          <div style="font-size:1.6rem; font-weight:700; color:#34D399;">{{ stats.total_attended }}</div>
+          <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Days Attended</div>
+        </div>
+        <div style="text-align:center; padding:12px; background:var(--bg-surface-2); border-radius:var(--radius-md);">
+          <div style="font-size:1.6rem; font-weight:700; color:#F87171;">{{ stats.total_absent }}</div>
+          <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Days Absent</div>
+        </div>
+        <div style="text-align:center; padding:12px; background:var(--bg-surface-2); border-radius:var(--radius-md);">
+          <div style="font-size:1.6rem; font-weight:700; color:#FBBF24;">{{ stats.streak }}</div>
+          <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Current Streak</div>
+        </div>
+      </div>
+
+      <div style="font-size:0.88rem; color:var(--text-secondary); line-height:1.8;">
+        <div><strong>Member Since:</strong> {{ member.membership_start_date|date_format("%B %d, %Y") }}</div>
+        <div><strong>Valid Until:</strong> {{ member.membership_end_date|date_format("%B %d, %Y") }}</div>
+        <div><strong>Phone:</strong> {{ member.phone }}</div>
+        {% if member.email %}<div><strong>Email:</strong> {{ member.email }}</div>{% endif %}
+        {% if member.emergency_contact %}<div><strong>Emergency:</strong> {{ member.emergency_contact }}</div>{% endif %}
+        {% if member.notes %}
+          <div style="margin-top:8px; padding:10px; background:var(--bg-surface-2); border-radius:var(--radius-sm); font-size:0.85rem;">
+            <strong>Notes:</strong> {{ member.notes }}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabs / Sections: Attendance Logs & Payment History -->
+<div class="grid-cols-2">
+  <!-- Attendance History Table -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Attendance History (Recent)</h3>
+      <span class="badge badge-active">{{ attendance_history|length }} Check-ins</span>
+    </div>
+    <div class="card-body" style="padding:0;">
+      {% if attendance_history %}
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Check-in Time</th>
+                <th>Method</th>
+                <th>Verified By</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for a in attendance_history %}
+                <tr>
+                  <td><strong>{{ a.attendance_date|date_format("%b %d, %Y") }}</strong></td>
+                  <td>{{ a.check_in_time|date_format("%I:%M %p") }}</td>
+                  <td><span class="badge badge-neutral">{{ a.method }}</span></td>
+                  <td><small>{{ a.recorded_by_name or 'System' }}</small></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <p class="empty-title">No Attendance Recorded</p>
+          <p class="empty-desc">This member has not checked in yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Payment History Table -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Payment Ledger</h3>
+      <button onclick="openModal('record-payment-modal')" class="btn btn-outline btn-sm">+ Record Fee</button>
+    </div>
+    <div class="card-body" style="padding:0;">
+      {% if payments %}
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Period</th>
+                <th>Amount</th>
+                <th>Date</th>
+                <th>Receipt #</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in payments %}
+                <tr>
+                  <td><strong>{{ p.billing_month }}</strong></td>
+                  <td style="color:var(--accent-primary); font-weight:600;">
+                    {{ p.amount|currency(p.currency) }}
+                  </td>
+                  <td>{{ p.payment_date|date_format("%b %d, %Y") }}</td>
+                  <td><small><code>{{ p.receipt_number }}</code></small></td>
+                  <td>
+                    {% if p.status == 'paid' %}
+                      <span class="badge badge-paid">Paid</span>
+                    {% else %}
+                      <span class="badge badge-danger">{{ p.status }}</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <p class="empty-title">No Fee Records</p>
+          <p class="empty-desc">No membership payments recorded for this member.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Record Payment -->
+<div class="modal-overlay" id="record-payment-modal">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h3 class="modal-title">Record Membership Fee</h3>
+      <button class="modal-close" onclick="closeModal('record-payment-modal')">✕</button>
+    </div>
+    <form method="POST" action="{{ url_for('owner.record_payment') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="modal-body">
+        <input type="hidden" name="member_id" value="{{ member.id }}">
+
+        <div class="form-group">
+          <label class="form-label">Member</label>
+          <input type="text" class="form-input" value="{{ member.full_name }} ({{ member.member_code }})" disabled>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Billing Month (YYYY-MM) *</label>
+            <input type="month" name="billing_month" class="form-input" value="{{ current_month }}" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fee Amount ({{ gym_settings.currency }}) *</label>
+            <input type="number" step="100" name="amount" class="form-input" value="{{ member.monthly_fee }}" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Payment Method *</label>
+          <select name="payment_method" class="form-select">
+            <option value="cash">Cash</option>
+            <option value="bank_transfer">Bank Transfer</option>
+            <option value="easypaisa_jazzcash">JazzCash / EasyPaisa</option>
+            <option value="card">Credit / Debit Card</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Receipt Notes (Optional)</label>
+          <input type="text" name="notes" class="form-input" placeholder="e.g. Received by front desk">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('record-payment-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Confirm & Issue Receipt</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,93 @@
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+from auth.decorators import role_required, get_current_user
+from services.auth_service import get_gym_settings
+from services.member_service import get_all_members, get_member_by_id
+from services.attendance_service import (
+    record_attendance_by_qr, record_attendance_manual,
+    get_today_attendance, get_gym_local_date
+)
+from services.payment_service import (
+    get_current_billing_month, get_monthly_payment_status,
+    record_monthly_payment
+)
+
+receptionist_bp = Blueprint("receptionist", __name__, url_prefix="/receptionist")
+
+@receptionist_bp.route("/desk")
+@role_required("receptionist", "owner")
+def desk():
+    """Receptionist Front Desk Terminal with Live QR Camera Scanner."""
+    today, _ = get_gym_local_date()
+    today_records = get_today_attendance()
+    settings = get_gym_settings()
+    current_month = get_current_billing_month()
+
+    return render_template(
+        "receptionist/desk.html",
+        today_records=today_records,
+        today_date=today.strftime("%A, %B %d, %Y"),
+        settings=settings,
+        current_month=current_month
+    )
+
+@receptionist_bp.route("/attendance")
+@role_required("receptionist", "owner")
+def attendance():
+    """Daily attendance log & manual check-in search."""
+    today, _ = get_gym_local_date()
+    today_records = get_today_attendance()
+    settings = get_gym_settings()
+
+    return render_template(
+        "receptionist/attendance.html",
+        today_records=today_records,
+        today_date=today.strftime("%A, %B %d, %Y"),
+        settings=settings
+    )
+
+@receptionist_bp.route("/payments")
+@role_required("receptionist", "owner")
+def payments():
+    """Receptionist monthly fee collection & lookup."""
+    month = request.args.get("month") or get_current_billing_month()
+    status_filter = request.args.get("status", "all")
+    search = request.args.get("q", "")
+
+    overview = get_monthly_payment_status(
+        billing_month=month, search=search, status_filter=status_filter
+    )
+    settings = get_gym_settings()
+
+    return render_template(
+        "receptionist/payments.html",
+        overview=overview,
+        selected_month=month,
+        status_filter=status_filter,
+        search=search,
+        settings=settings
+    )
+
+@receptionist_bp.route("/payments/record", methods=["POST"])
+@role_required("receptionist", "owner")
+def record_payment():
+    """Receptionist records a manual payment."""
+    member_id = request.form.get("member_id")
+    billing_month = request.form.get("billing_month") or get_current_billing_month()
+    amount = request.form.get("amount")
+    payment_method = request.form.get("payment_method", "cash")
+    notes = request.form.get("notes", "").strip()
+
+    try:
+        payment = record_monthly_payment(
+            member_id=member_id,
+            billing_month=billing_month,
+            amount=amount,
+            payment_method=payment_method,
+            recorded_by_id=session.get("user_id"),
+            notes=notes
+        )
+        flash(f"Payment recorded! Receipt: {payment['receipt_number']}", "success")
+    except Exception as e:
+        flash(f"Payment recording failed: {str(e)}", "danger")
+
+    return redirect(url_for("receptionist.payments", month=billing_month))

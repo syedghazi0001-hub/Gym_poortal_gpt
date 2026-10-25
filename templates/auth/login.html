@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — {{ gym_settings.gym_name }}</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/logo.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px 16px;
+      background: radial-gradient(circle at 50% 15%, #141B26 0%, #0A0D12 75%);
+    }
+    .login-container {
+      width: 100%;
+      max-width: 440px;
+    }
+    .login-card {
+      background-color: var(--bg-surface-1);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-xl);
+      padding: 36px 32px;
+      box-shadow: var(--shadow-lg);
+    }
+    .login-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .login-logo {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 14px;
+      display: block;
+    }
+    .role-badge-row {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .role-hint-pill {
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      background-color: var(--bg-surface-2);
+      color: var(--text-muted);
+      border: 1px solid var(--border-subtle);
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container animate-slide-up">
+    <div class="login-card">
+      <div class="login-header">
+        <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="Logo" class="login-logo">
+        <h1 style="font-size:1.35rem; font-weight:700;">{{ gym_settings.gym_name }}</h1>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">Gym Management & Member Portal</p>
+        <div class="role-badge-row">
+          <span class="role-hint-pill">Owner</span>
+          <span class="role-hint-pill">Receptionist</span>
+          <span class="role-hint-pill">Trainer</span>
+          <span class="role-hint-pill">Member</span>
+        </div>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-container">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">
+                <span>{{ message }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('auth.login', next=request.args.get('next')) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input type="text" name="username" class="form-input" placeholder="Enter your username" required autofocus autocomplete="username">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" name="password" class="form-input" placeholder="Enter your password" required autocomplete="current-password">
+        </div>
+
+        <div style="margin-top:24px;">
+          <button type="submit" class="btn btn-primary btn-lg" style="width:100%;">
+            Sign In to Portal →
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <p style="text-align:center; margin-top:20px; font-size:0.82rem; color:var(--text-muted);">
+      Powered by Vanguard Gym OS • Secure Role-Based Access
+    </p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found — {{ gym_settings.gym_name }}{% endblock %}
+{% block page_title %}404 Page Not Found{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 500px; margin: 40px auto; text-align: center;">
+  <div class="empty-state">
+    <div class="empty-icon" style="color:var(--warning); font-size:1.8rem;">🔍</div>
+    <h2 class="empty-title">Page Not Found</h2>
+    <p class="empty-desc">The requested gym management page or record does not exist or has been relocated.</p>
+    <a href="/" class="btn btn-primary">Return to Portal</a>
+  </div>
+</div>
+{% endblock %}

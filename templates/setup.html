@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Initial Gym Setup — Vanguard Gym OS</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/logo.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 32px 16px;
+      background: radial-gradient(circle at 50% 20%, #151C28 0%, #0A0D12 80%);
+    }
+    .setup-card {
+      width: 100%;
+      max-width: 600px;
+      background-color: var(--bg-surface-1);
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-xl);
+      padding: 36px;
+      box-shadow: var(--shadow-lg);
+    }
+    .setup-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="setup-card animate-slide-up">
+    <div class="setup-brand">
+      <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="Logo" style="width:40px; height:40px;">
+      <div>
+        <h1 style="font-size:1.35rem; font-weight:700;">Vanguard Gym OS</h1>
+        <p style="font-size:0.85rem; color:var(--text-muted);">Initial System Configuration & Owner Setup</p>
+      </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <p style="font-size:0.9rem; color:var(--text-secondary); margin-bottom:24px;">
+      Welcome to your new Gym Management Portal. Since this is a fresh setup, please configure your gym profile and create the primary <strong>Gym Owner</strong> administrator account.
+    </p>
+
+    <form method="POST" action="{{ url_for('auth.setup') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div style="font-size:0.82rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--accent-primary); margin-bottom:12px;">1. Gym Information</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Gym Club Name *</label>
+          <input type="text" name="gym_name" class="form-input" value="Vanguard Fitness Club" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Currency *</label>
+          <input type="text" name="currency" class="form-input" value="PKR" required placeholder="PKR, USD, etc.">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Gym Timezone *</label>
+        <input type="text" name="timezone" class="form-input" value="Asia/Karachi" required>
+        <span class="form-hint">Used to calculate precise local attendance calendar dates.</span>
+      </div>
+
+      <div style="font-size:0.82rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--accent-primary); margin:24px 0 12px;">2. Primary Owner Credentials</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Owner Full Name *</label>
+          <input type="text" name="full_name" class="form-input" placeholder="e.g. Malik Ahmed" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contact Phone *</label>
+          <input type="tel" name="phone" class="form-input" placeholder="+92 300 1234567" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Owner Email (Optional)</label>
+        <input type="email" name="email" class="form-input" placeholder="owner@vanguardfitness.com">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Owner Username *</label>
+        <input type="text" name="username" class="form-input" placeholder="admin" required autocomplete="username">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Password *</label>
+          <input type="password" name="password" class="form-input" placeholder="••••••••" minlength="12" required autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm Password *</label>
+          <input type="password" name="confirm_password" class="form-input" placeholder="••••••••" minlength="12" required autocomplete="new-password">
+        </div>
+      </div>
+
+      <div style="margin-top:28px;">
+        <button type="submit" class="btn btn-primary btn-lg" style="width:100%;">
+          Complete Setup & Enter Portal →
+        </button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

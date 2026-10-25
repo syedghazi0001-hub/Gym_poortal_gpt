@@ -1,0 +1,262 @@
+import io
+import base64
+import logging
+from datetime import datetime, date
+import qrcode
+from database.connection import query_one, query_all, execute_statement
+from auth.security import hash_password, generate_uuid, generate_qr_token, generate_member_code
+
+logger = logging.getLogger(__name__)
+
+def generate_next_member_code():
+    """Determine the next sequential member code for the current year."""
+    year = datetime.now().year
+    res = query_one("""
+        SELECT COUNT(*) AS total
+        FROM members
+        WHERE member_code LIKE %s;
+    """, (f"MEM-{year}-%",))
+    next_num = (res["total"] if res else 0) + 1
+    return generate_member_code(next_num)
+
+def create_member(
+    full_name, phone, start_date, end_date, monthly_fee,
+    username, password, email=None, dob=None, emergency_contact=None,
+    membership_plan="Monthly Standard", membership_status="active",
+    assigned_trainer_id=None, notes=None, created_by_id=None
+):
+    """
+    Create a new gym member along with their secure portal login account.
+    Auto-generates Member ID and secure QR token.
+    """
+    # 1. Validate username uniqueness
+    existing_user = query_one("SELECT id FROM users WHERE LOWER(username) = LOWER(%s);", (username.strip(),))
+    if existing_user:
+        raise ValueError(f"Username '{username}' is already in use.")
+
+    # 2. Check phone duplicates if needed (soft check)
+    existing_member_phone = query_one("SELECT id, full_name FROM members WHERE phone = %s;", (phone.strip(),))
+    if existing_member_phone:
+        raise ValueError(f"Phone number '{phone}' is already registered to {existing_member_phone['full_name']}.")
+
+    # 3. Generate IDs
+    user_id = generate_uuid()
+    member_id = generate_uuid()
+    member_code = generate_next_member_code()
+    qr_token = generate_qr_token()
+    p_hash = hash_password(password)
+
+    # 4. Create User
+    execute_statement("""
+        INSERT INTO users (id, username, password_hash, role, is_active)
+        VALUES (%s, %s, %s, 'member', TRUE);
+    """, (user_id, username.strip(), p_hash))
+
+    # 5. Create Profile
+    profile_id = generate_uuid()
+    execute_statement("""
+        INSERT INTO profiles (id, user_id, full_name, phone, email, avatar_color)
+        VALUES (%s, %s, %s, %s, %s, '#10B981');
+    """, (profile_id, user_id, full_name.strip(), phone.strip(), (email or "").strip()))
+
+    # 6. Insert Member
+    execute_statement("""
+        INSERT INTO members (
+            id, user_id, member_code, full_name, phone, email, dob,
+            emergency_contact, membership_plan, membership_start_date,
+            membership_end_date, monthly_fee, membership_status,
+            assigned_trainer_id, qr_token, notes
+        ) VALUES (
+            %s, %s, %s, %s, %s, %s, %s,
+            %s, %s, %s,
+            %s, %s, %s,
+            %s, %s, %s
+        );
+    """, (
+        member_id, user_id, member_code, full_name.strip(), phone.strip(),
+        (email or "").strip() or None, dob or None,
+        (emergency_contact or "").strip() or None,
+        (membership_plan or "Monthly Standard").strip(),
+        start_date, end_date, float(monthly_fee),
+        membership_status, (assigned_trainer_id or None),
+        qr_token, (notes or "").strip() or None
+    ))
+
+    # 7. Audit log
+    execute_statement("""
+        INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details)
+        VALUES (%s, %s, 'CREATE_MEMBER', 'MEMBER', %s, %s);
+    """, (generate_uuid(), created_by_id, member_id, f"Created member {full_name} ({member_code})"))
+
+    return get_member_by_id(member_id)
+
+def update_member(
+    member_id, full_name, phone, email, dob, emergency_contact,
+    membership_plan, start_date, end_date, monthly_fee,
+    membership_status, assigned_trainer_id, notes, updated_by_id=None
+):
+    """Update member profile details, trainer assignment, and status."""
+    member = get_member_by_id(member_id)
+    if not member:
+        raise ValueError("Member not found.")
+
+    execute_statement("""
+        UPDATE members
+        SET full_name = %s,
+            phone = %s,
+            email = %s,
+            dob = %s,
+            emergency_contact = %s,
+            membership_plan = %s,
+            membership_start_date = %s,
+            membership_end_date = %s,
+            monthly_fee = %s,
+            membership_status = %s,
+            assigned_trainer_id = %s,
+            notes = %s,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = %s;
+    """, (
+        full_name.strip(), phone.strip(), (email or "").strip() or None,
+        dob or None, (emergency_contact or "").strip() or None,
+        membership_plan.strip(), start_date, end_date,
+        float(monthly_fee), membership_status,
+        (assigned_trainer_id or None), (notes or "").strip() or None,
+        member_id
+    ))
+
+    # Also update profile full_name, phone, email
+    execute_statement("""
+        UPDATE profiles
+        SET full_name = %s, phone = %s, email = %s
+        WHERE user_id = %s;
+    """, (full_name.strip(), phone.strip(), (email or "").strip() or None, member["user_id"]))
+
+    # Update user active status if membership is inactive/suspended
+    is_active = (membership_status == "active")
+    execute_statement("UPDATE users SET is_active = %s WHERE id = %s;", (is_active, member["user_id"]))
+
+    # Audit log
+    execute_statement("""
+        INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details)
+        VALUES (%s, %s, 'UPDATE_MEMBER', 'MEMBER', %s, %s);
+    """, (generate_uuid(), updated_by_id, member_id, f"Updated member {full_name} ({member['member_code']})"))
+
+    return get_member_by_id(member_id)
+
+def regenerate_member_qr_token(member_id, requested_by_id=None):
+    """Revoke old QR token and generate a fresh one."""
+    member = get_member_by_id(member_id)
+    if not member:
+        raise ValueError("Member not found.")
+    
+    new_token = generate_qr_token()
+    execute_statement("UPDATE members SET qr_token = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s;", (new_token, member_id))
+    
+    execute_statement("""
+        INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details)
+        VALUES (%s, %s, 'REGENERATE_QR', 'MEMBER', %s, %s);
+    """, (generate_uuid(), requested_by_id, member_id, f"Regenerated QR token for {member['member_code']}"))
+    
+    return new_token
+
+def get_member_by_id(member_id):
+    """Retrieve full member details including assigned trainer name."""
+    sql = """
+        SELECT m.*, u.username, u.is_active AS user_is_active,
+               t.full_name AS trainer_name, t.specialization AS trainer_specialization
+        FROM members m
+        JOIN users u ON u.id = m.user_id
+        LEFT JOIN trainers t ON t.id = m.assigned_trainer_id
+        WHERE m.id = %s;
+    """
+    return query_one(sql, (member_id,))
+
+def get_member_by_user_id(user_id):
+    """Retrieve member details given user_id."""
+    sql = """
+        SELECT m.*, u.username,
+               t.full_name AS trainer_name, t.phone AS trainer_phone
+        FROM members m
+        JOIN users u ON u.id = m.user_id
+        LEFT JOIN trainers t ON t.id = m.assigned_trainer_id
+        WHERE m.user_id = %s;
+    """
+    return query_one(sql, (user_id,))
+
+def get_member_by_qr_token(qr_token):
+    """Retrieve member matching the scanned QR token."""
+    sql = """
+        SELECT m.*, u.username, u.is_active AS user_is_active,
+               t.full_name AS trainer_name
+        FROM members m
+        JOIN users u ON u.id = m.user_id
+        LEFT JOIN trainers t ON t.id = m.assigned_trainer_id
+        WHERE m.qr_token = %s;
+    """
+    return query_one(sql, (qr_token,))
+
+def get_all_members(search=None, status=None, trainer_id=None, limit=100, offset=0):
+    """Filter and search members with pagination."""
+    params = []
+    where_clauses = ["1=1"]
+
+    if search and search.strip():
+        term = f"%{search.strip()}%"
+        where_clauses.append("(m.full_name ILIKE %s OR m.member_code ILIKE %s OR m.phone ILIKE %s OR u.username ILIKE %s)")
+        params.extend([term, term, term, term])
+
+    if status and status.strip() and status != "all":
+        where_clauses.append("m.membership_status = %s")
+        params.append(status.strip())
+
+    if trainer_id and trainer_id.strip() and trainer_id != "all":
+        where_clauses.append("m.assigned_trainer_id = %s")
+        params.append(trainer_id.strip())
+
+    where_sql = " AND ".join(where_clauses)
+    
+    count_sql = f"""
+        SELECT COUNT(*) AS total
+        FROM members m
+        JOIN users u ON u.id = m.user_id
+        WHERE {where_sql};
+    """
+    count_res = query_one(count_sql, tuple(params))
+    total_count = count_res["total"] if count_res else 0
+
+    sql = f"""
+        SELECT m.*, u.username,
+               t.full_name AS trainer_name,
+               (SELECT MAX(attendance_date) FROM attendance WHERE member_id = m.id) AS last_attendance_date,
+               (SELECT COUNT(*) FROM attendance WHERE member_id = m.id) AS total_attendance_count
+        FROM members m
+        JOIN users u ON u.id = m.user_id
+        LEFT JOIN trainers t ON t.id = m.assigned_trainer_id
+        WHERE {where_sql}
+        ORDER BY m.created_at DESC
+        LIMIT %s OFFSET %s;
+    """
+    params.extend([limit, offset])
+    members = query_all(sql, tuple(params))
+    return members, total_count
+
+def generate_qr_code_image_data(qr_token):
+    """
+    Generate high-resolution PNG QR Code for a member token,
+    encoded as base64 data URI string.
+    """
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=8,
+        border=3,
+    )
+    qr.add_data(qr_token)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="#0F172A", back_color="#FFFFFF")
+    
+    buffered = io.BytesIO()
+    img.save(buffered, format="PNG")
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    return f"data:image/png;base64,{img_str}"

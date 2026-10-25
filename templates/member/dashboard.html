@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}My Member Pass — {{ gym_settings.gym_name }}{% endblock %}
+{% block page_title %}Member Personal Portal{% endblock %}
+
+{% block content %}
+<!-- Ten-Day Absence Warning Banner -->
+{% if absence_alert %}
+  <div class="alert alert-warning animate-slide-up mb-6" style="border-left: 4px solid var(--warning); padding:18px 22px;">
+    <div style="display:flex; align-items:center; gap:16px;">
+      <span style="font-size:2rem;">⚠️</span>
+      <div>
+        <h3 style="font-size:1.05rem; font-weight:700; margin-bottom:4px;">Gym Attendance Notice</h3>
+        <p style="font-size:0.92rem; line-height:1.4;">
+          Aap ne pichlay {{ absence_alert.consecutive_days_absent }} din se gym attendance mark nahi karwai.
+          Apni attendance routine dobara shuru karne ke liye gym se rabta karein.
+        </p>
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+<!-- Digital Membership Card & QR Pass -->
+<div class="grid-cols-2 mb-6">
+  <div class="member-badge-card">
+    <div class="badge-header">
+      <div class="badge-gym-brand">{{ gym_settings.gym_name }}</div>
+      <div class="badge-status-pill">{{ member.membership_status|upper }}</div>
+    </div>
+    <div class="badge-body">
+      <div class="badge-qr-container">
+        <img src="{{ qr_data_uri }}" alt="Attendance QR Code" class="badge-qr-img">
+      </div>
+      <div class="badge-details">
+        <div class="badge-member-name">{{ member.full_name }}</div>
+        <div class="badge-member-code">{{ member.member_code }}</div>
+        <div class="badge-meta-grid">
+          <div>
+            <div class="badge-meta-label">Plan</div>
+            <div class="badge-meta-val">{{ member.membership_plan }}</div>
+          </div>
+          <div>
+            <div class="badge-meta-label">Pass Expiry</div>
+            <div class="badge-meta-val">{{ member.membership_end_date|date_format("%b %d, %Y") }}</div>
+          </div>
+          <div>
+            <div class="badge-meta-label">Assigned Coach</div>
+            <div class="badge-meta-val">{{ member.trainer_name or 'General Roster' }}</div>
+          </div>
+          <div>
+            <div class="badge-meta-label">{{ current_month }} Dues</div>
+            <div class="badge-meta-val">
+              {% if is_current_paid %}
+                <span style="color:#34D399;">✓ Paid</span>
+              {% else %}
+                <span style="color:#FBBF24;">Pending</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:20px; font-size:0.8rem; color:rgba(255,255,255,0.7); display:flex; justify-content:space-between; align-items:center;">
+      <span>Scan at the front desk scanner to check in.</span>
+      <button onclick="window.print()" class="btn btn-outline btn-sm" style="color:#FFFFFF; border-color:rgba(255,255,255,0.3);">
+        🖨️ Print Pass
+      </button>
+    </div>
+  </div>
+
+  <!-- Attendance Consistency & Metrics -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">My Workout Routine</h3>
+      <span class="badge badge-active">{{ stats.streak }} Days Streak 🔥</span>
+    </div>
+    <div class="card-body">
+      <div class="grid-cols-3 mb-6" style="grid-template-columns: repeat(3, 1fr);">
+        <div style="text-align:center; padding:14px; background:var(--bg-surface-2); border-radius:var(--radius-md);">
+          <div style="font-size:1.8rem; font-weight:700; color:#34D399;">{{ stats.total_attended }}</div>
+          <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Attended Days</div>
+        </div>
+        <div style="text-align:center; padding:14px; background:var(--bg-surface-2); border-radius:var(--radius-md);">
+          <div style="font-size:1.8rem; font-weight:700; color:#F87171;">{{ stats.total_absent }}</div>
+          <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Absent Days</div>
+        </div>
+        <div style="text-align:center; padding:14px; background:var(--bg-surface-2); border-radius:var(--radius-md);">
+          <div style="font-size:1.8rem; font-weight:700; color:#FBBF24;">{{ stats.streak }}</div>
+          <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Active Streak</div>
+        </div>
+      </div>
+
+      <!-- Current Month Fee Banner -->
+      <div style="padding:14px 18px; border-radius:var(--radius-md); background:var(--bg-surface-2); display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-size:0.8rem; color:var(--text-muted); text-transform:uppercase; font-weight:600;">{{ current_month }} Membership Fee</div>
+          <div style="font-size:1.1rem; font-weight:700;">{{ member.monthly_fee|currency(gym_settings.currency) }}</div>
+        </div>
+        <div>
+          {% if is_current_paid %}
+            <span class="badge badge-paid" style="font-size:0.85rem; padding:6px 12px;">Paid ({{ current_payment.receipt_number }})</span>
+          {% else %}
+            <span class="badge badge-pending" style="font-size:0.85rem; padding:6px 12px;">Payment Pending</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Activity & Coaching Notes -->
+<div class="grid-cols-2">
+  <!-- Recent Check-ins -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Recent Gym Check-ins</h3>
+      <a href="{{ url_for('member.attendance') }}" class="btn btn-outline btn-sm">All Logs →</a>
+    </div>
+    <div class="card-body" style="padding:0;">
+      {% if recent_attendance %}
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Check-in Time</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for a in recent_attendance %}
+                <tr>
+                  <td><strong>{{ a.attendance_date|date_format("%A, %b %d") }}</strong></td>
+                  <td>{{ a.check_in_time|date_format("%I:%M %p") }}</td>
+                  <td><span class="badge badge-active">Present</span></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <p class="empty-desc">No check-ins recorded yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Trainer Notes for Member -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Coach Notes & Routine Guidance</h3>
+      {% if member.trainer_name %}
+        <span class="badge badge-neutral">Coach {{ member.trainer_name }}</span>
+      {% endif %}
+    </div>
+    <div class="card-body">
+      {% if notes %}
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          {% for n in notes %}
+            <div style="background:var(--bg-surface-2); padding:14px; border-radius:var(--radius-md); border-left:3px solid var(--accent-primary);">
+              <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                <strong style="font-size:0.85rem;">{{ n.trainer_name }}</strong>
+                <span style="font-size:0.75rem; color:var(--text-muted);">{{ n.created_at|date_format("%b %d, %Y") }}</span>
+              </div>
+              <p style="font-size:0.88rem; color:var(--text-secondary); line-height:1.4;">{{ n.note }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <p class="empty-desc">No coaching notes from your trainer yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

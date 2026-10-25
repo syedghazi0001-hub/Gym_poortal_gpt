@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}Staff Management — {{ gym_settings.gym_name }}{% endblock %}
+{% block page_title %}Gym Staff & Role Directory{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+  <div>
+    <h2 style="font-size:1.3rem; font-weight:700;">Trainers & Front Desk Staff</h2>
+    <p style="font-size:0.85rem; color:var(--text-muted);">Manage employee login access, roles, and gym responsibilities.</p>
+  </div>
+  <div style="display:flex; gap:10px;">
+    <button onclick="openModal('add-trainer-modal')" class="btn btn-primary">
+      + Add Trainer
+    </button>
+    <button onclick="openModal('add-receptionist-modal')" class="btn btn-secondary">
+      + Add Receptionist
+    </button>
+  </div>
+</div>
+
+<!-- Trainers Section -->
+<div class="card mb-8">
+  <div class="card-header">
+    <div>
+      <h3 class="card-title">Fitness Trainers ({{ trainers|length }})</h3>
+      <p class="card-subtitle">Trainers can view their assigned members' attendance and log training notes.</p>
+    </div>
+    <button onclick="openModal('add-trainer-modal')" class="btn btn-outline btn-sm">+ New Trainer</button>
+  </div>
+  <div class="card-body" style="padding:0;">
+    {% if trainers %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Trainer Name</th>
+              <th>Username</th>
+              <th>Specialization</th>
+              <th>Contact Phone</th>
+              <th>Assigned Members</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in trainers %}
+              <tr>
+                <td style="font-weight:600;">{{ t.full_name }}</td>
+                <td><code>@{{ t.username }}</code></td>
+                <td>{{ t.specialization }}</td>
+                <td>{{ t.phone }}</td>
+                <td>
+                  <span class="badge badge-neutral">{{ t.assigned_members_count }} Active Members</span>
+                </td>
+                <td>
+                  {% if t.is_active %}
+                    <span class="badge badge-active">Active</span>
+                  {% else %}
+                    <span class="badge badge-danger">Deactivated</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <form method="POST" action="{{ url_for('owner.toggle_trainer', trainer_id=t.id) }}" style="display:inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn btn-outline btn-sm">
+                      {% if t.is_active %}Deactivate{% else %}Activate{% endif %}
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p class="empty-title">No Trainers Added</p>
+        <p class="empty-desc">Add fitness trainers so members can be assigned personal guidance.</p>
+        <button onclick="openModal('add-trainer-modal')" class="btn btn-primary">+ Add Trainer</button>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Receptionists Section -->
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h3 class="card-title">Front Desk Receptionists ({{ receptionists|length }})</h3>
+      <p class="card-subtitle">Staff authorized to operate the QR scanner and record manual payments.</p>
+    </div>
+    <button onclick="openModal('add-receptionist-modal')" class="btn btn-outline btn-sm">+ New Receptionist</button>
+  </div>
+  <div class="card-body" style="padding:0;">
+    {% if receptionists %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Username</th>
+              <th>Shift</th>
+              <th>Contact Phone</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in receptionists %}
+              <tr>
+                <td style="font-weight:600;">{{ r.full_name }}</td>
+                <td><code>@{{ r.username }}</code></td>
+                <td>{{ r.shift }} Shift</td>
+                <td>{{ r.phone }}</td>
+                <td>
+                  {% if r.is_active %}
+                    <span class="badge badge-active">Active</span>
+                  {% else %}
+                    <span class="badge badge-danger">Deactivated</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <form method="POST" action="{{ url_for('owner.toggle_receptionist', rec_id=r.id) }}" style="display:inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn btn-outline btn-sm">
+                      {% if r.is_active %}Deactivate{% else %}Activate{% endif %}
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p class="empty-title">No Front Desk Staff Added</p>
+        <p class="empty-desc">Create receptionist accounts for front-desk attendance scanning and payment processing.</p>
+        <button onclick="openModal('add-receptionist-modal')" class="btn btn-secondary">+ Add Receptionist</button>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Modal: Add Trainer -->
+<div class="modal-overlay" id="add-trainer-modal">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h3 class="modal-title">Create Trainer Account</h3>
+      <button class="modal-close" onclick="closeModal('add-trainer-modal')">✕</button>
+    </div>
+    <form method="POST" action="{{ url_for('owner.new_trainer') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input type="text" name="full_name" class="form-input" required placeholder="Coach Tariq">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone Number *</label>
+            <input type="tel" name="phone" class="form-input" required placeholder="0300-7654321">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Specialization</label>
+            <input type="text" name="specialization" class="form-input" placeholder="e.g. Bodybuilding, Crossfit">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email (Optional)</label>
+            <input type="email" name="email" class="form-input">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Bio / Experience Notes</label>
+          <textarea name="bio" class="form-textarea" placeholder="Certifications, years of experience..."></textarea>
+        </div>
+
+        <div style="font-size:0.8rem; font-weight:700; text-transform:uppercase; color:var(--accent-primary); margin:16px 0 10px;">
+          Portal Credentials
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Username *</label>
+            <input type="text" name="username" class="form-input" required placeholder="coach.tariq" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password *</label>
+            <input type="password" name="password" class="form-input" required minlength="6" placeholder="Min 6 chars" autocomplete="new-password">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('add-trainer-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create Trainer Account</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Add Receptionist -->
+<div class="modal-overlay" id="add-receptionist-modal">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h3 class="modal-title">Create Receptionist Account</h3>
+      <button class="modal-close" onclick="closeModal('add-receptionist-modal')">✕</button>
+    </div>
+    <form method="POST" action="{{ url_for('owner.new_receptionist') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input type="text" name="full_name" class="form-input" required placeholder="Ayesha Khan">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone Number *</label>
+            <input type="tel" name="phone" class="form-input" required placeholder="0312-3456789">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Shift *</label>
+            <select name="shift" class="form-select">
+              <option value="Morning">Morning Shift (06:00 - 14:00)</option>
+              <option value="Evening">Evening Shift (14:00 - 22:00)</option>
+              <option value="Full Day">Full Day</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email (Optional)</label>
+            <input type="email" name="email" class="form-input">
+          </div>
+        </div>
+
+        <div style="font-size:0.8rem; font-weight:700; text-transform:uppercase; color:var(--accent-primary); margin:16px 0 10px;">
+          Front Desk Login Credentials
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Username *</label>
+            <input type="text" name="username" class="form-input" required placeholder="desk.ayesha" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password *</label>
+            <input type="password" name="password" class="form-input" required minlength="6" placeholder="Min 6 chars" autocomplete="new-password">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('add-receptionist-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create Receptionist</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
