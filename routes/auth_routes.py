@@ -1,3 +1,4 @@
+import time
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from services.auth_service import (
     has_owner_account, setup_initial_owner, authenticate_user,
@@ -71,6 +72,9 @@ def login():
     if not has_owner_account():
         return redirect(url_for("auth.setup"))
 
+    if request.args.get("timeout"):
+        flash("Your session expired due to 20 minutes of inactivity. Please sign in again.", "info")
+
     if "user_id" in session:
         role = session.get("user_role")
         if role == "owner":
@@ -99,13 +103,14 @@ def login():
             flash(user["error"], "danger")
             return render_template("auth/login.html")
 
-        # Session setup
+        # Session setup: non-permanent (cleared when browser closes) + 20-min activity tracking
         session.clear()
         session["user_id"] = user["id"]
         session["username"] = user["username"]
         session["user_role"] = user["role"]
         session["full_name"] = user["full_name"]
-        session.permanent = True
+        session["last_active"] = time.time()
+        session.permanent = False
 
         next_page = request.args.get("next")
         if next_page and next_page.startswith("/"):
@@ -127,7 +132,10 @@ def login():
 def logout():
     """Sign out the current user."""
     session.clear()
-    flash("You have been signed out safely.", "info")
+    if request.args.get("timeout"):
+        flash("Your session expired due to 20 minutes of inactivity. Please sign in again.", "info")
+    else:
+        flash("You have been signed out safely.", "info")
     return redirect(url_for("auth.login"))
 
 @auth_bp.route("/change-password", methods=["GET", "POST"])

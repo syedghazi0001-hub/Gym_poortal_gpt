@@ -42,6 +42,30 @@ def create_app(config_class=Config):
     init_db()
 
     @app.before_request
+    def check_session_inactivity():
+        if request.endpoint and (
+            request.endpoint.startswith("static") or 
+            request.endpoint in ("auth.login", "auth.logout", "auth.setup")
+        ):
+            return
+
+        if "user_id" in session:
+            import time
+            now = time.time()
+            last_active = session.get("last_active")
+            # 20 minutes = 1200 seconds of sliding inactivity
+            if last_active and (now - last_active > 1200):
+                session.clear()
+                if request.is_json or request.path.startswith("/api/"):
+                    from flask import jsonify
+                    return jsonify({
+                        "success": False,
+                        "error": "Session expired due to 20 minutes of inactivity. Please sign in again."
+                    }), 401
+                return redirect(url_for("auth.login", timeout=1))
+            session["last_active"] = now
+
+    @app.before_request
     def protect_state_changing_requests():
         if app.testing:
             return

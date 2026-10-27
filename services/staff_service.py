@@ -157,6 +157,46 @@ def update_receptionist_status(receptionist_id, is_active, updated_by_id=None):
         VALUES (%s, %s, 'UPDATE_RECEPTIONIST_STATUS', 'RECEPTIONIST', %s, %s);
     """, (generate_uuid(), updated_by_id, receptionist_id, f"Receptionist {receptionist['full_name']} status set to {is_active}"))
 
+def delete_trainer(trainer_id, owner_id=None):
+    """Permanently delete a trainer and their user account."""
+    trainer = query_one("SELECT id, user_id, full_name FROM trainers WHERE id = %s;", (trainer_id,))
+    if not trainer:
+        return False, "Trainer not found."
+
+    user_id = trainer["user_id"]
+    execute_statement("UPDATE members SET assigned_trainer_id = NULL WHERE assigned_trainer_id = %s;", (trainer_id,))
+    execute_statement("DELETE FROM trainer_notes WHERE trainer_id = %s;", (trainer_id,))
+    execute_statement("DELETE FROM notifications WHERE user_id = %s;", (user_id,))
+    execute_statement("DELETE FROM trainers WHERE id = %s;", (trainer_id,))
+    execute_statement("DELETE FROM users WHERE id = %s;", (user_id,))
+
+    if owner_id:
+        execute_statement("""
+            INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details)
+            VALUES (%s, %s, 'DELETE_TRAINER', 'TRAINER', %s, %s);
+        """, (generate_uuid(), owner_id, trainer_id, f"Deleted trainer {trainer['full_name']}"))
+
+    return True, f"Trainer '{trainer['full_name']}' has been permanently removed."
+
+def delete_receptionist(receptionist_id, owner_id=None):
+    """Permanently delete a receptionist and their user account."""
+    receptionist = query_one("SELECT id, user_id, full_name FROM receptionists WHERE id = %s;", (receptionist_id,))
+    if not receptionist:
+        return False, "Receptionist not found."
+
+    user_id = receptionist["user_id"]
+    execute_statement("DELETE FROM notifications WHERE user_id = %s;", (user_id,))
+    execute_statement("DELETE FROM receptionists WHERE id = %s;", (receptionist_id,))
+    execute_statement("DELETE FROM users WHERE id = %s;", (user_id,))
+
+    if owner_id:
+        execute_statement("""
+            INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details)
+            VALUES (%s, %s, 'DELETE_RECEPTIONIST', 'RECEPTIONIST', %s, %s);
+        """, (generate_uuid(), owner_id, receptionist_id, f"Deleted receptionist {receptionist['full_name']}"))
+
+    return True, f"Receptionist '{receptionist['full_name']}' has been permanently removed."
+
 # ============================================================================
 # TRAINER ASSIGNED MEMBERS & NOTES
 # ============================================================================

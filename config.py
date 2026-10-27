@@ -21,11 +21,11 @@ class Config:
     # Gym Local Timezone
     TIMEZONE = os.getenv("GYM_TIMEZONE", "Asia/Karachi")
     
-    # Session Security
+    # Session Security (20-minute inactivity expiration + browser-close reset)
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = _IS_PRODUCTION
-    PERMANENT_SESSION_LIFETIME = timedelta(hours=12)
+    PERMANENT_SESSION_LIFETIME = timedelta(minutes=20)
     
     # Application settings
     APP_NAME = "Vanguard Gym OS"

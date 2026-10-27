@@ -61,12 +61,20 @@
                   {% endif %}
                 </td>
                 <td>
-                  <form method="POST" action="{{ url_for('owner.toggle_trainer', trainer_id=t.id) }}" style="display:inline;">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button type="submit" class="btn btn-outline btn-sm">
-                      {% if t.is_active %}Deactivate{% else %}Activate{% endif %}
-                    </button>
-                  </form>
+                  <div style="display:flex; gap:6px; align-items:center;">
+                    <form method="POST" action="{{ url_for('owner.toggle_trainer', trainer_id=t.id) }}" style="display:inline; margin:0;">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                      <button type="submit" class="btn btn-outline btn-sm">
+                        {% if t.is_active %}Deactivate{% else %}Activate{% endif %}
+                      </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('owner.remove_trainer', trainer_id=t.id) }}" onsubmit="return confirm('Permanently remove trainer {{ t.full_name }}?');" style="display:inline; margin:0;">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                      <button type="submit" class="btn btn-danger btn-sm" title="Remove Trainer" style="padding:4px 8px; font-size:0.75rem;">
+                        🗑️
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             {% endfor %}
@@ -121,12 +129,20 @@
                   {% endif %}
                 </td>
                 <td>
-                  <form method="POST" action="{{ url_for('owner.toggle_receptionist', rec_id=r.id) }}" style="display:inline;">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button type="submit" class="btn btn-outline btn-sm">
-                      {% if r.is_active %}Deactivate{% else %}Activate{% endif %}
-                    </button>
-                  </form>
+                  <div style="display:flex; gap:6px; align-items:center;">
+                    <form method="POST" action="{{ url_for('owner.toggle_receptionist', rec_id=r.id) }}" style="display:inline; margin:0;">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                      <button type="submit" class="btn btn-outline btn-sm">
+                        {% if r.is_active %}Deactivate{% else %}Activate{% endif %}
+                      </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('owner.remove_receptionist', receptionist_id=r.id) }}" onsubmit="return confirm('Permanently remove receptionist {{ r.full_name }}?');" style="display:inline; margin:0;">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                      <button type="submit" class="btn btn-danger btn-sm" title="Remove Receptionist" style="padding:4px 8px; font-size:0.75rem;">
+                        🗑️
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             {% endfor %}

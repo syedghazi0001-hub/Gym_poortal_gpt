@@ -241,6 +241,34 @@ def get_all_members(search=None, status=None, trainer_id=None, limit=100, offset
     members = query_all(sql, tuple(params))
     return members, total_count
 
+def delete_member(member_id, owner_id=None):
+    """
+    Permanently delete a gym member, associated user account, and all records.
+    """
+    member = query_one("SELECT id, user_id, full_name, member_code FROM members WHERE id = %s;", (member_id,))
+    if not member:
+        return False, "Member not found."
+
+    user_id = member["user_id"]
+
+    # Delete related dependent records
+    execute_statement("DELETE FROM absence_alerts WHERE member_id = %s;", (member_id,))
+    execute_statement("DELETE FROM trainer_notes WHERE member_id = %s;", (member_id,))
+    execute_statement("DELETE FROM attendance WHERE member_id = %s;", (member_id,))
+    execute_statement("DELETE FROM payments WHERE member_id = %s;", (member_id,))
+    execute_statement("DELETE FROM notifications WHERE user_id = %s;", (user_id,))
+    execute_statement("DELETE FROM members WHERE id = %s;", (member_id,))
+    execute_statement("DELETE FROM users WHERE id = %s;", (user_id,))
+
+    if owner_id:
+        execute_statement("""
+            INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details)
+            VALUES (%s, %s, 'DELETE_MEMBER', 'MEMBER', %s, %s);
+        """, (generate_uuid(), owner_id, member_id, f"Deleted member {member['full_name']} ({member['member_code']})"))
+
+    logger.info("Member %s (%s) deleted by owner %s", member["full_name"], member_id, owner_id)
+    return True, f"Member '{member['full_name']}' has been permanently removed."
+
 def generate_qr_code_image_data(qr_token):
     """
     Generate high-resolution PNG QR Code for a member token,

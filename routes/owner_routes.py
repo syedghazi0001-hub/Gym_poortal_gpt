@@ -3,12 +3,12 @@ from auth.decorators import role_required, get_current_user
 from services.auth_service import get_gym_settings, update_gym_settings
 from services.member_service import (
     create_member, update_member, get_all_members, get_member_by_id,
-    generate_qr_code_image_data, regenerate_member_qr_token
+    generate_qr_code_image_data, regenerate_member_qr_token, delete_member
 )
 from services.staff_service import (
     create_trainer, get_all_trainers, get_trainer_by_id, update_trainer_status,
     create_receptionist, get_all_receptionists, get_receptionist_by_id, update_receptionist_status,
-    get_trainer_notes_for_member
+    get_trainer_notes_for_member, delete_trainer, delete_receptionist
 )
 from services.attendance_service import (
     get_today_attendance, get_attendance_logs, get_gym_local_date,
@@ -522,3 +522,27 @@ def settings():
 
     current_settings = get_gym_settings()
     return render_template("owner/settings.html", settings=current_settings)
+
+@owner_bp.route("/members/<member_id>/delete", methods=["POST"])
+@role_required("owner")
+def remove_member(member_id):
+    """Permanently remove a member from the gym system."""
+    success, msg = delete_member(member_id, owner_id=session.get("user_id"))
+    flash(msg, "success" if success else "danger")
+    return redirect(url_for("owner.members"))
+
+@owner_bp.route("/staff/trainers/<trainer_id>/delete", methods=["POST"])
+@role_required("owner")
+def remove_trainer(trainer_id):
+    """Permanently remove a trainer."""
+    success, msg = delete_trainer(trainer_id, owner_id=session.get("user_id"))
+    flash(msg, "success" if success else "danger")
+    return redirect(url_for("owner.staff"))
+
+@owner_bp.route("/staff/receptionists/<receptionist_id>/delete", methods=["POST"])
+@role_required("owner")
+def remove_receptionist(receptionist_id):
+    """Permanently remove a receptionist."""
+    success, msg = delete_receptionist(receptionist_id, owner_id=session.get("user_id"))
+    flash(msg, "success" if success else "danger")
+    return redirect(url_for("owner.staff"))

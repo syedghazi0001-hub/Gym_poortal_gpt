@@ -109,3 +109,25 @@ def test_owner_operations(client):
     blocked_resp = client.get("/owner/members/new", follow_redirects=True)
     # Should redirect with access denied or 403
     assert b"Access denied" in blocked_resp.data or blocked_resp.status_code in (403, 302)
+
+    # 6. Test Owner Delete Member
+    client.get("/logout")
+    login_as(client, "owner_hamza", "SecretPassword123!")
+
+    del_member_resp = client.post(f"/owner/members/{member['id']}/delete", follow_redirects=True)
+    assert del_member_resp.status_code == 200
+    assert b"permanently removed" in del_member_resp.data
+    assert query_one("SELECT id FROM members WHERE id = %s;", (member["id"],)) is None
+
+    # 7. Test Owner Delete Trainer
+    del_trainer_resp = client.post(f"/owner/staff/trainers/{trainer['id']}/delete", follow_redirects=True)
+    assert del_trainer_resp.status_code == 200
+    assert b"permanently removed" in del_trainer_resp.data
+    assert query_one("SELECT id FROM trainers WHERE id = %s;", (trainer["id"],)) is None
+
+    # 8. Test Owner Delete Receptionist
+    rec = query_one("SELECT id FROM receptionists WHERE full_name = 'Sana Receptionist';")
+    del_rec_resp = client.post(f"/owner/staff/receptionists/{rec['id']}/delete", follow_redirects=True)
+    assert del_rec_resp.status_code == 200
+    assert b"permanently removed" in del_rec_resp.data
+    assert query_one("SELECT id FROM receptionists WHERE id = %s;", (rec["id"],)) is None

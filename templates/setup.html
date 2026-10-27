@@ -1255,7 +1255,22 @@ code {
 <body>
   <div class="setup-card animate-slide-up">
     <div class="setup-brand">
-      <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="Logo" style="width:40px; height:40px;">
+      <svg width="40" height="40" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+        <defs>
+          <linearGradient id="setupShieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#34D399" />
+            <stop offset="100%" stop-color="#059669" />
+          </linearGradient>
+          <linearGradient id="setupShieldBg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#1E293B" />
+            <stop offset="100%" stop-color="#0F172A" />
+          </linearGradient>
+        </defs>
+        <rect x="2" y="2" width="44" height="44" rx="12" fill="url(#setupShieldBg)" stroke="rgba(255,255,255,0.22)" stroke-width="1.5" />
+        <path d="M14 15L24 33L34 15" stroke="url(#setupShieldGrad)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+        <circle cx="24" cy="20" r="3" fill="#10B981" />
+        <path d="M18 17H30" stroke="#E2E8F0" stroke-width="2.5" stroke-linecap="round" opacity="0.4" />
+      </svg>
       <div>
         <h1 style="font-size:1.35rem; font-weight:700;">Vanguard Gym OS</h1>
         <p style="font-size:0.85rem; color:var(--text-muted);">Initial System Configuration & Owner Setup</p>

@@ -20,7 +20,7 @@
     </div>
   </div>
 
-  <div style="display:flex; gap:10px;">
+  <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
     <button onclick="window.print()" class="btn btn-secondary">
       🖨️ Print Badge
     </button>
@@ -30,6 +30,12 @@
     <button onclick="openModal('record-payment-modal')" class="btn btn-primary">
       💳 Record Fee
     </button>
+    <form method="POST" action="{{ url_for('owner.remove_member', member_id=member.id) }}" onsubmit="return confirm('Are you sure you want to permanently remove this member? All attendance and payment records for this member will be deleted.');" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit" class="btn btn-danger">
+        🗑️ Remove Member
+      </button>
+    </form>
   </div>
 </div>
 

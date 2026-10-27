@@ -160,6 +160,12 @@
           tokenInput.value = "";
         }
       });
+      tokenInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          submitTokenBtn.click();
+        }
+      });
     }
 
     // Member search autocomplete

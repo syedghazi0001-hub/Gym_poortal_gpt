@@ -116,9 +116,17 @@
                   {% endif %}
                 </td>
                 <td>
-                  <a href="{{ url_for('owner.member_detail', member_id=m.id) }}" class="btn btn-outline btn-sm">
-                    View 360°
-                  </a>
+                  <div style="display:flex; gap:6px; align-items:center;">
+                    <a href="{{ url_for('owner.member_detail', member_id=m.id) }}" class="btn btn-outline btn-sm">
+                      View
+                    </a>
+                    <form method="POST" action="{{ url_for('owner.remove_member', member_id=m.id) }}" onsubmit="return confirm('Permanently remove {{ m.full_name }}?');" style="display:inline; margin:0;">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                      <button type="submit" class="btn btn-danger btn-sm" title="Remove Member" style="padding:4px 8px; font-size:0.75rem;">
+                        🗑️
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             {% endfor %}

@@ -68,3 +68,15 @@ def test_initial_setup_and_login(app):
     }, follow_redirects=True)
     assert resp_valid.status_code == 200
     assert b"Owner Command Center" in resp_valid.data
+
+    # 7. Test 20-minute sliding inactivity expiration
+    import time
+    with client.session_transaction() as sess:
+        # Simulate user going idle for 21 minutes (1260 seconds)
+        sess["last_active"] = time.time() - 1260
+
+    idle_resp = client.get("/owner/dashboard", follow_redirects=True)
+    assert idle_resp.status_code == 200
+    # Must redirect to login and notify user
+    assert b"session expired due to 20 minutes of inactivity" in idle_resp.data.lower() or b"sign in" in idle_resp.data.lower()
+
