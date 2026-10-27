@@ -3,7 +3,7 @@ from datetime import datetime, date, timedelta
 import logging
 from database.connection import query_one, query_all, execute_statement
 from auth.security import generate_uuid
-from services.auth_service import get_gym_settings
+from services.auth_service import get_gym_settings, invalidate_gym_settings_cache
 
 logger = logging.getLogger(__name__)
 
@@ -43,20 +43,29 @@ def run_ten_day_absence_check(force=False):
     owners = query_all("SELECT id FROM users WHERE role = 'owner' AND is_active = TRUE;")
     owner_ids = [o["id"] for o in owners]
 
+    # Batch-fetch latest attendance dates for all members in a single query (prevents N+1)
+    latest_att_rows = query_all("""
+        SELECT member_id, MAX(attendance_date) AS last_date
+        FROM attendance
+        GROUP BY member_id;
+    """)
+    latest_attendance_map = {r["member_id"]: r["last_date"] for r in latest_att_rows}
+
+    # Batch-fetch existing unresolved alerts in a single query (prevents N+1)
+    existing_alerts_rows = query_all("""
+        SELECT id, member_id, consecutive_days_absent
+        FROM absence_alerts
+        WHERE is_resolved = FALSE;
+    """)
+    existing_alerts_map = {r["member_id"]: r for r in existing_alerts_rows}
+
     new_alerts_count = 0
 
     for m in active_members:
         member_id = m["id"]
         start_date = m["membership_start_date"]
 
-        # Fetch last attendance date
-        last_att = query_one("""
-            SELECT MAX(attendance_date) AS last_date
-            FROM attendance
-            WHERE member_id = %s;
-        """, (member_id,))
-
-        last_date = last_att["last_date"] if (last_att and last_att["last_date"]) else start_date
+        last_date = latest_attendance_map.get(member_id) or start_date
 
         if not last_date:
             continue
@@ -70,11 +79,7 @@ def run_ten_day_absence_check(force=False):
         days_absent = (today - last_date).days
 
         if days_absent >= threshold_days:
-            # Check if an active unresolved alert already exists for this member
-            existing_alert = query_one("""
-                SELECT id FROM absence_alerts
-                WHERE member_id = %s AND is_resolved = FALSE;
-            """, (member_id,))
+            existing_alert = existing_alerts_map.get(member_id)
 
             if not existing_alert:
                 alert_id = generate_uuid()
@@ -110,16 +115,23 @@ def run_ten_day_absence_check(force=False):
                 """, (generate_uuid(), m["user_id"], member_msg))
 
                 new_alerts_count += 1
-            else:
-                # Update days_absent counter on the existing open alert
+                existing_alerts_map[member_id] = {
+                    "id": alert_id,
+                    "member_id": member_id,
+                    "consecutive_days_absent": days_absent
+                }
+            elif existing_alert.get("consecutive_days_absent") != days_absent:
+                # Update days_absent counter on the existing open alert only if changed
                 execute_statement("""
                     UPDATE absence_alerts
                     SET consecutive_days_absent = %s
                     WHERE id = %s;
                 """, (days_absent, existing_alert["id"]))
+                existing_alert["consecutive_days_absent"] = days_absent
 
     # Update last check timestamp
     execute_statement("UPDATE gym_settings SET last_absence_check_at = CURRENT_TIMESTAMP WHERE id = 1;")
+    invalidate_gym_settings_cache()
 
     return {
         "status": "completed",

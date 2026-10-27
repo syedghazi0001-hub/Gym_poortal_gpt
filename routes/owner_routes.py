@@ -41,12 +41,18 @@ def dashboard():
     today, _ = get_gym_local_date()
     current_month = get_current_billing_month()
 
-    # Core Metric Calculations
-    active_members_count = query_one("SELECT COUNT(*) AS total FROM members WHERE membership_status = 'active';")["total"]
-    total_trainers_count = query_one("SELECT COUNT(*) AS total FROM trainers WHERE is_active = TRUE;")["total"]
-    total_receptionists_count = query_one("SELECT COUNT(*) AS total FROM receptionists WHERE is_active = TRUE;")["total"]
-    
-    today_attendance_count = query_one("SELECT COUNT(*) AS total FROM attendance WHERE attendance_date = %s;", (today,))["total"]
+    # Core Metric Calculations (Consolidated into 1 multi-aggregate query to reduce remote DB roundtrips)
+    counts = query_one("""
+        SELECT 
+            (SELECT COUNT(*) FROM members WHERE membership_status = 'active') AS active_members,
+            (SELECT COUNT(*) FROM trainers WHERE is_active = TRUE) AS total_trainers,
+            (SELECT COUNT(*) FROM receptionists WHERE is_active = TRUE) AS total_receptionists,
+            (SELECT COUNT(*) FROM attendance WHERE attendance_date = %s) AS today_attendance;
+    """, (today,))
+    active_members_count = counts["active_members"] if counts else 0
+    total_trainers_count = counts["total_trainers"] if counts else 0
+    total_receptionists_count = counts["total_receptionists"] if counts else 0
+    today_attendance_count = counts["today_attendance"] if counts else 0
     today_absent_count = max(0, active_members_count - today_attendance_count)
 
     # Monthly payment metrics
@@ -181,7 +187,7 @@ def member_detail(member_id):
     qr_data_uri = generate_qr_code_image_data(member["qr_token"])
     
     # Attendance stats & history
-    stats = calculate_member_attendance_stats(member_id)
+    stats = calculate_member_attendance_stats(member_id, start_date=member.get("membership_start_date"))
     attendance_history = get_member_attendance_history(member_id, limit=30)
     
     # Payment history

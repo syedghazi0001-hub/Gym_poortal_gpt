@@ -15,7 +15,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def create_app(config_class=Config):
-    app = Flask(__name__)
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    app = Flask(
+        __name__,
+        static_folder=os.path.join(base_dir, "static"),
+        static_url_path="/static",
+        template_folder=os.path.join(base_dir, "templates")
+    )
     app.config.from_object(config_class)
 
     # Fail closed: do not start a deployed app with a missing/known secret.

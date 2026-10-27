@@ -1,10 +1,9 @@
 """
 wsgi.py
 
-PythonAnywhere WSGI configuration entrypoint.
-Notice: Does NOT call application.run() - purely exposes `application` callable for WSGI servers (Gunicorn, uWSGI, PythonAnywhere WSGI).
+Universal WSGI entrypoint for PythonAnywhere, Gunicorn, Vercel, and local WSGI servers.
+Exposes both `application` and `app` callables.
 """
-
 import os
 import sys
 
@@ -17,3 +16,4 @@ from app import create_app
 
 # Create WSGI application object
 application = create_app()
+app = application
