@@ -25,13 +25,28 @@ def dashboard():
         return redirect(url_for("auth.login"))
 
     today, _ = get_gym_local_date()
-    today_attendance = query_one(
-        "SELECT * FROM trainer_attendance WHERE trainer_id = %s AND attendance_date = %s;",
-        (trainer["id"], today)
-    )
-    attendance_history = get_trainer_attendance_history(trainer["id"], limit=15)
-    assigned_members = get_trainer_assigned_members(trainer["id"])
-    settings = get_gym_settings()
+    try:
+        today_attendance = query_one(
+            "SELECT * FROM trainer_attendance WHERE trainer_id = %s AND attendance_date = %s;",
+            (trainer["id"], today)
+        )
+    except Exception:
+        today_attendance = None
+
+    try:
+        attendance_history = get_trainer_attendance_history(trainer["id"], limit=15)
+    except Exception:
+        attendance_history = []
+
+    try:
+        assigned_members = get_trainer_assigned_members(trainer["id"])
+    except Exception:
+        assigned_members = []
+
+    try:
+        settings = get_gym_settings()
+    except Exception:
+        settings = {"gym_name": "Vanguard Fitness Club", "currency": "PKR"}
 
     return render_template(
         "trainer/dashboard.html",

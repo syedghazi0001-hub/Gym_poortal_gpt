@@ -20,10 +20,31 @@ receptionist_bp = Blueprint("receptionist", __name__, url_prefix="/receptionist"
 def desk():
     """Receptionist Front Desk Terminal with Live QR Camera Scanner & Trainer Attendance."""
     today, _ = get_gym_local_date()
-    today_records = get_today_attendance()
-    trainers_status = get_all_trainers_with_today_status()
-    today_trainer_records = get_today_trainer_attendance()
-    settings = get_gym_settings()
+    try:
+        today_records = get_today_attendance()
+    except Exception:
+        today_records = []
+
+    try:
+        trainers_status = get_all_trainers_with_today_status()
+    except Exception:
+        trainers_status = []
+
+    try:
+        today_trainer_records = get_today_trainer_attendance()
+    except Exception:
+        today_trainer_records = []
+
+    try:
+        members_list = get_all_members(status="active", limit=25)
+    except Exception:
+        members_list = []
+
+    try:
+        settings = get_gym_settings()
+    except Exception:
+        settings = {"gym_name": "Vanguard Fitness Club", "currency": "PKR", "timezone": "Asia/Karachi"}
+
     current_month = get_current_billing_month()
 
     return render_template(
@@ -31,6 +52,7 @@ def desk():
         today_records=today_records,
         trainers_status=trainers_status,
         today_trainer_records=today_trainer_records,
+        members_list=members_list,
         today_date=today.strftime("%A, %B %d, %Y"),
         settings=settings,
         current_month=current_month

@@ -279,8 +279,49 @@ def get_daily_attendance_trend(days=14):
 # TRAINER ATTENDANCE ENGINE
 # ============================================================================
 
+def _ensure_trainer_attendance_table():
+    """Ensure the trainer_attendance table exists in the active database engine."""
+    from database.connection import get_db_backend
+    backend = get_db_backend()
+    try:
+        if backend == "postgres":
+            execute_statement("""
+                CREATE TABLE IF NOT EXISTS trainer_attendance (
+                    id VARCHAR(36) PRIMARY KEY,
+                    trainer_id VARCHAR(36) NOT NULL REFERENCES trainers(id) ON DELETE CASCADE,
+                    attendance_date DATE NOT NULL,
+                    check_in_time TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    check_out_time TIMESTAMPTZ,
+                    status VARCHAR(20) NOT NULL DEFAULT 'present',
+                    method VARCHAR(30) NOT NULL DEFAULT 'desk_terminal',
+                    recorded_by_id VARCHAR(36) REFERENCES users(id) ON DELETE SET NULL,
+                    notes TEXT,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    CONSTRAINT unique_trainer_attendance_per_day UNIQUE (trainer_id, attendance_date)
+                );
+            """)
+        else:
+            execute_statement("""
+                CREATE TABLE IF NOT EXISTS trainer_attendance (
+                    id TEXT PRIMARY KEY,
+                    trainer_id TEXT NOT NULL REFERENCES trainers(id) ON DELETE CASCADE,
+                    attendance_date DATE NOT NULL,
+                    check_in_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    check_out_time TIMESTAMP,
+                    status TEXT NOT NULL DEFAULT 'present',
+                    method TEXT NOT NULL DEFAULT 'desk_terminal',
+                    recorded_by_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+                    notes TEXT,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    CONSTRAINT unique_trainer_attendance_per_day UNIQUE (trainer_id, attendance_date)
+                );
+            """)
+    except Exception as e:
+        logger.debug("Table check for trainer_attendance: %s", e)
+
 def record_trainer_checkin(trainer_id, recorded_by_id=None, method="desk_terminal", notes=None):
     """Record daily check-in for a gym trainer."""
+    _ensure_trainer_attendance_table()
     trainer = query_one("SELECT * FROM trainers WHERE id = %s;", (trainer_id,))
     if not trainer:
         raise ValueError("Trainer not found.")
@@ -317,6 +358,7 @@ def record_trainer_checkin(trainer_id, recorded_by_id=None, method="desk_termina
 
 def record_trainer_checkout(trainer_id):
     """Record daily check-out time for a trainer."""
+    _ensure_trainer_attendance_table()
     today, now_local = get_gym_local_date()
 
     att = query_one(
@@ -338,8 +380,9 @@ def record_trainer_checkout(trainer_id):
     }
 
 def get_today_trainer_attendance():
-    """Get all trainer check-in records for today."""
+    """Get all trainer check-in records for today with error resilience."""
     today, _ = get_gym_local_date()
+    _ensure_trainer_attendance_table()
     sql = """
         SELECT ta.*, t.full_name AS trainer_name, t.phone AS trainer_phone,
                t.specialization, u_rec.username AS recorded_by_name
@@ -349,11 +392,16 @@ def get_today_trainer_attendance():
         WHERE ta.attendance_date = %s
         ORDER BY ta.check_in_time DESC;
     """
-    return query_all(sql, (today,))
+    try:
+        return query_all(sql, (today,))
+    except Exception as e:
+        logger.warning("Could not query today trainer attendance: %s", e)
+        return []
 
 def get_all_trainers_with_today_status():
-    """Retrieve all active trainers along with their check-in status for today."""
+    """Retrieve all active trainers along with their check-in status for today with zero-crash fallback."""
     today, _ = get_gym_local_date()
+    _ensure_trainer_attendance_table()
     sql = """
         SELECT t.*, u.username,
                ta.id AS attendance_id,
@@ -368,10 +416,33 @@ def get_all_trainers_with_today_status():
         WHERE t.is_active = 1
         ORDER BY t.full_name ASC;
     """
-    return query_all(sql, (today,))
+    try:
+        return query_all(sql, (today,))
+    except Exception as e:
+        logger.error("Primary trainer attendance query failed: %s; using safe fallback", e)
+        # Safe fallback: retrieve trainers without joining trainer_attendance so page never 500s!
+        try:
+            fallback_sql = """
+                SELECT t.*, u.username,
+                       NULL AS attendance_id,
+                       NULL AS check_in_time,
+                       NULL AS check_out_time,
+                       'not_checked_in' AS attendance_status,
+                       NULL AS attendance_method,
+                       (SELECT COUNT(*) FROM members WHERE assigned_trainer_id = t.id) AS assigned_count
+                FROM trainers t
+                JOIN users u ON u.id = t.user_id
+                WHERE t.is_active = 1
+                ORDER BY t.full_name ASC;
+            """
+            return query_all(fallback_sql)
+        except Exception as e2:
+            logger.error("Fallback trainer query also failed: %s", e2)
+            return []
 
 def get_trainer_attendance_history(trainer_id, limit=30):
-    """Retrieve attendance history for a single trainer."""
+    """Retrieve attendance history for a single trainer with error resilience."""
+    _ensure_trainer_attendance_table()
     sql = """
         SELECT ta.*, u_rec.username AS recorded_by_name
         FROM trainer_attendance ta
@@ -380,4 +451,8 @@ def get_trainer_attendance_history(trainer_id, limit=30):
         ORDER BY ta.attendance_date DESC, ta.check_in_time DESC
         LIMIT %s;
     """
-    return query_all(sql, (trainer_id, limit))
+    try:
+        return query_all(sql, (trainer_id, limit))
+    except Exception as e:
+        logger.warning("Could not query trainer attendance history: %s", e)
+        return []

@@ -17,6 +17,7 @@ class GymScanner {
     this.videoElement = document.getElementById(options.videoId || 'scanner-video');
     this.resultContainer = document.getElementById(options.resultId || 'scan-result');
     this.facingMode = 'environment';
+    this.selectedDeviceId = null;
     this.stream = null;
     this.isScanning = false;
     this.scanInterval = null;
@@ -35,9 +36,7 @@ class GymScanner {
       if (AudioContext) {
         this.audioCtx = new AudioContext();
       }
-    } catch (e) {
-      console.warn('AudioContext not supported:', e);
-    }
+    } catch (e) {}
   }
 
   playBeep(success = true) {
@@ -69,10 +68,26 @@ class GymScanner {
     } catch (e) {}
   }
 
-  async startCamera() {
+  async getAvailableCameras() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+      return [];
+    }
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      return devices.filter(d => d.kind === 'videoinput');
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async startCamera(deviceId = null) {
+    if (deviceId) {
+      this.selectedDeviceId = deviceId;
+    }
+
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      this.showStatus('Camera access requires HTTPS or localhost. Please use Manual Check-in or Photo Scan below.', 'warning');
-      return;
+      this.showStatus('Camera access requires HTTPS or localhost. You can use the "📸 Scan from Image" button or manual search below.', 'warning');
+      return false;
     }
 
     try {
@@ -80,34 +95,53 @@ class GymScanner {
         this.stopCamera();
       }
 
-      // Try with requested facingMode first, then fallback to basic video (crucial for desktop webcams)
-      try {
-        this.stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: this.facingMode,
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          },
-          audio: false
-        });
-      } catch (constraintErr) {
-        console.warn('FacingMode constraint failed, retrying with default video device:', constraintErr);
-        this.stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: false
-        });
+      const constraints = { audio: false };
+      if (this.selectedDeviceId) {
+        constraints.video = { deviceId: { exact: this.selectedDeviceId } };
+      } else {
+        constraints.video = {
+          facingMode: this.facingMode,
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        };
       }
 
-      if (this.videoElement) {
+      // Try with preferred constraints first, then fallback to basic { video: true } (critical for desktop webcams)
+      try {
+        this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (constraintErr) {
+        console.warn('Preferred constraints failed, retrying with default video device:', constraintErr);
+        this.stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
+
+      if (this.videoElement && this.stream) {
         this.videoElement.srcObject = this.stream;
         this.videoElement.setAttribute('playsinline', 'true');
         this.videoElement.setAttribute('autoplay', 'true');
         this.videoElement.muted = true;
-        await this.videoElement.play();
+
+        // Ensure video metadata loaded before calling play()
+        await new Promise((resolve) => {
+          if (this.videoElement.readyState >= 2) {
+            resolve();
+          } else {
+            this.videoElement.onloadedmetadata = () => resolve();
+            setTimeout(resolve, 800);
+          }
+        });
+
+        try {
+          await this.videoElement.play();
+        } catch (playErr) {
+          console.warn('video.play() warning:', playErr);
+        }
+
         this.isScanning = true;
         this.startDetectionLoop();
         this.showStatus('Camera live. Position member QR code in frame.', 'info');
+        return true;
       }
+      return false;
     } catch (err) {
       console.error('Camera access error:', err);
       let msg = 'Camera access was blocked or unavailable. You can use the "📸 Scan from Image" button or manual search below.';
@@ -117,6 +151,7 @@ class GymScanner {
         msg = 'No camera device detected on this system. Please use manual search or code check-in below.';
       }
       this.showStatus(msg, 'warning');
+      return false;
     }
   }
 
@@ -137,7 +172,8 @@ class GymScanner {
 
   toggleCamera() {
     this.facingMode = this.facingMode === 'environment' ? 'user' : 'environment';
-    this.startCamera();
+    this.selectedDeviceId = null;
+    return this.startCamera();
   }
 
   startDetectionLoop() {
@@ -153,7 +189,7 @@ class GymScanner {
     this.scanInterval = setInterval(async () => {
       if (!this.isScanning || !this.videoElement || this.videoElement.readyState < 2) return;
 
-      // 1. Native BarcodeDetector (instant on supported mobile & modern engines)
+      // 1. Native BarcodeDetector (instant on supported mobile engines)
       if (barcodeDetector) {
         try {
           const barcodes = await barcodeDetector.detect(this.videoElement);
@@ -192,6 +228,7 @@ class GymScanner {
 
   decodeImageFile(file) {
     if (!file) return;
+    this.showStatus('Decoding badge from image file...', 'info');
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
@@ -213,7 +250,10 @@ class GymScanner {
             return;
           }
         }
-        this.renderError('Could not detect a valid QR code badge in this image.');
+        this.renderError('Could not detect a valid QR code badge in this image. Please ensure code is clear and in focus.');
+      };
+      img.onerror = () => {
+        this.renderError('Failed to read image file.');
       };
       img.src = e.target.result;
     };
@@ -321,7 +361,7 @@ class GymScanner {
   }
 }
 
-// Attach to window globally
+// Attach globally
 if (typeof window !== 'undefined') {
   window.GymScanner = GymScanner;
 }

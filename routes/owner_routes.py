@@ -279,10 +279,26 @@ def regenerate_qr(member_id):
 @role_required("owner")
 def staff():
     """Staff directory (Trainers and Front Desk Receptionists) & Trainer Attendance."""
-    trainers = get_all_trainers()
-    receptionists = get_all_receptionists()
-    trainers_status = get_all_trainers_with_today_status()
-    today_trainer_records = get_today_trainer_attendance()
+    try:
+        trainers = get_all_trainers()
+    except Exception:
+        trainers = []
+
+    try:
+        receptionists = get_all_receptionists()
+    except Exception:
+        receptionists = []
+
+    try:
+        trainers_status = get_all_trainers_with_today_status()
+    except Exception:
+        trainers_status = []
+
+    try:
+        today_trainer_records = get_today_trainer_attendance()
+    except Exception:
+        today_trainer_records = []
+
     today, _ = get_gym_local_date()
     return render_template(
         "owner/staff.html",

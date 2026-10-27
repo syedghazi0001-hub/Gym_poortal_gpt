@@ -125,3 +125,29 @@ def test_attendance_operations(app):
 
     t_att_updated = query_one("SELECT * FROM trainer_attendance WHERE trainer_id = %s AND attendance_date = %s;", (trainer["id"], today))
     assert t_att_updated["check_out_time"] is not None
+
+
+def test_trainer_attendance_db_fallback(app):
+    """Verify that if trainer_attendance table is dropped, pages degrade gracefully without 500 errors."""
+    client = app.test_client()
+    # Log in as receptionist created in previous step or fresh
+    import secrets
+    r_user = f"rec_fb_{secrets.token_hex(4)}"
+    create_receptionist(
+        full_name="Fallback Receptionist",
+        phone=f"+9230{secrets.randbelow(90000000)+10000000}",
+        email="fallback_rec@gym.com",
+        shift="Morning",
+        username=r_user,
+        password="Password123!"
+    )
+    login_res = client.post("/login", data={"username": r_user, "password": "Password123!"}, follow_redirects=True)
+    assert login_res.status_code == 200
+
+    # Drop table to simulate unmigrated Supabase database
+    execute_statement("DROP TABLE IF EXISTS trainer_attendance;")
+
+    # Desk page must render 200 OK without crashing (not 500)
+    resp_desk = client.get("/receptionist/desk")
+    assert resp_desk.status_code == 200
+    assert b"Front Desk Attendance &amp; Roster" in resp_desk.data or b"Front Desk" in resp_desk.data
