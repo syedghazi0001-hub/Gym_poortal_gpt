@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="none">
+  <defs>
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E2430" />
+      <stop offset="100%" stop-color="#11151D" />
+    </linearGradient>
+  </defs>
+  <!-- Background Shield -->
+  <rect x="2" y="2" width="44" height="44" rx="12" fill="url(#bgGrad)" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" />
+  <!-- Vanguard Stylized 'V' & Dumbbell Geometry -->
+  <path d="M14 15L24 33L34 15" stroke="url(#emeraldGrad)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="24" cy="20" r="3" fill="#10B981" />
+  <path d="M18 17H30" stroke="#E2E8F0" stroke-width="2.5" stroke-linecap="round" opacity="0.4" />
+</svg>
