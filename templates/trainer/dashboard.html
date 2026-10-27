@@ -1,15 +1,99 @@
 {% extends "base.html" %}
 
-{% block title %}Trainer Dashboard — {{ gym_settings.gym_name }}{% endblock %}
+{% block title %}Trainer Hub — {{ gym_settings.gym_name }}{% endblock %}
 {% block page_title %}Trainer Coaching Hub{% endblock %}
 
 {% block content %}
-<div class="mb-6">
-  <h2 style="font-size:1.3rem; font-weight:700;">Welcome, {{ trainer.full_name }}</h2>
-  <p style="font-size:0.85rem; color:var(--text-muted);">Specialization: {{ trainer.specialization }} • Assigned Roster: {{ assigned_members|length }} Members</p>
+<!-- Trainer Gym Hero Header -->
+<div class="card mb-6" style="background: linear-gradient(90deg, rgba(11, 15, 23, 0.94) 0%, rgba(15, 23, 42, 0.88) 55%, rgba(139, 92, 246, 0.22) 100%), url('{{ url_for('static', filename='images/gym-trainer.jpg') }}') center/cover; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 12px 30px -10px rgba(0,0,0,0.7); min-height: 140px; display: flex; align-items: center;">
+  <div class="card-body" style="padding: 24px 28px; width:100%; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+    <div>
+      <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(139, 92, 246, 0.18); border:1px solid rgba(139, 92, 246, 0.4); border-radius:9999px; padding:3px 12px; margin-bottom:8px;">
+        <span class="pulse-dot" style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#A78BFA; box-shadow:0 0 8px #A78BFA;"></span>
+        <span style="font-size:0.75rem; font-weight:700; color:#C4B5FD; letter-spacing:0.04em; text-transform:uppercase;">Certified Coach Portal</span>
+      </div>
+      <h2 style="font-size:1.4rem; font-weight:800; color:#F8FAFC; margin-bottom:4px;">Welcome back, Coach {{ trainer.full_name }}</h2>
+      <p style="font-size:0.86rem; color:#94A3B8; margin:0;">Specialization: <strong>{{ trainer.specialization }}</strong> • Roster: <strong>{{ assigned_members|length }} Trainees</strong></p>
+    </div>
+    
+    <!-- Shift Punch In/Out Quick Action -->
+    <div style="display:flex; align-items:center; gap:10px;">
+      {% if not today_attendance %}
+        <form method="POST" action="{{ url_for('trainer.punch_in') }}" style="margin:0;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="btn btn-primary" style="display:inline-flex; align-items:center; gap:8px; padding:10px 18px; font-weight:700;">
+            <span>⏱️</span> Punch In Shift
+          </button>
+        </form>
+      {% elif not today_attendance.check_out_time %}
+        <form method="POST" action="{{ url_for('trainer.punch_out') }}" style="margin:0;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="btn btn-outline" style="border-color:rgba(239, 68, 68, 0.5); color:#FCA5A5; display:inline-flex; align-items:center; gap:8px; padding:10px 18px; font-weight:700;">
+            <span>⏹</span> Punch Out Shift
+          </button>
+        </form>
+      {% else %}
+        <span class="badge badge-active" style="padding:8px 14px; font-size:0.85rem;">✓ Today's Shift Completed</span>
+      {% endif %}
+    </div>
+  </div>
 </div>
 
-<div class="card">
+<!-- Category 1: Today's Shift & Attendance Card -->
+<div class="grid-cols-3 mb-6">
+  <div class="stat-card">
+    <div class="stat-header">
+      <span class="stat-title">Today's Duty Status</span>
+      <div class="stat-icon-wrapper">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+    </div>
+    <div class="stat-value" style="font-size:1.35rem;">
+      {% if today_attendance %}
+        {% if today_attendance.check_out_time %}
+          <span style="color:#60A5FA;">Shift Done</span>
+        {% else %}
+          <span style="color:#10B981;">On Duty</span>
+        {% endif %}
+      {% else %}
+        <span style="color:#F59E0B;">Not Checked In</span>
+      {% endif %}
+    </div>
+    <div class="stat-subtext">
+      {% if today_attendance %}
+        In: {{ today_attendance.check_in_time|date_format("%I:%M %p") }}
+        {% if today_attendance.check_out_time %} • Out: {{ today_attendance.check_out_time|date_format("%I:%M %p") }}{% endif %}
+      {% else %}
+        Click Punch In above when starting shift
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-header">
+      <span class="stat-title">Assigned Trainees</span>
+      <div class="stat-icon-wrapper">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      </div>
+    </div>
+    <div class="stat-value">{{ assigned_members|length }}</div>
+    <div class="stat-subtext">Active gym members in coaching roster</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-header">
+      <span class="stat-title">Monthly Shifts Logged</span>
+      <div class="stat-icon-wrapper">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+      </div>
+    </div>
+    <div class="stat-value">{{ attendance_history|length }}</div>
+    <div class="stat-subtext">Recent attendance records on file</div>
+  </div>
+</div>
+
+<!-- Category 2: My Assigned Trainees -->
+<div class="card mb-6">
   <div class="card-header">
     <div>
       <h3 class="card-title">My Assigned Trainees ({{ assigned_members|length }})</h3>
@@ -33,13 +117,13 @@
           <tbody>
             {% for m in assigned_members %}
               <tr>
-                <td style="font-weight:600;">{{ m.full_name }}</td>
+                <td style="font-weight:600; color:var(--text-primary);">{{ m.full_name }}</td>
                 <td><code>{{ m.member_code }}</code></td>
                 <td>{{ m.phone }}</td>
-                <td>{{ m.membership_plan }}</td>
+                <td><span class="badge badge-neutral">{{ m.membership_plan }}</span></td>
                 <td>
                   {% if m.last_attended_date %}
-                    {{ m.last_attended_date|date_format("%b %d, %Y") }}
+                    <span style="color:#34D399; font-weight:600;">{{ m.last_attended_date|date_format("%b %d, %Y") }}</span>
                   {% else %}
                     <span style="color:var(--text-muted);">Never Attended</span>
                   {% endif %}
@@ -59,6 +143,55 @@
         <div class="empty-icon">🏋️</div>
         <p class="empty-title">No Trainees Assigned Yet</p>
         <p class="empty-desc">The gym owner has not assigned any members to your coaching roster yet.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Category 3: Trainer My Shift Attendance History -->
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h3 class="card-title">My Shift Attendance History</h3>
+      <p class="card-subtitle">Verified shift check-in and check-out logs</p>
+    </div>
+  </div>
+  <div class="card-body" style="padding:0;">
+    {% if attendance_history %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Check-in Time</th>
+              <th>Check-out Time</th>
+              <th>Verification Method</th>
+              <th>Verified By</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in attendance_history %}
+              <tr>
+                <td style="font-weight:600;">{{ a.attendance_date }}</td>
+                <td><strong>{{ a.check_in_time|date_format("%I:%M %p") }}</strong></td>
+                <td>
+                  {% if a.check_out_time %}
+                    <strong>{{ a.check_out_time|date_format("%I:%M %p") }}</strong>
+                  {% else %}
+                    <span style="color:var(--text-muted);">—</span>
+                  {% endif %}
+                </td>
+                <td><span class="badge badge-neutral">{{ a.method }}</span></td>
+                <td><small style="color:var(--text-muted);">{{ a.recorded_by_name or 'Self' }}</small></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p class="empty-title">No Shift Records Found</p>
+        <p class="empty-desc">Punch in when you arrive at the gym to log your daily duty shift.</p>
       </div>
     {% endif %}
   </div>

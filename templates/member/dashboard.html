@@ -22,9 +22,16 @@
 
 <!-- Digital Membership Card & QR Pass -->
 <div class="grid-cols-2 mb-6">
-  <div class="member-badge-card">
-    <div class="badge-header">
-      <div class="badge-gym-brand">{{ gym_settings.gym_name }}</div>
+  <div class="member-badge-card" style="background: linear-gradient(135deg, rgba(16, 24, 39, 0.94) 0%, rgba(9, 13, 20, 0.96) 100%), url('{{ url_for('static', filename='images/gym-lifting.jpg') }}') center/cover; border: 1px solid rgba(16, 185, 129, 0.4); box-shadow: 0 16px 40px -10px rgba(0,0,0,0.8);">
+    <div class="badge-header" style="display:flex; justify-content:space-between; align-items:center;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="44" height="44" rx="12" fill="#0F172A" stroke="#10B981" stroke-width="2" />
+          <path d="M14 15L24 33L34 15" stroke="#34D399" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="24" cy="20" r="3.5" fill="#10B981" />
+        </svg>
+        <div class="badge-gym-brand" style="font-weight:800; font-size:1.05rem; letter-spacing:-0.02em;">{{ gym_settings.gym_name }}</div>
+      </div>
       <div class="badge-status-pill">{{ member.membership_status|upper }}</div>
     </div>
     <div class="badge-body">

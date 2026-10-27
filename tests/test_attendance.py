@@ -93,3 +93,35 @@ def test_attendance_operations(app):
     resp_manual_dup = client.post("/api/attendance/manual", json={"member_id": active_m2["id"]})
     assert resp_manual_dup.status_code == 400
     assert "already checked in" in resp_manual_dup.get_json()["message"].lower()
+
+    # 5. Trainer Attendance Tests
+    from services.staff_service import create_trainer
+    trainer = create_trainer(
+        full_name="Trainer Bilal Coach",
+        phone="+923004441111",
+        email="bilal_coach@gym.com",
+        specialization="HIIT & Strength",
+        bio="Certified HIIT and strength coach",
+        hire_date="2026-01-01",
+        username="trainer_bilal_test",
+        password="Password123!"
+    )
+
+    # Receptionist checks in trainer
+    t_checkin_res = client.post("/receptionist/trainers/checkin", data={"trainer_id": trainer["id"]}, follow_redirects=True)
+    assert t_checkin_res.status_code == 200
+
+    t_att = query_one("SELECT * FROM trainer_attendance WHERE trainer_id = %s AND attendance_date = %s;", (trainer["id"], today))
+    assert t_att is not None
+    assert t_att["status"] == "present"
+
+    # Duplicate trainer checkin on same day fails
+    t_dup_res = client.post("/receptionist/trainers/checkin", data={"trainer_id": trainer["id"]}, follow_redirects=True)
+    assert b"already checked in" in t_dup_res.data or b"Trainer check-in failed" in t_dup_res.data
+
+    # Receptionist checks out trainer
+    t_checkout_res = client.post("/receptionist/trainers/checkout", data={"trainer_id": trainer["id"]}, follow_redirects=True)
+    assert t_checkout_res.status_code == 200
+
+    t_att_updated = query_one("SELECT * FROM trainer_attendance WHERE trainer_id = %s AND attendance_date = %s;", (trainer["id"], today))
+    assert t_att_updated["check_out_time"] is not None

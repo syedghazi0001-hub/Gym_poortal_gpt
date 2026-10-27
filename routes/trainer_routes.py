@@ -6,9 +6,12 @@ from services.staff_service import (
 )
 from services.member_service import get_member_by_id
 from services.attendance_service import (
-    get_member_attendance_history, calculate_member_attendance_stats
+    get_member_attendance_history, calculate_member_attendance_stats,
+    record_trainer_checkin, record_trainer_checkout,
+    get_trainer_attendance_history, get_gym_local_date
 )
 from services.auth_service import get_gym_settings
+from database.connection import query_one
 
 trainer_bp = Blueprint("trainer", __name__, url_prefix="/trainer")
 
@@ -21,15 +24,52 @@ def dashboard():
         flash("Trainer profile not found.", "danger")
         return redirect(url_for("auth.login"))
 
+    today, _ = get_gym_local_date()
+    today_attendance = query_one(
+        "SELECT * FROM trainer_attendance WHERE trainer_id = %s AND attendance_date = %s;",
+        (trainer["id"], today)
+    )
+    attendance_history = get_trainer_attendance_history(trainer["id"], limit=15)
     assigned_members = get_trainer_assigned_members(trainer["id"])
     settings = get_gym_settings()
 
     return render_template(
         "trainer/dashboard.html",
         trainer=trainer,
+        today_attendance=today_attendance,
+        attendance_history=attendance_history,
         assigned_members=assigned_members,
         settings=settings
     )
+
+@trainer_bp.route("/punch-in", methods=["POST"])
+@role_required("trainer")
+def punch_in():
+    """Trainer punches in for their shift."""
+    trainer = get_trainer_by_user_id(session["user_id"])
+    try:
+        res = record_trainer_checkin(
+            trainer_id=trainer["id"],
+            recorded_by_id=session["user_id"],
+            method="self",
+            notes="Self punch-in"
+        )
+        flash(res["message"], "success")
+    except Exception as e:
+        flash(f"Check-in failed: {str(e)}", "danger")
+    return redirect(url_for("trainer.dashboard"))
+
+@trainer_bp.route("/punch-out", methods=["POST"])
+@role_required("trainer")
+def punch_out():
+    """Trainer punches out from their shift."""
+    trainer = get_trainer_by_user_id(session["user_id"])
+    try:
+        res = record_trainer_checkout(trainer["id"])
+        flash(res["message"], "success")
+    except Exception as e:
+        flash(f"Check-out failed: {str(e)}", "danger")
+    return redirect(url_for("trainer.dashboard"))
 
 @trainer_bp.route("/members/<member_id>")
 @role_required("trainer")

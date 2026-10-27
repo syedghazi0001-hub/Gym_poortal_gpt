@@ -274,3 +274,110 @@ def get_daily_attendance_trend(days=14):
         })
         curr += timedelta(days=1)
     return trend
+
+# ============================================================================
+# TRAINER ATTENDANCE ENGINE
+# ============================================================================
+
+def record_trainer_checkin(trainer_id, recorded_by_id=None, method="desk_terminal", notes=None):
+    """Record daily check-in for a gym trainer."""
+    trainer = query_one("SELECT * FROM trainers WHERE id = %s;", (trainer_id,))
+    if not trainer:
+        raise ValueError("Trainer not found.")
+    if not trainer["is_active"]:
+        raise ValueError("Trainer account is deactivated.")
+
+    today, now_local = get_gym_local_date()
+
+    existing = query_one(
+        "SELECT id, check_in_time FROM trainer_attendance WHERE trainer_id = %s AND attendance_date = %s;",
+        (trainer_id, today)
+    )
+    if existing:
+        raise ValueError(f"Trainer '{trainer['full_name']}' has already checked in today at {existing['check_in_time']}.")
+
+    att_id = generate_uuid()
+    execute_statement("""
+        INSERT INTO trainer_attendance (id, trainer_id, attendance_date, check_in_time, status, method, recorded_by_id, notes)
+        VALUES (%s, %s, %s, %s, 'present', %s, %s, %s);
+    """, (att_id, trainer_id, today, now_local, method, recorded_by_id, notes))
+
+    execute_statement("""
+        INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details)
+        VALUES (%s, %s, 'TRAINER_CHECKIN', 'TRAINER_ATTENDANCE', %s, %s);
+    """, (generate_uuid(), recorded_by_id, att_id, f"Trainer {trainer['full_name']} checked in via {method}"))
+
+    return {
+        "success": True,
+        "trainer_id": trainer_id,
+        "trainer_name": trainer["full_name"],
+        "check_in_time": now_local.strftime("%I:%M %p"),
+        "message": f"Trainer {trainer['full_name']} checked in successfully at {now_local.strftime('%I:%M %p')}."
+    }
+
+def record_trainer_checkout(trainer_id):
+    """Record daily check-out time for a trainer."""
+    today, now_local = get_gym_local_date()
+
+    att = query_one(
+        "SELECT * FROM trainer_attendance WHERE trainer_id = %s AND attendance_date = %s;",
+        (trainer_id, today)
+    )
+    if not att:
+        raise ValueError("Trainer has not checked in today.")
+
+    execute_statement(
+        "UPDATE trainer_attendance SET check_out_time = %s WHERE id = %s;",
+        (now_local, att["id"])
+    )
+
+    return {
+        "success": True,
+        "check_out_time": now_local.strftime("%I:%M %p"),
+        "message": f"Checked out at {now_local.strftime('%I:%M %p')}."
+    }
+
+def get_today_trainer_attendance():
+    """Get all trainer check-in records for today."""
+    today, _ = get_gym_local_date()
+    sql = """
+        SELECT ta.*, t.full_name AS trainer_name, t.phone AS trainer_phone,
+               t.specialization, u_rec.username AS recorded_by_name
+        FROM trainer_attendance ta
+        JOIN trainers t ON t.id = ta.trainer_id
+        LEFT JOIN users u_rec ON u_rec.id = ta.recorded_by_id
+        WHERE ta.attendance_date = %s
+        ORDER BY ta.check_in_time DESC;
+    """
+    return query_all(sql, (today,))
+
+def get_all_trainers_with_today_status():
+    """Retrieve all active trainers along with their check-in status for today."""
+    today, _ = get_gym_local_date()
+    sql = """
+        SELECT t.*, u.username,
+               ta.id AS attendance_id,
+               ta.check_in_time,
+               ta.check_out_time,
+               ta.status AS attendance_status,
+               ta.method AS attendance_method,
+               (SELECT COUNT(*) FROM members WHERE assigned_trainer_id = t.id) AS assigned_count
+        FROM trainers t
+        JOIN users u ON u.id = t.user_id
+        LEFT JOIN trainer_attendance ta ON ta.trainer_id = t.id AND ta.attendance_date = %s
+        WHERE t.is_active = 1
+        ORDER BY t.full_name ASC;
+    """
+    return query_all(sql, (today,))
+
+def get_trainer_attendance_history(trainer_id, limit=30):
+    """Retrieve attendance history for a single trainer."""
+    sql = """
+        SELECT ta.*, u_rec.username AS recorded_by_name
+        FROM trainer_attendance ta
+        LEFT JOIN users u_rec ON u_rec.id = ta.recorded_by_id
+        WHERE ta.trainer_id = %s
+        ORDER BY ta.attendance_date DESC, ta.check_in_time DESC
+        LIMIT %s;
+    """
+    return query_all(sql, (trainer_id, limit))

@@ -71,7 +71,7 @@ class GymScanner {
 
   async startCamera() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      this.showStatus('Camera API not supported in this browser. Please use manual entry.', 'danger');
+      this.showStatus('Camera access requires HTTPS or localhost. Please use Manual Check-in or Photo Scan below.', 'warning');
       return;
     }
 
@@ -80,27 +80,41 @@ class GymScanner {
         this.stopCamera();
       }
 
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: this.facingMode,
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio: false
-      });
+      // Try with requested facingMode first, then fallback to basic video (crucial for desktop webcams)
+      try {
+        this.stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: this.facingMode,
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        });
+      } catch (constraintErr) {
+        console.warn('FacingMode constraint failed, retrying with default video device:', constraintErr);
+        this.stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false
+        });
+      }
 
       if (this.videoElement) {
         this.videoElement.srcObject = this.stream;
+        this.videoElement.setAttribute('playsinline', 'true');
+        this.videoElement.setAttribute('autoplay', 'true');
+        this.videoElement.muted = true;
         await this.videoElement.play();
         this.isScanning = true;
         this.startDetectionLoop();
-        this.showStatus('Camera live. Scan member badge or QR code.', 'info');
+        this.showStatus('Camera live. Position member QR code in frame.', 'info');
       }
     } catch (err) {
       console.error('Camera access error:', err);
-      let msg = 'Camera access denied. Please grant camera permission or use manual check-in below.';
-      if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        msg = 'No camera device detected on this system. Please use manual code check-in below.';
+      let msg = 'Camera access was blocked or unavailable. You can use the "📸 Scan from Image" button or manual search below.';
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        msg = 'Camera permission was denied. Please allow camera permissions in your browser address bar or use manual search below.';
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        msg = 'No camera device detected on this system. Please use manual search or code check-in below.';
       }
       this.showStatus(msg, 'warning');
     }
@@ -115,6 +129,9 @@ class GymScanner {
     if (this.stream) {
       this.stream.getTracks().forEach((track) => track.stop());
       this.stream = null;
+    }
+    if (this.videoElement) {
+      this.videoElement.srcObject = null;
     }
   }
 
@@ -148,12 +165,12 @@ class GymScanner {
       }
 
       // 2. High-speed jsQR fallback (100% universal across Windows, Mac, Linux, Chrome, Edge, Firefox)
-      if (typeof window.jsQR === 'function') {
+      const jsqrFn = window.jsQR || (typeof jsQR !== 'undefined' ? jsQR : null);
+      if (typeof jsqrFn === 'function') {
         try {
           const w = this.videoElement.videoWidth;
           const h = this.videoElement.videoHeight;
           if (w > 0 && h > 0) {
-            // Downscale high-res webcams to 640px max width for sub-5ms decode latency
             const scale = Math.min(1, 640 / w);
             const sw = Math.round(w * scale);
             const sh = Math.round(h * scale);
@@ -161,7 +178,7 @@ class GymScanner {
             this.canvas.height = sh;
             this.ctx.drawImage(this.videoElement, 0, 0, sw, sh);
             const imgData = this.ctx.getImageData(0, 0, sw, sh);
-            const code = window.jsQR(imgData.data, sw, sh, {
+            const code = jsqrFn(imgData.data, sw, sh, {
               inversionAttempts: 'dontInvert'
             });
             if (code && code.data) {
@@ -171,6 +188,36 @@ class GymScanner {
         } catch (e) {}
       }
     }, 200);
+  }
+
+  decodeImageFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const w = img.width;
+        const h = img.height;
+        const scale = Math.min(1, 1024 / Math.max(w, h));
+        const sw = Math.round(w * scale);
+        const sh = Math.round(h * scale);
+        this.canvas.width = sw;
+        this.canvas.height = sh;
+        this.ctx.drawImage(img, 0, 0, sw, sh);
+        const imgData = this.ctx.getImageData(0, 0, sw, sh);
+        const jsqrFn = window.jsQR || (typeof jsQR !== 'undefined' ? jsQR : null);
+        if (typeof jsqrFn === 'function') {
+          const code = jsqrFn(imgData.data, sw, sh, { inversionAttempts: 'attemptBoth' });
+          if (code && code.data) {
+            this.handleDetectedToken(code.data);
+            return;
+          }
+        }
+        this.renderError('Could not detect a valid QR code badge in this image.');
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
   }
 
   async handleDetectedToken(token) {
@@ -187,7 +234,7 @@ class GymScanner {
 
   async submitToken(token) {
     const viewport = document.querySelector('.scanner-viewport');
-    this.showStatus('Verifying badge token...', 'info');
+    this.showStatus('Verifying badge token with gym database...', 'info');
 
     try {
       const resp = await fetch('/api/attendance/scan', {
@@ -239,7 +286,7 @@ class GymScanner {
     const checkInTime = this.escapeHtml(data.check_in_time);
     const message = this.escapeHtml(data.message);
     this.resultContainer.innerHTML = `
-      <div class="alert alert-success animate-slide-up" style="display:flex; gap:14px; align-items:center; border:1px solid #10B981; background:rgba(16,185,129,0.12); padding:16px;">
+      <div class="alert alert-success animate-slide-up" style="display:flex; gap:14px; align-items:center; border:1px solid #10B981; background:rgba(16,185,129,0.14); padding:16px;">
         <div style="font-size:2.2rem; line-height:1; color:#34D399;">✓</div>
         <div>
           <div style="font-weight:700; font-size:1.1rem; color:#ECFDF5;">${memberName}</div>
@@ -254,7 +301,7 @@ class GymScanner {
     if (!this.resultContainer) return;
     const safeMessage = this.escapeHtml(msg);
     this.resultContainer.innerHTML = `
-      <div class="alert alert-danger animate-slide-up" style="display:flex; gap:14px; align-items:center; border:1px solid #EF4444; background:rgba(239,68,68,0.12); padding:16px;">
+      <div class="alert alert-danger animate-slide-up" style="display:flex; gap:14px; align-items:center; border:1px solid #EF4444; background:rgba(239,68,68,0.14); padding:16px;">
         <div style="font-size:2.2rem; line-height:1; color:#F87171;">✕</div>
         <div>
           <div style="font-weight:700; font-size:1rem; color:#FEF2F2;">Check-in Denied</div>
@@ -272,6 +319,11 @@ class GymScanner {
       </div>
     `;
   }
+}
+
+// Attach to window globally
+if (typeof window !== 'undefined') {
+  window.GymScanner = GymScanner;
 }
 
 // Global Manual Member Check-in
@@ -307,4 +359,8 @@ async function submitManualAttendance(memberId) {
       alert('Network error during manual check-in');
     }
   }
+}
+
+if (typeof window !== 'undefined') {
+  window.submitManualAttendance = submitManualAttendance;
 }

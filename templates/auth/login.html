@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign In — {{ gym_settings.gym_name }}</title>
-  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/logo.svg') }}">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' width='48' height='48' fill='none'%3E%3Crect x='2' y='2' width='44' height='44' rx='12' fill='%230F172A' stroke='%2310B981' stroke-width='2'/%3E%3Cpath d='M14 15L24 33L34 15' stroke='%2334D399' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='20' r='3.5' fill='%2310B981'/%3E%3Cpath d='M18 17H30' stroke='%23E2E8F0' stroke-width='2.5' stroke-linecap='round' opacity='0.5'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
@@ -1230,7 +1230,7 @@ code {
       min-height: 100vh;
       padding: 24px 16px;
       margin: 0;
-      background: #070A0F radial-gradient(circle at 50% 20%, rgba(16, 185, 129, 0.1) 0%, transparent 60%);
+      background: linear-gradient(180deg, rgba(7, 10, 15, 0.88) 0%, rgba(7, 10, 15, 0.94) 100%), url('{{ url_for('static', filename='images/gym-login-bg.jpg') }}') center/cover fixed;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       color: #F8FAFC;
     }

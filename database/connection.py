@@ -223,11 +223,46 @@ def init_db(schema_file=None, force=False):
     Execute appropriate schema file to ensure tables exist.
     Skips execution if database is already initialized unless force=True.
     """
+    backend = get_db_backend()
     if not force and schema_file is None and is_db_initialized():
         logger.info("Database schema already initialized. Skipping DDL execution.")
+        # Ensure trainer_attendance exists for schema migrations
+        try:
+            if backend == "postgres":
+                execute_statement("""
+                    CREATE TABLE IF NOT EXISTS trainer_attendance (
+                        id VARCHAR(36) PRIMARY KEY,
+                        trainer_id VARCHAR(36) NOT NULL REFERENCES trainers(id) ON DELETE CASCADE,
+                        attendance_date DATE NOT NULL,
+                        check_in_time TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        check_out_time TIMESTAMPTZ,
+                        status VARCHAR(20) NOT NULL DEFAULT 'present',
+                        method VARCHAR(30) NOT NULL DEFAULT 'desk_terminal',
+                        recorded_by_id VARCHAR(36) REFERENCES users(id) ON DELETE SET NULL,
+                        notes TEXT,
+                        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        CONSTRAINT unique_trainer_attendance_per_day UNIQUE (trainer_id, attendance_date)
+                    );
+                """)
+            else:
+                execute_statement("""
+                    CREATE TABLE IF NOT EXISTS trainer_attendance (
+                        id TEXT PRIMARY KEY,
+                        trainer_id TEXT NOT NULL REFERENCES trainers(id) ON DELETE CASCADE,
+                        attendance_date DATE NOT NULL,
+                        check_in_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        check_out_time TIMESTAMP,
+                        status TEXT NOT NULL DEFAULT 'present',
+                        method TEXT NOT NULL DEFAULT 'desk_terminal',
+                        recorded_by_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+                        notes TEXT,
+                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        CONSTRAINT unique_trainer_attendance_per_day UNIQUE (trainer_id, attendance_date)
+                    );
+                """)
+        except Exception as e:
+            logger.warning("Could not auto-ensure trainer_attendance: %s", e)
         return
-
-    backend = get_db_backend()
     if backend == "postgres":
         if schema_file is None:
             schema_file = os.path.join(os.path.dirname(__file__), "schema.sql")

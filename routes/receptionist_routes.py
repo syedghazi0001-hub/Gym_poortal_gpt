@@ -4,7 +4,9 @@ from services.auth_service import get_gym_settings
 from services.member_service import get_all_members, get_member_by_id
 from services.attendance_service import (
     record_attendance_by_qr, record_attendance_manual,
-    get_today_attendance, get_gym_local_date
+    get_today_attendance, get_gym_local_date,
+    record_trainer_checkin, record_trainer_checkout,
+    get_today_trainer_attendance, get_all_trainers_with_today_status
 )
 from services.payment_service import (
     get_current_billing_month, get_monthly_payment_status,
@@ -16,19 +18,53 @@ receptionist_bp = Blueprint("receptionist", __name__, url_prefix="/receptionist"
 @receptionist_bp.route("/desk")
 @role_required("receptionist", "owner")
 def desk():
-    """Receptionist Front Desk Terminal with Live QR Camera Scanner."""
+    """Receptionist Front Desk Terminal with Live QR Camera Scanner & Trainer Attendance."""
     today, _ = get_gym_local_date()
     today_records = get_today_attendance()
+    trainers_status = get_all_trainers_with_today_status()
+    today_trainer_records = get_today_trainer_attendance()
     settings = get_gym_settings()
     current_month = get_current_billing_month()
 
     return render_template(
         "receptionist/desk.html",
         today_records=today_records,
+        trainers_status=trainers_status,
+        today_trainer_records=today_trainer_records,
         today_date=today.strftime("%A, %B %d, %Y"),
         settings=settings,
         current_month=current_month
     )
+
+@receptionist_bp.route("/trainers/checkin", methods=["POST"])
+@role_required("receptionist", "owner")
+def trainer_checkin():
+    """Record trainer attendance from front desk."""
+    trainer_id = request.form.get("trainer_id")
+    notes = request.form.get("notes", "").strip()
+    try:
+        res = record_trainer_checkin(
+            trainer_id=trainer_id,
+            recorded_by_id=session.get("user_id"),
+            method="desk_terminal",
+            notes=notes
+        )
+        flash(res["message"], "success")
+    except Exception as e:
+        flash(f"Trainer check-in failed: {str(e)}", "danger")
+    return redirect(url_for("receptionist.desk"))
+
+@receptionist_bp.route("/trainers/checkout", methods=["POST"])
+@role_required("receptionist", "owner")
+def trainer_checkout():
+    """Record trainer checkout from front desk."""
+    trainer_id = request.form.get("trainer_id")
+    try:
+        res = record_trainer_checkout(trainer_id=trainer_id)
+        flash(res["message"], "success")
+    except Exception as e:
+        flash(f"Trainer check-out failed: {str(e)}", "danger")
+    return redirect(url_for("receptionist.desk"))
 
 @receptionist_bp.route("/attendance")
 @role_required("receptionist", "owner")

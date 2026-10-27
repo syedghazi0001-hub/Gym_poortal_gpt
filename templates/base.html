@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token }}">
   <title>{% block title %}{{ gym_settings.gym_name }}{% endblock %} — Vanguard Gym OS</title>
-  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/logo.svg') }}">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' width='48' height='48' fill='none'%3E%3Crect x='2' y='2' width='44' height='44' rx='12' fill='%230F172A' stroke='%2310B981' stroke-width='2'/%3E%3Cpath d='M14 15L24 33L34 15' stroke='%2334D399' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='20' r='3.5' fill='%2310B981'/%3E%3Cpath d='M18 17H30' stroke='%23E2E8F0' stroke-width='2.5' stroke-linecap='round' opacity='0.5'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
@@ -1472,10 +1472,28 @@ code {
     <!-- Main Content Area -->
     <div class="app-main">
       <header class="app-topbar">
-        <div class="topbar-left">
+        <div class="topbar-left" style="display:flex; align-items:center; gap:12px;">
           <button class="mobile-menu-toggle" aria-label="Toggle menu">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
           </button>
+          <a href="/" style="display:inline-flex; align-items:center; gap:8px; text-decoration:none;">
+            <svg width="30" height="30" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0; filter:drop-shadow(0 0 8px rgba(16, 185, 129, 0.45));">
+              <defs>
+                <linearGradient id="topShieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#34D399" />
+                  <stop offset="100%" stop-color="#059669" />
+                </linearGradient>
+                <linearGradient id="topShieldBg" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#1E293B" />
+                  <stop offset="100%" stop-color="#0F172A" />
+                </linearGradient>
+              </defs>
+              <rect x="2" y="2" width="44" height="44" rx="12" fill="url(#topShieldBg)" stroke="rgba(16, 185, 129, 0.4)" stroke-width="1.8" />
+              <path d="M14 15L24 33L34 15" stroke="url(#topShieldGrad)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+              <circle cx="24" cy="20" r="3" fill="#10B981" />
+              <path d="M18 17H30" stroke="#E2E8F0" stroke-width="2.5" stroke-linecap="round" opacity="0.4" />
+            </svg>
+          </a>
           <h1 class="page-title">{% block page_title %}{{ gym_settings.gym_name }}{% endblock %}</h1>
         </div>
 
@@ -1547,6 +1565,53 @@ code {
         }
       }, 15000);
     })();
+  </script>
+  <script>
+    // Embedded Modal & Toast Handlers (Guaranteed 100% Availability)
+    function openModal(id) {
+      var el = document.getElementById(id);
+      if (el) {
+        el.classList.add('open');
+        var input = el.querySelector('input:not([type=hidden]), select, textarea');
+        if (input) input.focus();
+      }
+    }
+    function closeModal(id) {
+      var el = document.getElementById(id);
+      if (el) el.classList.remove('open');
+    }
+    document.addEventListener('click', function(e) {
+      if (e.target && e.target.classList.contains('modal-overlay')) {
+        e.target.classList.remove('open');
+      }
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay.open').forEach(function(m) {
+          m.classList.remove('open');
+        });
+      }
+    });
+    function showToast(message, type) {
+      type = type || 'info';
+      var container = document.getElementById('toast-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;max-width:380px;';
+        document.body.appendChild(container);
+      }
+      var toast = document.createElement('div');
+      toast.className = 'alert alert-' + type + ' animate-slide-up';
+      toast.style.cssText = 'box-shadow:0 4px 16px rgba(0,0,0,0.5);margin:0;';
+      toast.innerHTML = '<span>' + message + '</span><button style=\"background:none;border:none;color:inherit;cursor:pointer;margin-left:12px;font-weight:bold;\" onclick=\"this.parentElement.remove()\">✕</button>';
+      container.appendChild(toast);
+      setTimeout(function() {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(function() { toast.remove(); }, 300);
+      }, 4000);
+    }
   </script>
   {% block scripts %}{% endblock %}
 </body>

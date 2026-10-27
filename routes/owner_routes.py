@@ -13,7 +13,8 @@ from services.staff_service import (
 from services.attendance_service import (
     get_today_attendance, get_attendance_logs, get_gym_local_date,
     get_member_attendance_history, calculate_member_attendance_stats,
-    get_daily_attendance_trend
+    get_daily_attendance_trend, get_all_trainers_with_today_status,
+    get_today_trainer_attendance, record_trainer_checkin, record_trainer_checkout
 )
 from services.payment_service import (
     get_current_billing_month, get_monthly_payment_status,
@@ -277,10 +278,42 @@ def regenerate_qr(member_id):
 @owner_bp.route("/staff")
 @role_required("owner")
 def staff():
-    """Staff directory (Trainers and Front Desk Receptionists)."""
+    """Staff directory (Trainers and Front Desk Receptionists) & Trainer Attendance."""
     trainers = get_all_trainers()
     receptionists = get_all_receptionists()
-    return render_template("owner/staff.html", trainers=trainers, receptionists=receptionists)
+    trainers_status = get_all_trainers_with_today_status()
+    today_trainer_records = get_today_trainer_attendance()
+    today, _ = get_gym_local_date()
+    return render_template(
+        "owner/staff.html",
+        trainers=trainers,
+        receptionists=receptionists,
+        trainers_status=trainers_status,
+        today_trainer_records=today_trainer_records,
+        today_date=today.strftime("%A, %B %d, %Y")
+    )
+
+@owner_bp.route("/staff/trainers/<trainer_id>/checkin", methods=["POST"])
+@role_required("owner")
+def owner_trainer_checkin(trainer_id):
+    """Owner logs checkin for a trainer."""
+    try:
+        res = record_trainer_checkin(trainer_id, recorded_by_id=session.get("user_id"), method="owner")
+        flash(res["message"], "success")
+    except Exception as e:
+        flash(f"Check-in failed: {str(e)}", "danger")
+    return redirect(url_for("owner.staff"))
+
+@owner_bp.route("/staff/trainers/<trainer_id>/checkout", methods=["POST"])
+@role_required("owner")
+def owner_trainer_checkout(trainer_id):
+    """Owner logs checkout for a trainer."""
+    try:
+        res = record_trainer_checkout(trainer_id)
+        flash(res["message"], "success")
+    except Exception as e:
+        flash(f"Checkout failed: {str(e)}", "danger")
+    return redirect(url_for("owner.staff"))
 
 @owner_bp.route("/staff/trainer/new", methods=["POST"])
 @role_required("owner")
