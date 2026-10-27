@@ -1,11 +1,47 @@
+import time
 import zoneinfo
 from datetime import datetime
+from flask import g, has_request_context
 from database.connection import query_one, query_all, execute_insert, execute_statement
 from auth.security import hash_password, verify_password, generate_uuid
 from config import Config
 
-def get_gym_settings():
-    """Retrieve the singleton gym settings record, or create default if missing."""
+_SETTINGS_CACHE = None
+_SETTINGS_CACHE_TIME = 0.0
+_SETTINGS_CACHE_TTL = 60.0  # seconds
+
+def invalidate_gym_settings_cache():
+    """Clear both in-memory process cache and request-scoped gym settings cache."""
+    global _SETTINGS_CACHE, _SETTINGS_CACHE_TIME
+    _SETTINGS_CACHE = None
+    _SETTINGS_CACHE_TIME = 0.0
+    if has_request_context() and hasattr(g, "_cached_gym_settings"):
+        try:
+            delattr(g, "_cached_gym_settings")
+        except Exception:
+            pass
+
+def get_gym_settings(force_refresh=False):
+    """
+    Retrieve the singleton gym settings record, or create default if missing.
+    Uses request-scoped caching and in-memory TTL caching to prevent
+    redundant round-trips to the remote database.
+    """
+    global _SETTINGS_CACHE, _SETTINGS_CACHE_TIME
+
+    now = time.time()
+
+    # 1. Request context cache check (fastest, per-request)
+    if not force_refresh and has_request_context():
+        if hasattr(g, "_cached_gym_settings") and g._cached_gym_settings is not None:
+            return g._cached_gym_settings
+
+    # 2. In-memory process cache check (TTL-based)
+    if not force_refresh and _SETTINGS_CACHE is not None and (now - _SETTINGS_CACHE_TIME) < _SETTINGS_CACHE_TTL:
+        if has_request_context():
+            g._cached_gym_settings = _SETTINGS_CACHE
+        return _SETTINGS_CACHE
+
     settings = query_one("SELECT * FROM gym_settings WHERE id = 1;")
     if not settings:
         execute_statement("""
@@ -14,6 +50,12 @@ def get_gym_settings():
             ON CONFLICT (id) DO NOTHING;
         """)
         settings = query_one("SELECT * FROM gym_settings WHERE id = 1;")
+
+    _SETTINGS_CACHE = settings
+    _SETTINGS_CACHE_TIME = now
+    if has_request_context():
+        g._cached_gym_settings = settings
+
     return settings
 
 def update_gym_settings(gym_name, gym_tagline, currency, timezone, accent_color, contact_phone, contact_email, address, absence_threshold_days):
@@ -36,7 +78,8 @@ def update_gym_settings(gym_name, gym_tagline, currency, timezone, accent_color,
         gym_name, gym_tagline, currency, timezone, accent_color,
         contact_phone, contact_email, address, absence_threshold_days
     ))
-    return get_gym_settings()
+    invalidate_gym_settings_cache()
+    return get_gym_settings(force_refresh=True)
 
 def has_owner_account() -> bool:
     """Check if at least one active owner account exists in the database."""
@@ -61,6 +104,7 @@ def setup_initial_owner(gym_name, currency, timezone, username, password, full_n
             timezone = EXCLUDED.timezone,
             updated_at = CURRENT_TIMESTAMP;
     """, (gym_name, currency, timezone))
+    invalidate_gym_settings_cache()
     
     # 2. Create Owner User
     user_id = generate_uuid()

@@ -195,7 +195,7 @@ def get_member_attendance_history(member_id, limit=60):
     """
     return query_all(sql, (member_id, limit))
 
-def calculate_member_attendance_stats(member_id):
+def calculate_member_attendance_stats(member_id, start_date=None):
     """
     Calculate comprehensive attendance stats:
     - total attended days
@@ -203,34 +203,33 @@ def calculate_member_attendance_stats(member_id):
     - total absent days
     - current streak (consecutive attendance days)
     """
-    member = query_one("SELECT membership_start_date FROM members WHERE id = %s;", (member_id,))
-    if not member:
-        return {"total_attended": 0, "total_absent": 0, "streak": 0}
+    if not start_date:
+        member = query_one("SELECT membership_start_date FROM members WHERE id = %s;", (member_id,))
+        if not member:
+            return {"total_attended": 0, "total_absent": 0, "streak": 0}
+        start_date = member["membership_start_date"]
 
     today, _ = get_gym_local_date()
-    start_date = member["membership_start_date"]
     if isinstance(start_date, str):
         try:
             start_date = datetime.strptime(start_date[:10], "%Y-%m-%d").date()
         except Exception:
             start_date = today
 
-    # Total attended count
-    att_count_row = query_one("SELECT COUNT(*) AS total FROM attendance WHERE member_id = %s;", (member_id,))
-    total_attended = att_count_row["total"] if att_count_row else 0
-
-    # Total calendar days active
-    days_since_start = max(1, (today - start_date).days + 1)
-    total_absent = max(0, days_since_start - total_attended)
-
-    # Current streak calculation
-    # Fetch dates attended in descending order
+    # Current streak & attended records calculation
+    # Fetch dates attended in descending order (len(dates_rows) gives total_attended without a separate query)
     dates_rows = query_all("""
         SELECT attendance_date
         FROM attendance
         WHERE member_id = %s
         ORDER BY attendance_date DESC;
     """, (member_id,))
+
+    total_attended = len(dates_rows)
+
+    # Total calendar days active
+    days_since_start = max(1, (today - start_date).days + 1)
+    total_absent = max(0, days_since_start - total_attended)
     
     attended_dates = {r["attendance_date"] for r in dates_rows}
     streak = 0
