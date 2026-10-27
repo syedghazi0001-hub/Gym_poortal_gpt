@@ -47,7 +47,7 @@ def member_detail(member_id):
         flash("Access Denied: You are not assigned to this member.", "danger")
         return redirect(url_for("trainer.dashboard"))
 
-    stats = calculate_member_attendance_stats(member_id, start_date=member.get("membership_start_date"))
+    stats = calculate_member_attendance_stats(member_id)
     attendance_history = get_member_attendance_history(member_id, limit=30)
     notes = get_trainer_notes_for_member(member_id)
     settings = get_gym_settings()

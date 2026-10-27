@@ -32,7 +32,6 @@ class Config:
     VERSION = "2.4.0"
     DEFAULT_CURRENCY = "PKR"
     ABSENCE_THRESHOLD_DAYS = 10
-    SEND_FILE_MAX_AGE_DEFAULT = 604800  # 7 days browser cache for static files
 
 class DevelopmentConfig(Config):
     DEBUG = True

@@ -2,15 +2,10 @@ import os
 import re
 import logging
 import sqlite3
-from datetime import date, datetime
 from contextlib import contextmanager
 from config import Config
 
 logger = logging.getLogger(__name__)
-
-# Register date/datetime adapters for SQLite on Python 3.12+
-sqlite3.register_adapter(date, lambda d: d.isoformat())
-sqlite3.register_adapter(datetime, lambda dt: dt.isoformat())
 
 # Check if psycopg2 is available
 try:
@@ -55,12 +50,6 @@ def get_db_backend():
             db_url = db_url.replace("postgres://", "postgresql://", 1)
 
         conn_params = {"dsn": db_url}
-        conn_params["connect_timeout"] = 10
-        conn_params["keepalives"] = 1
-        conn_params["keepalives_idle"] = 30
-        conn_params["keepalives_interval"] = 10
-        conn_params["keepalives_count"] = 5
-
         if "localhost" not in db_url and "127.0.0.1" not in db_url:
             if "sslmode" not in db_url:
                 conn_params["sslmode"] = "require"
@@ -100,30 +89,14 @@ def get_db_connection():
     if backend == "postgres":
         global _connection_pool
         conn = _connection_pool.getconn()
-        # Recover gracefully if the connection was terminated during an idle serverless period
-        if getattr(conn, "closed", 0) != 0:
-            try:
-                _connection_pool.putconn(conn, close=True)
-            except Exception:
-                pass
-            conn = _connection_pool.getconn()
         try:
             yield conn
             conn.commit()
         except Exception:
-            try:
-                conn.rollback()
-            except Exception:
-                pass
+            conn.rollback()
             raise
         finally:
-            if getattr(conn, "closed", 0) != 0:
-                try:
-                    _connection_pool.putconn(conn, close=True)
-                except Exception:
-                    pass
-            else:
-                _connection_pool.putconn(conn)
+            _connection_pool.putconn(conn)
     else:
         conn = sqlite3.connect(_sqlite_path, timeout=20.0)
         conn.row_factory = sqlite3.Row
@@ -197,36 +170,8 @@ def execute_statement(sql, params=None):
             cur.execute(formatted_sql, params or ())
             return cur.rowcount
 
-def is_db_initialized():
-    """
-    Check whether core database tables already exist.
-    Prevents running expensive DDL migrations on every cold start.
-    """
-    backend = get_db_backend()
-    try:
-        if backend == "postgres":
-            row = query_one(
-                "SELECT 1 AS exists_val FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'gym_settings' LIMIT 1;"
-            )
-            return bool(row)
-        else:
-            row = query_one(
-                "SELECT 1 AS exists_val FROM sqlite_master WHERE type = 'table' AND name = 'gym_settings' LIMIT 1;"
-            )
-            return bool(row)
-    except Exception as e:
-        logger.debug("Database initialization check error: %s", e)
-        return False
-
-def init_db(schema_file=None, force=False):
-    """
-    Execute appropriate schema file to ensure tables exist.
-    Skips execution if database is already initialized unless force=True.
-    """
-    if not force and schema_file is None and is_db_initialized():
-        logger.info("Database schema already initialized. Skipping DDL execution.")
-        return
-
+def init_db(schema_file=None):
+    """Execute appropriate schema file to ensure tables exist."""
     backend = get_db_backend()
     if backend == "postgres":
         if schema_file is None:

@@ -30,7 +30,7 @@ def dashboard():
     qr_data_uri = generate_qr_code_image_data(member["qr_token"])
 
     # Attendance stats
-    stats = calculate_member_attendance_stats(member["id"], start_date=member.get("membership_start_date"))
+    stats = calculate_member_attendance_stats(member["id"])
     recent_attendance = get_member_attendance_history(member["id"], limit=10)
 
     # Payments
@@ -78,7 +78,7 @@ def attendance():
         return redirect(url_for("auth.login"))
 
     history = get_member_attendance_history(member["id"], limit=100)
-    stats = calculate_member_attendance_stats(member["id"], start_date=member.get("membership_start_date"))
+    stats = calculate_member_attendance_stats(member["id"])
     settings = get_gym_settings()
 
     return render_template(

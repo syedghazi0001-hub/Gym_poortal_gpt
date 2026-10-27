@@ -1,20 +1,9 @@
 from functools import wraps
-from flask import session, redirect, url_for, flash, request, abort, jsonify, g, has_request_context
+from flask import session, redirect, url_for, flash, request, abort, jsonify
 from database.connection import query_one
 
-def clear_current_user_cache():
-    """Clear request-scoped current user cache."""
-    if has_request_context() and hasattr(g, "_current_user"):
-        try:
-            delattr(g, "_current_user")
-        except Exception:
-            pass
-
 def get_current_user():
-    """Retrieve the currently logged-in user details from session and database, cached per-request."""
-    if has_request_context() and hasattr(g, "_current_user"):
-        return g._current_user
-
+    """Retrieve the currently logged-in user details from session and database."""
     user_id = session.get("user_id")
     if not user_id:
         return None
@@ -34,12 +23,7 @@ def get_current_user():
     user = query_one(sql, (user_id,))
     if not user or not user["is_active"]:
         session.clear()
-        if has_request_context():
-            g._current_user = None
         return None
-
-    if has_request_context():
-        g._current_user = user
     return user
 
 def login_required(f):
