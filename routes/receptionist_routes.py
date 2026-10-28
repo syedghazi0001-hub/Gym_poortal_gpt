@@ -36,9 +36,9 @@ def desk():
         today_trainer_records = []
 
     try:
-        members_list = get_all_members(status="active", limit=25)
+        members_res, _ = get_all_members(status="active", limit=30)
     except Exception:
-        members_list = []
+        members_res = []
 
     try:
         settings = get_gym_settings()
@@ -52,7 +52,7 @@ def desk():
         today_records=today_records,
         trainers_status=trainers_status,
         today_trainer_records=today_trainer_records,
-        members_list=members_list,
+        members_list=members_res,
         today_date=today.strftime("%A, %B %d, %Y"),
         settings=settings,
         current_month=current_month

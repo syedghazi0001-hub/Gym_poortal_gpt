@@ -1,154 +1,156 @@
 {% extends "base.html" %}
 
-{% block title %}Receptionist Terminal & Attendance Hub | {{ settings.gym_name }}{% endblock %}
+{% block title %}Front Desk & Attendance Hub | {{ settings.gym_name }}{% endblock %}
 
 {% block content %}
-<!-- Modernized Receptionist Header with Gym Visuals -->
-<div class="card mb-6" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(15, 23, 42, 0.95) 100%), url('{{ url_for('static', filename='images/gym-dumbbells.jpg') }}') center/cover; border: 1px solid rgba(16, 185, 129, 0.25); position: relative; overflow: hidden;">
-  <div style="position: absolute; inset: 0; background: rgba(11, 15, 25, 0.82); backdrop-filter: blur(2px);"></div>
-  <div class="card-body" style="position: relative; z-index: 2; padding: 28px 24px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
-      <div>
-        <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.3); padding:4px 12px; border-radius:999px; font-size:0.78rem; color:#34D399; font-weight:600; margin-bottom:8px;">
-          <span>⚡</span> RECEPTIONIST DESK TERMINAL • LIVE SCANNER
-        </div>
-        <h1 style="font-size: 1.85rem; font-weight: 800; color: #F9FAFB; margin: 0 0 6px 0; letter-spacing: -0.02em;">
-          Front Desk Attendance & Roster
-        </h1>
-        <p style="color: #94A3B8; margin: 0; font-size: 0.92rem;">
-          {{ today_date }} • Verified for Member Badges & Staff Duty
-        </p>
+<!-- Top Header: Modern, Clean & High-Impact -->
+<div class="card mb-6" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.8) 100%); border: 1px solid rgba(255, 255, 255, 0.08); padding: 24px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+    <div>
+      <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(16,185,129,0.14); border:1px solid rgba(16,185,129,0.25); padding:3px 10px; border-radius:999px; font-size:0.75rem; color:#34D399; font-weight:700; letter-spacing:0.04em; margin-bottom:8px;">
+        <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10B981;"></span> LIVE TERMINAL
       </div>
-      <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <a href="{{ url_for('receptionist.attendance') }}" class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
-          <span>📋</span> Attendance Log
-        </a>
-        <a href="{{ url_for('receptionist.payments') }}" class="btn btn-primary btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
-          <span>💳</span> Fee Collections
-        </a>
-      </div>
+      <h1 style="font-size: 1.75rem; font-weight: 800; color: #F8FAFC; margin: 0 0 4px 0; letter-spacing: -0.02em;">
+        Front Desk & Member Check-In
+      </h1>
+      <p style="color: #94A3B8; margin: 0; font-size: 0.9rem;">
+        {{ today_date }} • Instant QR Verification, Fast Search & Staff Roster
+      </p>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <a href="{{ url_for('receptionist.attendance') }}" class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
+        <span>📋</span> Attendance Log
+      </a>
+      <a href="{{ url_for('receptionist.payments') }}" class="btn btn-primary btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
+        <span>💳</span> Fee Collections
+      </a>
     </div>
   </div>
 </div>
 
-<!-- Category 1: Member Attendance Verification (Camera + Photo + Quick Lookup) -->
-<div class="grid-cols-2 mb-6">
-  <!-- Live Camera & Photo Scanner Console -->
+<!-- Main Workspace: 2-Column Split (Scanner Console + Member Fast Check-In) -->
+<div class="grid-cols-2 mb-6" style="gap:24px;">
+  
+  <!-- Column 1: Live QR Scanner Terminal -->
   <div class="card" style="border: 1px solid rgba(255, 255, 255, 0.08);">
-    <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+    <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.06); display:flex; justify-content:space-between; align-items:center;">
       <div>
         <h3 class="card-title" style="display:flex; align-items:center; gap:8px;">
-          <span>📷</span> Live QR Camera Scanner
+          <span>📷</span> QR Badge Scanner
         </h3>
-        <p class="card-subtitle">Scan member digital badges using webcam or camera.</p>
+        <p class="card-subtitle">Scan member pass with camera or upload badge photo.</p>
       </div>
-      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-        <select id="camera-select" class="form-select form-select-sm" style="font-size:0.78rem; padding:4px 8px; max-width:160px; background:#111827; border:1px solid #374151; color:#F3F4F6; display:none;">
+      <div style="display:flex; gap:8px; align-items:center;">
+        <select id="camera-select" class="form-select form-select-sm" style="font-size:0.78rem; padding:4px 8px; max-width:140px; background:#111827; border:1px solid #374151; color:#F3F4F6; display:none;">
           <option value="">Default Camera</option>
         </select>
-        <button id="btn-toggle-camera" class="btn btn-outline btn-sm" title="Switch between camera sources" style="padding:4px 10px; font-size:0.8rem;">🔄 Flip</button>
-        <button id="btn-start-camera" class="btn btn-primary btn-sm" style="padding:5px 14px; font-weight:600;">▶ Start Camera</button>
+        <button id="btn-toggle-camera" class="btn btn-outline btn-sm" title="Switch Camera" style="padding:4px 10px; font-size:0.8rem; display:none;">🔄</button>
+        <button id="btn-start-camera" class="btn btn-primary btn-sm" style="font-weight:600; padding:5px 14px;">▶ Start Camera</button>
       </div>
     </div>
     <div class="card-body">
-      <!-- Camera Viewport with Viewfinder Reticle -->
-      <div class="scanner-viewport" style="background:#070A0F; position:relative; overflow:hidden; border-radius:var(--radius-md); border:1px solid rgba(255,255,255,0.1); min-height:260px; display:flex; align-items:center; justify-content:center;">
+      <!-- Camera Viewport with Reticle -->
+      <div class="scanner-viewport" style="background:#05070B; position:relative; overflow:hidden; border-radius:12px; border:1px solid rgba(255,255,255,0.1); min-height:240px; aspect-ratio:4/3; display:flex; align-items:center; justify-content:center;">
         <video id="scanner-video" class="scanner-video" playsinline autoplay muted style="width:100%; height:100%; object-fit:cover; display:none;"></video>
-        <div id="camera-idle-placeholder" style="text-align:center; padding:32px 16px;">
-          <div style="font-size:2.8rem; margin-bottom:8px; opacity:0.7;">📸</div>
-          <div style="font-size:0.95rem; font-weight:600; color:var(--text-primary);">Camera Ready</div>
-          <div style="font-size:0.82rem; color:var(--text-muted); margin-top:4px; max-width:280px; margin-inline:auto;">
-            Click <strong>"▶ Start Camera"</strong> above to scan member badges.
+        
+        <div id="camera-idle-placeholder" style="text-align:center; padding:30px 16px;">
+          <div style="font-size:2.6rem; margin-bottom:8px; opacity:0.6;">📸</div>
+          <div style="font-size:0.95rem; font-weight:700; color:#F8FAFC;">Camera Ready</div>
+          <div style="font-size:0.82rem; color:#94A3B8; margin-top:4px; max-width:260px; margin-inline:auto;">
+            Click <strong>"▶ Start Camera"</strong> above to scan member badges in real time.
           </div>
         </div>
-        <div class="scanner-laser"></div>
-        <div class="scanner-reticle"></div>
+
+        <div class="scanner-laser" style="display:none;"></div>
+        <div class="scanner-reticle" style="display:none;"></div>
       </div>
 
-      <!-- Action Bar: Photo Upload & Instant Camera Capture Fallback -->
+      <!-- Action Row: Photo QR Upload -->
       <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; gap:8px; flex-wrap:wrap;">
-        <span style="font-size:0.8rem; color:var(--text-muted);">Webcam blocked or using badge photo?</span>
+        <span style="font-size:0.8rem; color:var(--text-muted);">No webcam or badge is on phone?</span>
         <label for="qr-file-input" class="btn btn-outline btn-sm" style="cursor:pointer; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px;">
           <span>🖼️</span> Scan from Photo / File
         </label>
         <input type="file" id="qr-file-input" accept="image/*" capture="environment" style="display:none;">
       </div>
 
-      <!-- Result Banner -->
-      <div id="scan-result" style="margin-top:16px; min-height:55px;">
-        <div class="alert alert-info" style="font-size:0.84rem; display:flex; align-items:center; gap:8px;">
-          <span>💡</span> Position member QR badge within viewfinder frame. Check-in records automatically.
+      <!-- Live Scan Result Feedback Banner -->
+      <div id="scan-result" style="margin-top:14px; min-height:50px;">
+        <div class="alert alert-info" style="font-size:0.84rem; display:flex; align-items:center; gap:8px; margin:0;">
+          <span>💡</span> Position member QR pass in front of camera or enter member code below.
         </div>
       </div>
 
-      <!-- Manual Token Entry Fallback -->
-      <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border-subtle);">
-        <label class="form-label" style="font-size:0.78rem; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.04em;">
-          Manual Token or Barcode Input
+      <!-- Fast Manual Token / Code Entry -->
+      <div style="margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.06);">
+        <label class="form-label" style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.04em;">
+          Quick Token, Member Code (MBR-...), or Phone Check-In
         </label>
         <div style="display:flex; gap:8px;">
-          <input type="text" id="manual-token-input" class="form-input" placeholder="Type token or scan with USB scanner (e.g. GYM-A1B2...)" autocomplete="off">
-          <button id="btn-submit-token" class="btn btn-secondary" style="white-space:nowrap;">Verify</button>
+          <input type="text" id="manual-token-input" class="form-input" placeholder="Type MBR-code, phone, or token..." autocomplete="off">
+          <button id="btn-submit-token" class="btn btn-secondary" style="white-space:nowrap; font-weight:600;">Check In</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Member Fast Lookup & 1-Click Check-in -->
-  <div class="card" style="border: 1px solid rgba(255, 255, 255, 0.08);">
+  <!-- Column 2: Fast Member Search & 1-Click Check-In -->
+  <div class="card" style="border: 1px solid rgba(255, 255, 255, 0.08); display:flex; flex-direction:column;">
     <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
       <div>
         <h3 class="card-title" style="display:flex; align-items:center; gap:8px;">
-          <span>🔍</span> Fast Member Check-In
+          <span>⚡</span> Fast Member Check-In
         </h3>
-        <p class="card-subtitle">Search or 1-click check-in active members without camera.</p>
+        <p class="card-subtitle">Search by name, ID, or phone for instant 1-click check-in.</p>
       </div>
     </div>
-    <div class="card-body">
-      <div class="form-group mb-4">
-        <input type="text" id="member-search-input" class="form-input" placeholder="Search by name, member code (e.g. MBR-...), or phone..." autocomplete="off">
+    <div class="card-body" style="display:flex; flex-direction:column; flex:1;">
+      <!-- Search Input Bar -->
+      <div class="form-group mb-3">
+        <input type="text" id="member-search-input" class="form-input" placeholder="🔍 Search by name, member code (e.g. MBR-...), or phone..." autocomplete="off" style="font-size:0.9rem; padding:10px 14px;">
       </div>
 
-      <!-- Dynamic Search & Fast Check-In Container -->
-      <div id="search-results-list" style="max-height:360px; overflow-y:auto;">
+      <!-- Scrollable Member List -->
+      <div id="search-results-list" style="flex:1; max-height:380px; overflow-y:auto; padding-right:4px;">
         {% if members_list %}
-          <div style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; margin-bottom:10px; letter-spacing:0.04em;">
-            Active Members (Click to Check In)
+          <div style="font-size:0.72rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; margin-bottom:8px; letter-spacing:0.04em;">
+            Active Gym Members (Click to Check In)
           </div>
           {% for m in members_list %}
-            <div class="member-search-row" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:var(--radius-sm); margin-bottom:8px;">
+            <div class="member-row" id="member-card-{{ m.id }}" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:8px; margin-bottom:8px; transition:border-color 0.15s ease;">
               <div>
-                <div style="font-weight:600; font-size:0.92rem; color:var(--text-primary);">{{ m.full_name }}</div>
-                <div style="font-size:0.78rem; color:var(--text-muted);">
-                  <code>{{ m.member_code }}</code> • {{ m.phone }}
+                <div style="font-weight:700; font-size:0.92rem; color:#F8FAFC;">{{ m.full_name }}</div>
+                <div style="font-size:0.78rem; color:#94A3B8; margin-top:2px;">
+                  <code style="color:#34D399; background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:4px;">{{ m.member_code }}</code> • {{ m.phone or 'No phone' }}
                 </div>
               </div>
-              <button type="button" class="btn btn-primary btn-sm" onclick="submitManualAttendance('{{ m.id }}')" style="font-size:0.78rem; padding:4px 10px;">
+              <button type="button" class="btn btn-primary btn-sm checkin-btn" data-id="{{ m.id }}" style="font-size:0.78rem; padding:5px 12px; font-weight:600;">
                 ✓ Check In
               </button>
             </div>
           {% endfor %}
         {% else %}
-          <div style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:24px 0;">
-            Type a member name or code above to check in.
+          <div style="color:var(--text-muted); font-size:0.86rem; text-align:center; padding:32px 0;">
+            No active members registered yet.
           </div>
         {% endif %}
       </div>
     </div>
   </div>
+
 </div>
 
-<!-- Category 2: Trainer Duty Roster & Attendance System -->
+<!-- Section 2: Today's Trainer Attendance & Duty Roster -->
 <div class="card mb-6" style="border: 1px solid rgba(255, 255, 255, 0.08);">
-  <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+  <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.06); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
     <div>
       <h3 class="card-title" style="display:flex; align-items:center; gap:8px;">
-        <span>🏋️</span> Today's Trainer Attendance & Duty Roster
+        <span>🏋️</span> Today's Trainer Duty & Shift Roster
       </h3>
-      <p class="card-subtitle">Track trainer shifts, duty check-ins, and floor availability.</p>
+      <p class="card-subtitle">Track trainer shifts, duty check-ins, and gym floor presence.</p>
     </div>
     <div style="font-size:0.82rem; color:var(--text-muted);">
-      Duty Status: <strong style="color:#10B981;">{{ today_trainer_records|length }} Present</strong> / {{ trainers_status|length }} Total Trainers
+      Duty Status: <strong style="color:#10B981;">{{ today_trainer_records|length }} Present</strong> / {{ trainers_status|length }} Total
     </div>
   </div>
   <div class="card-body" style="padding:0;">
@@ -170,8 +172,8 @@
             {% for t in trainers_status %}
               <tr>
                 <td>
-                  <div style="font-weight:600; color:var(--text-primary); font-size:0.92rem;">{{ t.full_name }}</div>
-                  <div style="font-size:0.78rem; color:var(--text-muted);">@{{ t.username }} • {{ t.phone or 'No phone' }}</div>
+                  <div style="font-weight:700; color:var(--text-primary); font-size:0.92rem;">{{ t.full_name }}</div>
+                  <div style="font-size:0.76rem; color:var(--text-muted);">@{{ t.username }} • {{ t.phone or 'No phone' }}</div>
                 </td>
                 <td>
                   <span class="badge badge-neutral" style="font-size:0.75rem;">{{ t.specialization or 'General Fitness' }}</span>
@@ -242,12 +244,12 @@
   </div>
 </div>
 
-<!-- Category 3: Today's Live Member Attendance Feed -->
+<!-- Section 3: Today's Live Member Attendance Log -->
 <div class="card">
-  <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+  <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.06); display:flex; justify-content:space-between; align-items:center;">
     <div>
       <h3 class="card-title" style="display:flex; align-items:center; gap:8px;">
-        <span>📋</span> Today's Member Check-in Log ({{ today_records|length }})
+        <span>📋</span> Today's Member Check-In Feed (<span id="today-count">{{ today_records|length }}</span>)
       </h3>
       <p class="card-subtitle">{{ today_date }}</p>
     </div>
@@ -256,7 +258,7 @@
   <div class="card-body" style="padding:0;">
     {% if today_records %}
       <div class="table-responsive">
-        <table class="table">
+        <table class="table" id="today-records-table">
           <thead>
             <tr>
               <th>Member Name</th>
@@ -267,12 +269,12 @@
               <th>Verified By</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="today-records-tbody">
             {% for r in today_records %}
               <tr>
-                <td style="font-weight:600; color:var(--text-primary);">{{ r.full_name }}</td>
+                <td style="font-weight:700; color:var(--text-primary);">{{ r.full_name }}</td>
                 <td><code>{{ r.member_code }}</code></td>
-                <td>{{ r.phone }}</td>
+                <td>{{ r.phone or '—' }}</td>
                 <td><strong>{{ r.check_in_time|date_format("%I:%M:%S %p") }}</strong></td>
                 <td><span class="badge badge-neutral">{{ r.method }}</span></td>
                 <td><small style="color:var(--text-muted);">{{ r.recorded_by_name or 'Front Desk' }}</small></td>
@@ -282,9 +284,9 @@
         </table>
       </div>
     {% else %}
-      <div class="empty-state">
+      <div class="empty-state" id="empty-feed-placeholder">
         <p class="empty-title">No Check-ins Yet Today</p>
-        <p class="empty-desc">Check-ins scanned or entered today will appear here immediately.</p>
+        <p class="empty-desc">Check-ins scanned or verified today will appear here immediately.</p>
       </div>
     {% endif %}
   </div>
@@ -292,203 +294,551 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/scanner.js') }}"></script>
+<!-- Safe loading of jsQR fallback -->
+<script src="{{ url_for('static', filename='js/jsQR.min.js') }}"></script>
 <script>
-  // Receptionist Terminal Controller
-  document.addEventListener("DOMContentLoaded", async () => {
-    const video = document.getElementById("scanner-video");
-    const idlePlaceholder = document.getElementById("camera-idle-placeholder");
-    const startBtn = document.getElementById("btn-start-camera");
-    const toggleBtn = document.getElementById("btn-toggle-camera");
-    const cameraSelect = document.getElementById("camera-select");
-    const fileInput = document.getElementById("qr-file-input");
+  // =========================================================================
+  // VANGUARD GYM OS - BULLETPROOF FRONT DESK SCANNER & CHECK-IN CONTROLLER
+  // Zero External Script Failures • 100% Standalone Execution
+  // =========================================================================
 
-    let scanner = null;
+  // Global Audio Chime Generator (Web Audio API)
+  function playAudioChime(success = true) {
     try {
-      if (typeof GymScanner === "function") {
-        scanner = new GymScanner({
-          videoId: "scanner-video",
-          resultId: "scan-result"
-        });
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      if (success) {
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.setValueAtTime(1320, ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.25);
+      } else {
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(220, ctx.currentTime);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.3);
       }
-    } catch (e) {
-      console.warn("GymScanner init error:", e);
-    }
+    } catch (e) {}
+  }
 
-    // Populate camera devices in dropdown if multiple exist
-    if (scanner && cameraSelect) {
-      try {
-        const cameras = await scanner.getAvailableCameras();
-        if (cameras.length > 1) {
-          cameraSelect.innerHTML = cameras.map((c, idx) => 
-            `<option value="${c.deviceId}">${c.label || 'Camera ' + (idx + 1)}</option>`
-          ).join('');
-          cameraSelect.style.display = "inline-block";
-        }
-      } catch (e) {}
-
-      cameraSelect.addEventListener("change", async (e) => {
-        if (scanner.isScanning) {
-          await scanner.startCamera(e.target.value);
-        }
-      });
-    }
-
-    // Camera Start / Stop handler with foolproof loading states
-    if (startBtn) {
-      startBtn.addEventListener("click", async () => {
-        if (!scanner) {
-          alert("Scanner engine is loading. Please use manual search or photo scan.");
-          return;
-        }
-
-        if (!scanner.isScanning) {
-          startBtn.disabled = true;
-          startBtn.textContent = "⏳ Starting...";
-          
-          const selectedDeviceId = cameraSelect ? cameraSelect.value : null;
-          const started = await scanner.startCamera(selectedDeviceId);
-          startBtn.disabled = false;
-
-          if (started && scanner.isScanning) {
-            if (idlePlaceholder) idlePlaceholder.style.display = "none";
-            if (video) video.style.display = "block";
-            startBtn.textContent = "⏹ Stop Camera";
-            startBtn.classList.replace("btn-primary", "btn-secondary");
-          } else {
-            if (video) video.style.display = "none";
-            if (idlePlaceholder) idlePlaceholder.style.display = "block";
-            startBtn.textContent = "▶ Start Camera";
-            startBtn.classList.replace("btn-secondary", "btn-primary");
-          }
-        } else {
-          scanner.stopCamera();
-          if (video) video.style.display = "none";
-          if (idlePlaceholder) idlePlaceholder.style.display = "block";
-          startBtn.textContent = "▶ Start Camera";
-          startBtn.classList.replace("btn-secondary", "btn-primary");
-        }
-      });
-    }
-
-    if (toggleBtn && scanner) {
-      toggleBtn.addEventListener("click", async () => {
-        if (scanner.isScanning) {
-          await scanner.toggleCamera();
-        }
-      });
-    }
-
-    // Photo/File Upload QR Scanner
-    if (fileInput && scanner) {
-      fileInput.addEventListener("change", (e) => {
-        const file = e.target.files && e.target.files[0];
-        if (file) {
-          scanner.decodeImageFile(file);
-        }
-      });
-    }
-
-    // Manual token entry
-    const tokenInput = document.getElementById("manual-token-input");
-    const submitTokenBtn = document.getElementById("btn-submit-token");
-    if (submitTokenBtn && tokenInput) {
-      const handleTokenSubmit = () => {
-        const val = tokenInput.value.trim();
-        if (val) {
-          if (scanner) {
-            scanner.submitToken(val);
-          } else {
-            submitTokenDirectly(val);
-          }
-          tokenInput.value = "";
-        }
-      };
-      submitTokenBtn.addEventListener("click", handleTokenSubmit);
-      tokenInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          handleTokenSubmit();
-        }
-      });
-    }
-
-    // Member search autocomplete
-    const searchInput = document.getElementById("member-search-input");
-    const resultsContainer = document.getElementById("search-results-list");
-    let debounceTimer = null;
-
-    if (searchInput && resultsContainer) {
-      searchInput.addEventListener("input", (e) => {
-        clearTimeout(debounceTimer);
-        const q = e.target.value.trim();
-        if (q.length < 2) {
-          // If query cleared, reload or keep current
-          return;
-        }
-
-        debounceTimer = setTimeout(async () => {
-          try {
-            resultsContainer.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:16px 0;">Searching active members...</div>';
-            const resp = await fetch(`/api/members/search?q=${encodeURIComponent(q)}`);
-            const data = await resp.json();
-
-            if (!data || data.length === 0) {
-              resultsContainer.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:16px 0;">No matching active members found.</div>';
-              return;
-            }
-
-            resultsContainer.innerHTML = data.map((m) => {
-              const name = escapeHtml(m.full_name);
-              const code = escapeHtml(m.member_code);
-              const phone = escapeHtml(m.phone || 'No phone');
-              const id = escapeHtml(m.id);
-              return `
-                <div class="member-search-row" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:var(--radius-sm); margin-bottom:8px;">
-                  <div>
-                    <div style="font-weight:600; font-size:0.92rem; color:var(--text-primary);">${name}</div>
-                    <div style="font-size:0.78rem; color:var(--text-muted);"><code>${code}</code> • ${phone}</div>
-                  </div>
-                  <button type="button" class="btn btn-primary btn-sm" onclick="submitManualAttendance('${id}')" style="font-size:0.78rem; padding:4px 10px;">
-                    ✓ Check In
-                  </button>
-                </div>
-              `;
-            }).join("");
-          } catch (err) {
-            resultsContainer.innerHTML = '<div style="color:#EF4444; font-size:0.85rem; text-align:center; padding:16px 0;">Search failed. Please try again.</div>';
-          }
-        }, 300);
-      });
-    }
-  });
-
+  // Escape HTML helper
   function escapeHtml(str) {
     return String(str || '').replace(/[&<>"']/g, (m) => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[m]));
   }
 
-  async function submitTokenDirectly(token) {
+  // Live Feedback Renderer
+  function showScanFeedback(message, type = "info", memberName = null, memberCode = null, checkInTime = null) {
+    const box = document.getElementById("scan-result");
+    if (!box) return;
+
+    if (type === "success") {
+      box.innerHTML = `
+        <div class="alert alert-success animate-slide-up" style="display:flex; gap:12px; align-items:center; border:1px solid #10B981; background:rgba(16,185,129,0.12); padding:12px 16px; margin:0; border-radius:8px;">
+          <div style="font-size:1.8rem; line-height:1; color:#34D399;">✓</div>
+          <div>
+            <div style="font-weight:700; font-size:1rem; color:#ECFDF5;">${escapeHtml(memberName || 'Member Verified')}</div>
+            <div style="font-size:0.84rem; color:#A7F3D0;">
+              Code: <strong>${escapeHtml(memberCode || '—')}</strong> • Checked In at <strong>${escapeHtml(checkInTime || 'Now')}</strong>
+            </div>
+            <div style="font-size:0.8rem; margin-top:2px; color:#D1FAE5;">${escapeHtml(message)}</div>
+          </div>
+        </div>
+      `;
+    } else if (type === "danger") {
+      box.innerHTML = `
+        <div class="alert alert-danger animate-slide-up" style="display:flex; gap:12px; align-items:center; border:1px solid #EF4444; background:rgba(239,68,68,0.12); padding:12px 16px; margin:0; border-radius:8px;">
+          <div style="font-size:1.8rem; line-height:1; color:#F87171;">✕</div>
+          <div>
+            <div style="font-weight:700; font-size:0.95rem; color:#FEF2F2;">Check-In Denied</div>
+            <div style="font-size:0.84rem; color:#FECACA;">${escapeHtml(message)}</div>
+          </div>
+        </div>
+      `;
+    } else {
+      box.innerHTML = `
+        <div class="alert alert-${type} animate-fade-in" style="font-size:0.84rem; padding:10px 14px; margin:0;">
+          ${escapeHtml(message)}
+        </div>
+      `;
+    }
+  }
+
+  // 1. Core Token / Member Code / Phone Submission Engine
+  async function submitTokenOrCode(codeOrToken) {
+    if (!codeOrToken || !codeOrToken.trim()) return;
+    const cleanVal = codeOrToken.trim();
+    showScanFeedback("Verifying badge / code with gym server...", "info");
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
     try {
       const resp = await fetch('/api/attendance/scan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+          'X-CSRF-Token': csrfToken
         },
-        body: JSON.stringify({ qr_token: token.trim() })
+        body: JSON.stringify({ qr_token: cleanVal })
       });
+
       const data = await resp.json();
+
       if (resp.ok && data.success) {
-        alert(data.message);
-        window.location.reload();
+        playAudioChime(true);
+        showScanFeedback(data.message, 'success', data.member_name, data.member_code, data.check_in_time);
+        setTimeout(() => window.location.reload(), 1400);
       } else {
-        alert(data.message || 'Token verification failed');
+        playAudioChime(false);
+        showScanFeedback(data.message || 'Check-in denied.', 'danger');
       }
-    } catch (e) {
-      alert('Error contacting gym server');
+    } catch (err) {
+      playAudioChime(false);
+      showScanFeedback('Network error verifying check-in. Please try again.', 'danger');
     }
   }
+
+  // 2. Core 1-Click Manual Member Check-In Engine (Declared Globally)
+  async function submitManualAttendance(memberId) {
+    if (!memberId) {
+      alert('Member ID missing.');
+      return;
+    }
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    showScanFeedback('Recording member check-in...', 'info');
+
+    try {
+      const resp = await fetch('/api/attendance/manual', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken
+        },
+        body: JSON.stringify({ member_id: memberId })
+      });
+
+      const data = await resp.json();
+
+      if (resp.ok && data.success) {
+        playAudioChime(true);
+        showScanFeedback(data.message, 'success', data.member_name, data.member_code, data.check_in_time);
+        
+        // Update button visual
+        const card = document.getElementById(`member-card-${memberId}`);
+        if (card) {
+          const btn = card.querySelector('.checkin-btn');
+          if (btn) {
+            btn.textContent = '✓ Checked In';
+            btn.className = 'btn btn-secondary btn-sm';
+            btn.disabled = true;
+          }
+        }
+        setTimeout(() => window.location.reload(), 1400);
+      } else {
+        playAudioChime(false);
+        showScanFeedback(data.message || 'Check-in denied.', 'danger');
+      }
+    } catch (err) {
+      playAudioChime(false);
+      showScanFeedback('Network error during manual check-in.', 'danger');
+    }
+  }
+  window.submitManualAttendance = submitManualAttendance;
+
+  // 3. Photo QR Code Decoder (FileReader + Canvas)
+  function decodeBadgeImageFile(file) {
+    if (!file) return;
+    showScanFeedback('Decoding QR badge image...', 'info');
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const maxDim = 1024;
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        canvas.width = w;
+        canvas.height = h;
+        ctx.drawImage(img, 0, 0, w, h);
+
+        // A. BarcodeDetector
+        if ('BarcodeDetector' in window) {
+          const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+          detector.detect(canvas).then((barcodes) => {
+            if (barcodes.length > 0 && barcodes[0].rawValue) {
+              submitTokenOrCode(barcodes[0].rawValue);
+            } else {
+              fallbackJsQR(canvas, ctx, w, h);
+            }
+          }).catch(() => fallbackJsQR(canvas, ctx, w, h));
+        } else {
+          fallbackJsQR(canvas, ctx, w, h);
+        }
+      };
+      img.onerror = () => {
+        showScanFeedback('Failed to read image file.', 'danger');
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function fallbackJsQR(canvas, ctx, w, h) {
+    const jsqrFn = window.jsQR || (typeof jsQR !== 'undefined' ? jsQR : null);
+    if (typeof jsqrFn === 'function') {
+      const imgData = ctx.getImageData(0, 0, w, h);
+      const code = jsqrFn(imgData.data, w, h, { inversionAttempts: 'attemptBoth' });
+      if (code && code.data) {
+        submitTokenOrCode(code.data);
+        return;
+      }
+    }
+    showScanFeedback('Could not detect a clear QR badge in this image. Please ensure photo is well lit.', 'danger');
+  }
+
+  // 4. Standalone Live Camera Controller
+  let cameraStream = null;
+  let isCameraScanning = false;
+  let scanIntervalId = null;
+  let lastScannedToken = null;
+  let cooldownTimer = null;
+
+  async function startLiveCamera(deviceId = null) {
+    const video = document.getElementById('scanner-video');
+    const placeholder = document.getElementById('camera-idle-placeholder');
+    const startBtn = document.getElementById('btn-start-camera');
+    const laser = document.querySelector('.scanner-laser');
+    const reticle = document.querySelector('.scanner-reticle');
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showScanFeedback('Camera access requires HTTPS or localhost. Please use the Fast Member Search below.', 'warning');
+      return false;
+    }
+
+    try {
+      if (cameraStream) {
+        stopLiveCamera();
+      }
+
+      startBtn.disabled = true;
+      startBtn.textContent = '⏳ Starting Camera...';
+
+      const constraints = { audio: false };
+      if (deviceId) {
+        constraints.video = { deviceId: { exact: deviceId } };
+      } else {
+        constraints.video = {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        };
+      }
+
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (err1) {
+        // Fallback constraint (desktop webcams)
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
+
+      video.srcObject = cameraStream;
+      video.setAttribute('playsinline', 'true');
+      video.muted = true;
+
+      await new Promise((resolve) => {
+        if (video.readyState >= 2) resolve();
+        else {
+          video.onloadedmetadata = () => resolve();
+          setTimeout(resolve, 800);
+        }
+      });
+
+      try {
+        await video.play();
+      } catch (playErr) {
+        console.warn('Video play warning:', playErr);
+      }
+
+      isCameraScanning = true;
+      startBtn.disabled = false;
+      startBtn.textContent = '⏹ Stop Camera';
+      startBtn.classList.replace('btn-primary', 'btn-danger');
+
+      video.style.display = 'block';
+      if (placeholder) placeholder.style.display = 'none';
+      if (laser) laser.style.display = 'block';
+      if (reticle) reticle.style.display = 'block';
+
+      showScanFeedback('Camera is live. Hold member QR badge in frame.', 'info');
+      startCameraDetectionLoop(video);
+      return true;
+    } catch (err) {
+      console.error('Camera error:', err);
+      startBtn.disabled = false;
+      startBtn.textContent = '▶ Start Camera';
+      startBtn.classList.replace('btn-danger', 'btn-primary');
+
+      let msg = 'Camera access was blocked. Please use the Fast Member Search or Photo Scan below.';
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        msg = 'Camera permission denied. Click the camera icon in your browser address bar to allow access.';
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        msg = 'No camera found on this device. Please use manual member search.';
+      }
+      showScanFeedback(msg, 'danger');
+      return false;
+    }
+  }
+
+  function stopLiveCamera() {
+    const video = document.getElementById('scanner-video');
+    const placeholder = document.getElementById('camera-idle-placeholder');
+    const startBtn = document.getElementById('btn-start-camera');
+    const laser = document.querySelector('.scanner-laser');
+    const reticle = document.querySelector('.scanner-reticle');
+
+    isCameraScanning = false;
+    if (scanIntervalId) {
+      clearInterval(scanIntervalId);
+      scanIntervalId = null;
+    }
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+      cameraStream = null;
+    }
+    if (video) {
+      video.srcObject = null;
+      video.style.display = 'none';
+    }
+    if (placeholder) placeholder.style.display = 'block';
+    if (laser) laser.style.display = 'none';
+    if (reticle) reticle.style.display = 'none';
+
+    if (startBtn) {
+      startBtn.disabled = false;
+      startBtn.textContent = '▶ Start Camera';
+      startBtn.classList.replace('btn-danger', 'btn-primary');
+    }
+  }
+
+  function startCameraDetectionLoop(video) {
+    let detector = null;
+    if ('BarcodeDetector' in window) {
+      try {
+        detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+      } catch (e) {
+        detector = null;
+      }
+    }
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+    scanIntervalId = setInterval(async () => {
+      if (!isCameraScanning || !video || video.readyState < 2) return;
+
+      // 1. Native BarcodeDetector (instant hardware decoding)
+      if (detector) {
+        try {
+          const barcodes = await detector.detect(video);
+          if (barcodes.length > 0 && barcodes[0].rawValue) {
+            handleDetectedCode(barcodes[0].rawValue);
+            return;
+          }
+        } catch (e) {}
+      }
+
+      // 2. jsQR Engine Fallback
+      const jsqrFn = window.jsQR || (typeof jsQR !== 'undefined' ? jsQR : null);
+      if (typeof jsqrFn === 'function') {
+        try {
+          const w = video.videoWidth;
+          const h = video.videoHeight;
+          if (w > 0 && h > 0) {
+            const scale = Math.min(1, 640 / w);
+            canvas.width = Math.round(w * scale);
+            canvas.height = Math.round(h * scale);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsqrFn(imgData.data, canvas.width, canvas.height, { inversionAttempts: 'dontInvert' });
+            if (code && code.data) {
+              handleDetectedCode(code.data);
+            }
+          }
+        } catch (e) {}
+      }
+    }, 220);
+  }
+
+  function handleDetectedCode(token) {
+    if (!token || token === lastScannedToken) return;
+    lastScannedToken = token;
+    clearTimeout(cooldownTimer);
+    cooldownTimer = setTimeout(() => {
+      lastScannedToken = null;
+    }, 4000);
+
+    submitTokenOrCode(token);
+  }
+
+  // =========================================================================
+  // DOM EVENT BINDINGS
+  // =========================================================================
+  document.addEventListener('DOMContentLoaded', async () => {
+    const startBtn = document.getElementById('btn-start-camera');
+    const cameraSelect = document.getElementById('camera-select');
+    const fileInput = document.getElementById('qr-file-input');
+    const tokenInput = document.getElementById('manual-token-input');
+    const submitTokenBtn = document.getElementById('btn-submit-token');
+    const searchInput = document.getElementById('member-search-input');
+    const resultsContainer = document.getElementById('search-results-list');
+
+    // Populate camera devices if available
+    if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices && cameraSelect) {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter((d) => d.kind === 'videoinput');
+        if (videoDevices.length > 1) {
+          cameraSelect.innerHTML = videoDevices.map((d, i) => 
+            `<option value="${d.deviceId}">${d.label || 'Camera ' + (i + 1)}</option>`
+          ).join('');
+          cameraSelect.style.display = 'inline-block';
+        }
+      } catch (e) {}
+
+      cameraSelect.addEventListener('change', () => {
+        if (isCameraScanning) {
+          startLiveCamera(cameraSelect.value);
+        }
+      });
+    }
+
+    // Camera Start / Stop Button Handler
+    if (startBtn) {
+      startBtn.addEventListener('click', () => {
+        if (!isCameraScanning) {
+          const deviceId = cameraSelect ? cameraSelect.value : null;
+          startLiveCamera(deviceId);
+        } else {
+          stopLiveCamera();
+        }
+      });
+    }
+
+    // Photo/File Upload QR Scanner
+    if (fileInput) {
+      fileInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) {
+          decodeBadgeImageFile(file);
+        }
+      });
+    }
+
+    // Manual Token / Member Code / Phone Input
+    if (submitTokenBtn && tokenInput) {
+      const handleTokenSubmit = () => {
+        const val = tokenInput.value.trim();
+        if (val) {
+          submitTokenOrCode(val);
+          tokenInput.value = '';
+        }
+      };
+      submitTokenBtn.addEventListener('click', handleTokenSubmit);
+      tokenInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleTokenSubmit();
+        }
+      });
+    }
+
+    // Delegated Click for Check-in buttons
+    if (resultsContainer) {
+      resultsContainer.addEventListener('click', (e) => {
+        const btn = e.target.closest('.checkin-btn');
+        if (btn) {
+          const memberId = btn.getAttribute('data-id');
+          if (memberId) {
+            submitManualAttendance(memberId);
+          }
+        }
+      });
+    }
+
+    // Fast Member Search with 200ms debounce
+    let searchDebounceTimer = null;
+    if (searchInput && resultsContainer) {
+      searchInput.addEventListener('input', (e) => {
+        clearTimeout(searchDebounceTimer);
+        const q = e.target.value.trim();
+
+        if (q.length < 2) {
+          // If query is short, don't clear default list unless user cleared it
+          if (q.length === 0) {
+            window.location.reload();
+          }
+          return;
+        }
+
+        searchDebounceTimer = setTimeout(async () => {
+          try {
+            resultsContainer.innerHTML = '<div style="color:#94A3B8; font-size:0.86rem; text-align:center; padding:20px 0;">Searching active members...</div>';
+            const resp = await fetch(`/api/members/search?q=${encodeURIComponent(q)}`);
+            const data = await resp.json();
+
+            if (!data || data.length === 0) {
+              resultsContainer.innerHTML = `
+                <div style="color:#94A3B8; font-size:0.86rem; text-align:center; padding:24px 0;">
+                  No active members found for "<strong>${escapeHtml(q)}</strong>".
+                </div>
+              `;
+              return;
+            }
+
+            resultsContainer.innerHTML = `
+              <div style="font-size:0.72rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; margin-bottom:8px; letter-spacing:0.04em;">
+                Search Results (${data.length})
+              </div>
+              ${data.map((m) => {
+                const name = escapeHtml(m.full_name || m.name);
+                const code = escapeHtml(m.member_code || m.code);
+                const phone = escapeHtml(m.phone || 'No phone');
+                const id = escapeHtml(m.id);
+                return `
+                  <div class="member-row" id="member-card-${id}" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:8px; margin-bottom:8px;">
+                    <div>
+                      <div style="font-weight:700; font-size:0.92rem; color:#F8FAFC;">${name}</div>
+                      <div style="font-size:0.78rem; color:#94A3B8; margin-top:2px;">
+                        <code style="color:#34D399; background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:4px;">${code}</code> • ${phone}
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm checkin-btn" data-id="${id}" style="font-size:0.78rem; padding:5px 12px; font-weight:600;">
+                      ✓ Check In
+                    </button>
+                  </div>
+                `;
+              }).join('')}
+            `;
+          } catch (err) {
+            resultsContainer.innerHTML = '<div style="color:#EF4444; font-size:0.86rem; text-align:center; padding:16px 0;">Search failed. Please try again.</div>';
+          }
+        }, 220);
+      });
+    }
+  });
 </script>
 {% endblock %}

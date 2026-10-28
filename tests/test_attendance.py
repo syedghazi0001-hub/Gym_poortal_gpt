@@ -151,3 +151,50 @@ def test_trainer_attendance_db_fallback(app):
     resp_desk = client.get("/receptionist/desk")
     assert resp_desk.status_code == 200
     assert b"Front Desk Attendance &amp; Roster" in resp_desk.data or b"Front Desk" in resp_desk.data
+
+
+def test_receptionist_desk_full_workflow(app):
+    """Test full receptionist desk features: search, 1-click checkin, member code checkin."""
+    client = app.test_client()
+    import secrets
+    r_user = f"desk_wf_{secrets.token_hex(4)}"
+    create_receptionist(
+        full_name="Workflow Desk", phone=f"+9230{secrets.randbelow(90000000)+10000000}",
+        email="wf_desk@gym.com", shift="Evening", username=r_user, password="Password123!"
+    )
+    client.post("/login", data={"username": r_user, "password": "Password123!"}, follow_redirects=True)
+
+    today, _ = get_gym_local_date()
+    m = create_member(
+        full_name="Desk Test Member",
+        phone=f"+9230{secrets.randbelow(90000000)+10000000}",
+        start_date=today.strftime("%Y-%m-%d"),
+        end_date="2026-12-01",
+        monthly_fee=5000,
+        username=f"desk_m_{secrets.token_hex(4)}",
+        password="Password123!",
+        membership_status="active"
+    )
+
+    # 1. Desk renders with member in list
+    res_desk = client.get("/receptionist/desk")
+    assert res_desk.status_code == 200
+    assert m["member_code"].encode() in res_desk.data
+
+    # 2. Search API returns both full_name and member_code
+    res_search = client.get(f"/api/members/search?q={m['member_code']}")
+    assert res_search.status_code == 200
+    data_search = res_search.get_json()
+    assert len(data_search) > 0
+    assert data_search[0]["id"] == m["id"]
+    assert data_search[0]["code"] == m["member_code"]
+    assert data_search[0]["name"] == m["full_name"]
+
+    # 3. Check in via member code string
+    res_scan = client.post("/api/attendance/scan", json={"qr_token": m["member_code"]})
+    assert res_scan.status_code == 200
+    assert res_scan.get_json()["success"] is True
+
+    # 4. Duplicate scan rejected
+    res_scan_dup = client.post("/api/attendance/scan", json={"qr_token": m["member_code"]})
+    assert res_scan_dup.status_code == 409

@@ -53,16 +53,21 @@ def search_members():
     if not q:
         return jsonify([])
 
-    members, _ = get_all_members(search=q, limit=10)
-    results = [{
-        "id": m["id"],
-        "name": m["full_name"],
-        "code": m["member_code"],
-        "phone": m["phone"],
-        "status": m["membership_status"],
-        "fee": float(m["monthly_fee"])
-    } for m in members]
-    return jsonify(results)
+    try:
+        members, _ = get_all_members(search=q, limit=15)
+        results = [{
+            "id": m["id"],
+            "name": m["full_name"],
+            "full_name": m["full_name"],
+            "code": m["member_code"],
+            "member_code": m["member_code"],
+            "phone": m.get("phone") or "",
+            "status": m.get("membership_status") or "active",
+            "fee": float(m["monthly_fee"]) if m.get("monthly_fee") else 0.0
+        } for m in members]
+        return jsonify(results)
+    except Exception:
+        return jsonify([]), 200
 
 @api_bp.route("/charts/dashboard")
 @role_required("owner")

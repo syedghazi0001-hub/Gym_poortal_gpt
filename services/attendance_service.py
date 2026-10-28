@@ -19,23 +19,24 @@ def get_gym_local_date():
 
 def record_attendance_by_qr(qr_token, recorded_by_id):
     """
-    Process QR code check-in from receptionist scanner.
+    Process QR code or member code check-in from receptionist terminal.
     Enforces status checks, duplicate check, and absence alert resolution.
+    Supports raw qr_token, member_code (e.g. MBR-...), or phone number.
     """
-    # 1. Look up member by token
+    clean_val = qr_token.strip()
     member = query_one("""
         SELECT m.id, m.user_id, m.member_code, m.full_name, m.membership_status,
                m.membership_end_date, u.is_active AS user_is_active
         FROM members m
         JOIN users u ON u.id = m.user_id
-        WHERE m.qr_token = %s;
-    """, (qr_token.strip(),))
+        WHERE m.qr_token = %s OR m.member_code = %s OR m.phone = %s;
+    """, (clean_val, clean_val, clean_val))
 
     if not member:
         return {
             "success": False,
             "status": "not_found",
-            "message": "Invalid QR Code. No matching gym member found."
+            "message": "Invalid QR badge or code. No active gym member found."
         }
 
     return _process_attendance_record(member, recorded_by_id, method="QR")
