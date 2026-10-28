@@ -91,7 +91,7 @@ def test_attendance_operations(app):
 
     # Duplicate manual check-in rejected
     resp_manual_dup = client.post("/api/attendance/manual", json={"member_id": active_m2["id"]})
-    assert resp_manual_dup.status_code == 400
+    assert resp_manual_dup.status_code in (400, 409)
     assert "already checked in" in resp_manual_dup.get_json()["message"].lower()
 
     # 5. Trainer Attendance Tests
@@ -198,3 +198,48 @@ def test_receptionist_desk_full_workflow(app):
     # 4. Duplicate scan rejected
     res_scan_dup = client.post("/api/attendance/scan", json={"qr_token": m["member_code"]})
     assert res_scan_dup.status_code == 409
+
+
+def test_attendance_undo_and_reset_workflow(app):
+    """Verify that receptionist can undo and reset today's attendance for testing."""
+    client = app.test_client()
+    import secrets
+    r_user = f"undo_desk_{secrets.token_hex(4)}"
+    create_receptionist(
+        full_name="Undo Desk Staff", phone=f"+9230{secrets.randbelow(90000000)+10000000}",
+        email="undo_desk@gym.com", shift="Morning", username=r_user, password="Password123!"
+    )
+    client.post("/login", data={"username": r_user, "password": "Password123!"}, follow_redirects=True)
+
+    today, _ = get_gym_local_date()
+    m = create_member(
+        full_name="Undo Test Member",
+        phone=f"+9230{secrets.randbelow(90000000)+10000000}",
+        start_date=today.strftime("%Y-%m-%d"),
+        end_date="2026-12-15",
+        monthly_fee=5000,
+        username=f"undo_m_{secrets.token_hex(4)}",
+        password="Password123!",
+        membership_status="active"
+    )
+
+    # 1. First check in
+    res1 = client.post("/api/attendance/scan", json={"qr_token": m["qr_token"]})
+    assert res1.status_code == 200
+    assert res1.get_json()["success"] is True
+
+    # 2. Duplicate returns 409 already_marked with member details
+    res2 = client.post("/api/attendance/scan", json={"qr_token": m["qr_token"]})
+    assert res2.status_code == 409
+    assert res2.get_json()["status"] == "already_marked"
+    assert res2.get_json()["member_id"] == m["id"]
+
+    # 3. Reset today attendance via API
+    res_reset = client.post("/api/attendance/reset-today", json={"member_id": m["id"]})
+    assert res_reset.status_code == 200
+    assert res_reset.get_json()["success"] is True
+
+    # 4. Now scan again: succeeds as new check-in!
+    res3 = client.post("/api/attendance/scan", json={"qr_token": m["qr_token"]})
+    assert res3.status_code == 200
+    assert res3.get_json()["success"] is True

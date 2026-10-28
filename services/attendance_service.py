@@ -17,7 +17,7 @@ def get_gym_local_date():
         tz = zoneinfo.ZoneInfo("Asia/Karachi")
     return datetime.now(tz).date(), datetime.now(tz)
 
-def record_attendance_by_qr(qr_token, recorded_by_id):
+def record_attendance_by_qr(qr_token, recorded_by_id, allow_override=False):
     """
     Process QR code or member code check-in from receptionist terminal.
     Enforces status checks, duplicate check, and absence alert resolution.
@@ -39,9 +39,9 @@ def record_attendance_by_qr(qr_token, recorded_by_id):
             "message": "Invalid QR badge or code. No active gym member found."
         }
 
-    return _process_attendance_record(member, recorded_by_id, method="QR")
+    return _process_attendance_record(member, recorded_by_id, method="QR", allow_override=allow_override)
 
-def record_attendance_manual(member_id, recorded_by_id, notes=None):
+def record_attendance_manual(member_id, recorded_by_id, notes=None, allow_override=False):
     """
     Process manual attendance check-in (front desk manual lookup).
     """
@@ -60,9 +60,9 @@ def record_attendance_manual(member_id, recorded_by_id, notes=None):
             "message": "Member not found."
         }
 
-    return _process_attendance_record(member, recorded_by_id, method="MANUAL", notes=notes)
+    return _process_attendance_record(member, recorded_by_id, method="MANUAL", notes=notes, allow_override=allow_override)
 
-def _process_attendance_record(member, recorded_by_id, method="QR", notes=None):
+def _process_attendance_record(member, recorded_by_id, method="QR", notes=None, allow_override=False):
     """Internal helper to validate membership, check duplicates, and record attendance."""
     today, now_local = get_gym_local_date()
 
@@ -97,11 +97,31 @@ def _process_attendance_record(member, recorded_by_id, method="QR", notes=None):
     """, (member["id"], today))
 
     if existing:
+        if allow_override:
+            execute_statement("""
+                UPDATE attendance SET check_in_time = %s, method = %s WHERE id = %s;
+            """, (now_local, method, existing["id"]))
+            return {
+                "success": True,
+                "status": "success",
+                "message": f"Check-in updated for {member['full_name']} at {now_local.strftime('%I:%M %p')}.",
+                "member_id": member["id"],
+                "member_name": member["full_name"],
+                "member_code": member["member_code"],
+                "check_in_time": now_local.strftime("%I:%M %p"),
+                "method": method,
+                "attendance_id": existing["id"]
+            }
         formatted_time = existing["check_in_time"].strftime("%I:%M %p") if hasattr(existing["check_in_time"], "strftime") else str(existing["check_in_time"])
         return {
             "success": False,
             "status": "already_marked",
-            "message": f"Duplicate scan: {member['full_name']} is already checked in for today at {formatted_time}."
+            "message": f"Duplicate scan: {member['full_name']} is already checked in for today at {formatted_time}.",
+            "member_id": member["id"],
+            "member_name": member["full_name"],
+            "member_code": member["member_code"],
+            "check_in_time": formatted_time,
+            "attendance_id": existing["id"]
         }
 
     # 4. Insert attendance record
@@ -162,6 +182,43 @@ def get_today_attendance():
         ORDER BY a.check_in_time DESC;
     """
     return query_all(sql, (today,))
+
+def delete_attendance_record(attendance_id, requested_by_id=None):
+    """Delete an attendance check-in record (allows receptionist/owner to undo a test check-in)."""
+    att = query_one("""
+        SELECT a.*, m.full_name, m.member_code
+        FROM attendance a
+        JOIN members m ON m.id = a.member_id
+        WHERE a.id = %s;
+    """, (attendance_id,))
+    if not att:
+        raise ValueError("Attendance record not found.")
+
+    execute_statement("DELETE FROM attendance WHERE id = %s;", (attendance_id,))
+    execute_statement("""
+        INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details)
+        VALUES (%s, %s, 'DELETE_ATTENDANCE', 'ATTENDANCE', %s, %s);
+    """, (generate_uuid(), requested_by_id, attendance_id, f"Deleted attendance for {att['full_name']} ({att['member_code']}) on {att['attendance_date']}"))
+    return {
+        "success": True,
+        "message": f"Check-in for {att['full_name']} removed. Ready to scan again!"
+    }
+
+def reset_member_today_attendance(member_id, requested_by_id=None):
+    """Remove today's attendance for a member so they can be re-tested immediately."""
+    today, _ = get_gym_local_date()
+    att = query_one("""
+        SELECT a.id, m.full_name, m.member_code
+        FROM attendance a
+        JOIN members m ON m.id = a.member_id
+        WHERE a.member_id = %s AND a.attendance_date = %s;
+    """, (member_id, today))
+    if not att:
+        return {
+            "success": True,
+            "message": "No attendance record found for today."
+        }
+    return delete_attendance_record(att["id"], requested_by_id)
 
 def get_attendance_logs(date_filter=None, limit=100, offset=0):
     """Retrieve attendance logs with optional date filter."""

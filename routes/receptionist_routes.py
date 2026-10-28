@@ -6,7 +6,8 @@ from services.attendance_service import (
     record_attendance_by_qr, record_attendance_manual,
     get_today_attendance, get_gym_local_date,
     record_trainer_checkin, record_trainer_checkout,
-    get_today_trainer_attendance, get_all_trainers_with_today_status
+    get_today_trainer_attendance, get_all_trainers_with_today_status,
+    delete_attendance_record
 )
 from services.payment_service import (
     get_current_billing_month, get_monthly_payment_status,
@@ -86,6 +87,17 @@ def trainer_checkout():
         flash(res["message"], "success")
     except Exception as e:
         flash(f"Trainer check-out failed: {str(e)}", "danger")
+    return redirect(url_for("receptionist.desk"))
+
+@receptionist_bp.route("/attendance/<attendance_id>/delete", methods=["POST"])
+@role_required("receptionist", "owner")
+def delete_attendance(attendance_id):
+    """Delete a check-in record for today (allows re-scan or correction)."""
+    try:
+        res = delete_attendance_record(attendance_id, requested_by_id=session.get("user_id"))
+        flash(res["message"], "success")
+    except Exception as e:
+        flash(f"Could not remove check-in: {str(e)}", "danger")
     return redirect(url_for("receptionist.desk"))
 
 @receptionist_bp.route("/attendance")

@@ -2,7 +2,8 @@ from flask import Blueprint, request, jsonify, session
 from auth.decorators import login_required, role_required
 from services.attendance_service import (
     record_attendance_by_qr, record_attendance_manual,
-    get_daily_attendance_trend
+    get_daily_attendance_trend, delete_attendance_record,
+    reset_member_today_attendance
 )
 from services.payment_service import (
     record_monthly_payment, get_monthly_revenue_trend,
@@ -18,6 +19,7 @@ def scan_attendance():
     """Endpoint for camera QR code scanner."""
     data = request.get_json(silent=True) or request.form
     qr_token = data.get("qr_token", "").strip()
+    override = bool(data.get("override", False))
 
     if not qr_token:
         return jsonify({
@@ -26,7 +28,7 @@ def scan_attendance():
             "message": "QR token is required."
         }), 400
 
-    result = record_attendance_by_qr(qr_token, session.get("user_id"))
+    result = record_attendance_by_qr(qr_token, session.get("user_id"), allow_override=override)
     status_code = 200 if result["success"] else (409 if result.get("status") == "already_marked" else 400)
     return jsonify(result), status_code
 
@@ -37,12 +39,38 @@ def manual_attendance():
     data = request.get_json(silent=True) or request.form
     member_id = data.get("member_id", "").strip()
     notes = data.get("notes", "").strip()
+    override = bool(data.get("override", False))
 
     if not member_id:
         return jsonify({"success": False, "message": "Member ID is required."}), 400
 
-    result = record_attendance_manual(member_id, session.get("user_id"), notes=notes)
-    status_code = 200 if result["success"] else 400
+    result = record_attendance_manual(member_id, session.get("user_id"), notes=notes, allow_override=override)
+    status_code = 200 if result["success"] else (409 if result.get("status") == "already_marked" else 400)
+    return jsonify(result), status_code
+
+@api_bp.route("/attendance/<attendance_id>/delete", methods=["POST"])
+@role_required("receptionist", "owner")
+def api_delete_attendance(attendance_id):
+    """API endpoint to delete a check-in record."""
+    try:
+        res = delete_attendance_record(attendance_id, requested_by_id=session.get("user_id"))
+        return jsonify(res), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 400
+
+@api_bp.route("/attendance/reset-today", methods=["POST"])
+@role_required("receptionist", "owner")
+def api_reset_today_attendance():
+    """API endpoint to reset a member's today attendance so they can be re-scanned."""
+    data = request.get_json(silent=True) or request.form
+    member_id = data.get("member_id", "").strip()
+    if not member_id:
+        return jsonify({"success": False, "message": "Member ID is required."}), 400
+    try:
+        res = reset_member_today_attendance(member_id, requested_by_id=session.get("user_id"))
+        return jsonify(res), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 400
     return jsonify(result), status_code
 
 @api_bp.route("/members/search")
