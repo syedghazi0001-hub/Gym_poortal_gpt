@@ -1,1133 +1,313 @@
 {% extends "base.html" %}
 
-{% block title %}Front Desk & Attendance Hub | {{ settings.gym_name }}{% endblock %}
+{% block title %}Desk Terminal — {{ settings.gym_name }}{% endblock %}
+{% block page_title %}Front Desk Station Terminal{% endblock %}
 
 {% block content %}
-<!-- Top Header: Modern, Clean & High-Impact -->
-<div class="card mb-6" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.8) 100%); border: 1px solid rgba(255, 255, 255, 0.08); padding: 24px;">
-  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
-    <div>
-      <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(16,185,129,0.14); border:1px solid rgba(16,185,129,0.25); padding:3px 10px; border-radius:999px; font-size:0.75rem; color:#34D399; font-weight:700; letter-spacing:0.04em; margin-bottom:8px;">
-        <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10B981;"></span> LIVE TERMINAL
+<!-- Minimalist Terminal Header (Simplified, High-Tech) -->
+<div class="card mb-4" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(15, 23, 42, 0.9) 100%); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 18px; padding: 18px 22px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div style="width:42px; height:42px; border-radius:12px; background:rgba(16,185,129,0.2); border:1.5px solid #10B981; display:flex; align-items:center; justify-content:center; color:#10B981; font-size:1.3rem;">
+        🖥️
       </div>
-      <h1 style="font-size: 1.75rem; font-weight: 800; color: #F8FAFC; margin: 0 0 4px 0; letter-spacing: -0.02em;">
-        Front Desk & Member Check-In
-      </h1>
-      <p style="color: #94A3B8; margin: 0; font-size: 0.9rem;">
-        {{ today_date }} • Instant QR Verification, Fast Search & Staff Roster
-      </p>
+      <div>
+        <div style="display:inline-flex; align-items:center; gap:6px; font-size:0.72rem; color:#34D399; font-weight:800; letter-spacing:0.04em; text-transform:uppercase;">
+          <span class="pulse-dot" style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10B981;"></span>
+          COUNTER TERMINAL • {{ today_date }}
+        </div>
+        <h1 style="font-size:1.4rem; font-weight:800; color:var(--text-primary); margin:2px 0 0;">
+          {{ settings.gym_name }} Front Desk
+        </h1>
+      </div>
     </div>
-    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      <button type="button" class="btn btn-outline btn-sm" onclick="openTerminalQRModal()" style="display:inline-flex; align-items:center; gap:6px; border-color:#10B981; color:#34D399;">
-        <span>🔍</span> Enlarge Station QR
+
+    <!-- Quick Navigation Buttons -->
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button type="button" class="btn btn-outline btn-sm" onclick="openTerminalQRModal()" style="display:inline-flex; align-items:center; gap:6px; border-color:rgba(16,185,129,0.4); color:#34D399; font-weight:700;">
+        <span>🔍</span> Stand QR
       </button>
-      <a href="{{ url_for('receptionist.attendance') }}" class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
-        <span>📋</span> Full Logs
+      <a href="{{ url_for('receptionist.attendance') }}" class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px; font-weight:700;">
+        <span>📋</span> All Logs
       </a>
-      <a href="{{ url_for('receptionist.payments') }}" class="btn btn-primary btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
+      <a href="{{ url_for('receptionist.payments') }}" class="btn btn-primary btn-sm" style="display:inline-flex; align-items:center; gap:6px; font-weight:700;">
         <span>💳</span> Fee Collections
       </a>
     </div>
   </div>
 </div>
 
-<!-- Gym Station Terminal QR Pass for Reverse Self-Scan -->
-<div class="card mb-6" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, rgba(30, 41, 59, 0.4) 100%); border: 1px solid rgba(16, 185, 129, 0.3); padding: 20px;">
-  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px;">
-    <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
-      <div style="background:#FFFFFF; padding:10px; border-radius:12px; box-shadow:0 0 20px rgba(16,185,129,0.25); text-align:center;">
+<!-- Streamlined 2-Column Desk Console -->
+<div class="grid-cols-2 mb-4" style="gap:16px;">
+  <!-- Column 1: Official Gym Station QR Pass Stand -->
+  <div class="card" style="border: 1px solid rgba(16, 185, 129, 0.3); border-radius:18px; padding:20px; display:flex; flex-direction:column; justify-content:space-between; text-align:center;">
+    <div>
+      <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); padding:3px 12px; border-radius:999px; font-size:0.72rem; color:#34D399; font-weight:800; text-transform:uppercase; margin-bottom:10px;">
+        STATION CHECK-IN PASS
+      </div>
+      <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin:0 0 12px;">Counter QR Stand</h3>
+      
+      <!-- High Contrast QR Image Frame -->
+      <div style="background:#FFFFFF; padding:12px; border-radius:16px; display:inline-block; box-shadow:0 8px 25px rgba(0,0,0,0.5); margin-bottom:12px;">
         {% if terminal_qr_data_uri %}
-          <img src="{{ terminal_qr_data_uri }}" alt="Gym Station Terminal QR" style="width:130px; height:130px; display:block; border-radius:6px;">
+          <img src="{{ terminal_qr_data_uri }}" alt="Gym Station Terminal QR" style="width:160px; height:160px; display:block;">
         {% else %}
-          <div style="width:130px; height:130px; display:flex; align-items:center; justify-content:center; background:#0F172A; color:#94A3B8; font-size:0.8rem;">
-            Station QR
-          </div>
+          <div style="width:160px; height:160px; display:flex; align-items:center; justify-content:center; color:#000;">Station QR</div>
         {% endif %}
       </div>
-      <div>
-        <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); padding:3px 10px; border-radius:999px; font-size:0.75rem; color:#34D399; font-weight:700; margin-bottom:6px;">
-          REVERSE SCAN TERMINAL
-        </div>
-        <h2 style="font-size:1.35rem; font-weight:800; color:#F8FAFC; margin:0 0 4px;">
-          Official Gym Station QR Pass
-        </h2>
-        <p style="font-size:0.88rem; color:#94A3B8; margin:0; max-width:550px; line-height:1.45;">
-          Display this station QR pass at the front counter. Members and Trainers scan this station pass on their personal phone cameras to record their daily <strong>Check In (Aty huay)</strong> and <strong>Check Out (Jaty huay)</strong>.
-        </p>
-        <div style="margin-top:10px; font-size:0.8rem; color:#64748B;">
-          Token: <code style="color:#34D399; background:rgba(0,0,0,0.3); padding:2px 8px; border-radius:4px;">{{ terminal_token }}</code>
-        </div>
+
+      <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:4px;">
+        Members and Trainers scan this station pass on their personal phone cameras to Check In & Check Out.
       </div>
+      <code style="color:#10B981; font-size:0.75rem; background:rgba(0,0,0,0.25); padding:2px 8px; border-radius:4px;">{{ terminal_token }}</code>
     </div>
-    <div style="display:flex; flex-direction:column; gap:8px;">
-      <button type="button" class="btn btn-primary" onclick="openTerminalQRModal()" style="display:inline-flex; align-items:center; gap:8px; font-weight:600; padding:10px 18px;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
-        <span>Enlarge for Desk Stand</span>
+
+    <div style="display:flex; justify-content:center; gap:8px; margin-top:14px;">
+      <button type="button" class="btn btn-primary btn-sm" onclick="openTerminalQRModal()" style="font-weight:700;">
+        🔍 Enlarge for Counter Stand
       </button>
-      <button type="button" class="btn btn-outline" onclick="printStationQR()" style="display:inline-flex; align-items:center; gap:8px; font-size:0.86rem; padding:8px 16px;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-        <span>Print Station QR</span>
+      <button type="button" class="btn btn-outline btn-sm" onclick="printStationQR()">
+        🖨️ Print Poster
       </button>
+    </div>
+  </div>
+
+  <!-- Column 2: Fast Member Lookup & 1-Click Check-In -->
+  <div class="card" style="border: 1px solid rgba(255, 255, 255, 0.08); border-radius:18px; padding:20px; display:flex; flex-direction:column;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <div>
+        <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin:0;">
+          ⚡ Fast Member Check-In
+        </h3>
+        <p style="font-size:0.78rem; color:var(--text-muted); margin:2px 0 0;">Search by name, code, or phone for instant check-in</p>
+      </div>
+      <button type="button" id="btn-toggle-webcam" onclick="toggleWebcamScanner()" class="btn btn-outline btn-sm" style="font-size:0.75rem; padding:4px 10px;">
+        📷 Badge Cam
+      </button>
+    </div>
+
+    <!-- Live Webcam Viewport (Hidden by default to save resources) -->
+    <div id="desk-webcam-box" style="display:none; margin-bottom:12px; border-radius:12px; overflow:hidden; border:1px solid #10B981; background:#000; position:relative; aspect-ratio:4/3; max-height:180px;">
+      <video id="scanner-video" playsinline autoplay muted style="width:100%; height:100%; object-fit:cover;"></video>
+      <div class="scanner-laser"></div>
+      <div id="scan-result" style="position:absolute; bottom:6px; left:6px; right:6px; font-size:0.75rem; text-align:center;"></div>
+    </div>
+
+    <!-- Search Bar -->
+    <div style="margin-bottom:10px;">
+      <input type="text" id="member-search-input" class="form-input" placeholder="🔍 Search name, code (MBR-...), phone..." autocomplete="off" style="font-size:0.85rem; padding:8px 12px; border-radius:10px;">
+    </div>
+
+    <!-- Quick Search Results List -->
+    <div id="members-quick-list" style="flex:1; max-height:220px; overflow-y:auto; border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:6px;">
+      {% if members_list %}
+        {% for m in members_list %}
+          <div class="member-search-row" data-name="{{ m.full_name|lower }}" data-code="{{ m.member_code|lower }}" data-phone="{{ m.phone }}" style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:8px; margin-bottom:4px; background:rgba(255,255,255,0.02);">
+            <div>
+              <div style="font-weight:700; font-size:0.85rem; color:var(--text-primary);">{{ m.full_name }}</div>
+              <div style="font-size:0.72rem; color:var(--text-muted);"><code style="color:#10B981;">{{ m.member_code }}</code> • {{ m.phone }}</div>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm" onclick="checkInMember('{{ m.member_code }}')" style="font-size:0.75rem; padding:3px 10px; border-color:rgba(16,185,129,0.4); color:#34D399; font-weight:700;">
+              Check In
+            </button>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div style="padding:16px; text-align:center; color:var(--text-muted); font-size:0.82rem;">No active members found.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Compact Floor Roster (Members Checked-In Today & Coaches on Duty) -->
+<div class="grid-cols-2" style="gap:16px;">
+  <!-- Card 1: Today's Checked-In Members -->
+  <div class="card" style="border-radius:16px;">
+    <div class="card-header" style="padding:12px 18px; display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size:0.88rem; font-weight:800; color:var(--text-primary);">
+        ⏱️ Today's Present Members ({{ today_records|length }})
+      </span>
+      <a href="{{ url_for('receptionist.attendance') }}" class="btn btn-outline btn-sm" style="font-size:0.75rem; padding:3px 8px;">All Logs →</a>
+    </div>
+    <div class="card-body" style="padding:0;">
+      {% if today_records %}
+        <div class="table-responsive" style="max-height:220px; overflow-y:auto;">
+          <table class="table" style="font-size:0.82rem;">
+            <tbody>
+              {% for a in today_records %}
+                <tr>
+                  <td>
+                    <strong style="color:var(--text-primary);">{{ a.member_name }}</strong>
+                    <div style="font-size:0.72rem; color:var(--text-muted);">{{ a.member_code }}</div>
+                  </td>
+                  <td><strong>{{ a.check_in_time|date_format("%I:%M %p") }}</strong></td>
+                  <td>
+                    {% if a.check_out_time %}
+                      <span style="color:#60A5FA;">{{ a.check_out_time|date_format("%I:%M %p") }}</span>
+                    {% else %}
+                      <span class="badge badge-active" style="font-size:0.68rem;">Inside</span>
+                    {% endif %}
+                  </td>
+                  <td style="text-align:right;">
+                    <form action="{{ url_for('receptionist.delete_attendance', attendance_id=a.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Remove check-in record for {{ a.member_name }}?');">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                      <button type="submit" class="btn btn-outline btn-sm" style="font-size:0.7rem; padding:2px 6px; color:#EF4444; border-color:rgba(239,68,68,0.3);">✕ Undo</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div style="padding:20px; text-align:center; color:var(--text-muted); font-size:0.82rem;">
+          No check-ins recorded yet today.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Card 2: Today's Coaches Shift Roster -->
+  <div class="card" style="border-radius:16px;">
+    <div class="card-header" style="padding:12px 18px; display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size:0.88rem; font-weight:800; color:var(--text-primary);">
+        🏋️ Coaches Duty Status ({{ trainers_status|length }})
+      </span>
+    </div>
+    <div class="card-body" style="padding:0;">
+      {% if trainers_status %}
+        <div class="table-responsive" style="max-height:220px; overflow-y:auto;">
+          <table class="table" style="font-size:0.82rem;">
+            <tbody>
+              {% for t in trainers_status %}
+                <tr>
+                  <td>
+                    <strong style="color:var(--text-primary);">{{ t.full_name }}</strong>
+                    <div style="font-size:0.72rem; color:var(--text-muted);">{{ t.specialization }}</div>
+                  </td>
+                  <td>
+                    {% if t.status == 'checked_out' %}
+                      <span style="color:#60A5FA; font-weight:700;">Done ({{ t.check_out_time|date_format("%I:%M %p") }})</span>
+                    {% elif t.status == 'checked_in' %}
+                      <span class="badge badge-active" style="font-size:0.68rem;">On Duty (In: {{ t.check_in_time|date_format("%I:%M %p") }})</span>
+                    {% else %}
+                      <span style="color:var(--text-muted);">Not In</span>
+                    {% endif %}
+                  </td>
+                  <td style="text-align:right;">
+                    {% if t.status == 'not_checked_in' %}
+                      <form action="{{ url_for('receptionist.trainer_checkin') }}" method="POST" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="trainer_id" value="{{ t.id }}">
+                        <button type="submit" class="btn btn-primary btn-sm" style="font-size:0.72rem; padding:3px 8px;">Punch In</button>
+                      </form>
+                    {% elif t.status == 'checked_in' %}
+                      <form action="{{ url_for('receptionist.trainer_checkout') }}" method="POST" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="trainer_id" value="{{ t.id }}">
+                        <button type="submit" class="btn btn-secondary btn-sm" style="font-size:0.72rem; padding:3px 8px;">Punch Out</button>
+                      </form>
+                    {% else %}
+                      <span style="font-size:0.72rem; color:var(--text-muted);">Finished</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div style="padding:20px; text-align:center; color:var(--text-muted); font-size:0.82rem;">
+          No coaches registered in system.
+        </div>
+      {% endif %}
     </div>
   </div>
 </div>
 
 <!-- Modal: Enlarge Terminal Station QR for Desk Stand / Tablet Display -->
 <div id="terminal-qr-modal" class="modal" style="display:none; position:fixed; inset:0; z-index:999; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:20px;">
-  <div style="background:#0F172A; border:2px solid #10B981; border-radius:24px; padding:36px; max-width:440px; width:100%; text-align:center; box-shadow:0 0 40px rgba(16,185,129,0.35);">
-    <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); padding:4px 12px; border-radius:999px; font-size:0.75rem; color:#34D399; font-weight:700; margin-bottom:12px;">
+  <div style="background:#0F172A; border:2px solid #10B981; border-radius:24px; padding:32px 24px; max-width:400px; width:100%; text-align:center; box-shadow:0 0 40px rgba(16,185,129,0.35);">
+    <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); padding:4px 12px; border-radius:999px; font-size:0.75rem; color:#34D399; font-weight:800; margin-bottom:10px;">
       {{ settings.gym_name|upper }} TERMINAL
     </div>
-    <h2 style="font-size:1.6rem; font-weight:800; color:#FFFFFF; margin:0 0 6px;">Station Check-In Pass</h2>
-    <p style="font-size:0.88rem; color:#94A3B8; margin:0 0 20px;">
-      Open Member or Trainer portal camera and scan below to Check In or Check Out.
+    <h2 style="font-size:1.4rem; font-weight:800; color:#FFFFFF; margin:0 0 4px;">Station Check-In Pass</h2>
+    <p style="font-size:0.82rem; color:#94A3B8; margin:0 0 16px;">
+      Point phone camera at this QR to Check In or Check Out
     </p>
 
-    <div style="background:#FFFFFF; padding:16px; border-radius:18px; display:inline-block; margin-bottom:20px; box-shadow:0 8px 30px rgba(0,0,0,0.5);">
-      <img src="{{ terminal_qr_data_uri }}" alt="Station Terminal QR Large" style="width:260px; height:260px; display:block;">
+    <div style="background:#FFFFFF; padding:14px; border-radius:18px; display:inline-block; margin-bottom:16px; box-shadow:0 8px 30px rgba(0,0,0,0.5);">
+      <img src="{{ terminal_qr_data_uri }}" alt="Station Terminal QR Large" style="width:240px; height:240px; display:block;">
     </div>
 
-    <div style="display:flex; justify-content:center; gap:12px;">
-      <button type="button" class="btn btn-outline" onclick="printStationQR()" style="padding:10px 20px;">
-        🖨️ Print Poster
-      </button>
-      <button type="button" class="btn btn-primary" onclick="closeTerminalQRModal()" style="padding:10px 24px;">
-        ✕ Close
-      </button>
+    <div style="display:flex; justify-content:center; gap:10px;">
+      <button type="button" class="btn btn-outline btn-sm" onclick="printStationQR()">🖨️ Print Poster</button>
+      <button type="button" class="btn btn-primary btn-sm" onclick="closeTerminalQRModal()">✕ Close</button>
     </div>
   </div>
 </div>
 
-<!-- Main Workspace: 2-Column Split (Scanner Console + Member Fast Check-In) -->
-<div class="grid-cols-2 mb-6" style="gap:24px;">
-  
-  <!-- Column 1: Live QR Scanner Terminal -->
-  <div class="card" style="border: 1px solid rgba(255, 255, 255, 0.08);">
-    <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.06); display:flex; justify-content:space-between; align-items:center;">
-      <div>
-        <h3 class="card-title" style="display:flex; align-items:center; gap:8px;">
-          <span>📷</span> QR Badge Scanner
-        </h3>
-        <p class="card-subtitle">Scan member pass with camera or upload badge photo.</p>
-      </div>
-      <div style="display:flex; gap:8px; align-items:center;">
-        <select id="camera-select" class="form-select form-select-sm" style="font-size:0.78rem; padding:4px 8px; max-width:140px; background:#111827; border:1px solid #374151; color:#F3F4F6; display:none;">
-          <option value="">Default Camera</option>
-        </select>
-        <button id="btn-toggle-camera" class="btn btn-outline btn-sm" title="Switch Camera" style="padding:4px 10px; font-size:0.8rem; display:none;">🔄</button>
-        <button id="btn-start-camera" class="btn btn-primary btn-sm" style="font-weight:600; padding:5px 14px;">▶ Start Camera</button>
-      </div>
-    </div>
-    <div class="card-body">
-      <!-- Camera Viewport with Reticle -->
-      <div class="scanner-viewport" id="scanner-viewport-box" style="background:#05070B; position:relative; overflow:hidden; border-radius:12px; border:1px solid rgba(255,255,255,0.1); min-height:240px; aspect-ratio:4/3; display:flex; align-items:center; justify-content:center;">
-        <video id="scanner-video" class="scanner-video" playsinline autoplay muted style="width:100%; height:100%; object-fit:cover; display:none;"></video>
-        
-        <div id="camera-idle-placeholder" style="text-align:center; padding:30px 16px;">
-          <div style="font-size:2.6rem; margin-bottom:8px; opacity:0.6;">📸</div>
-          <div style="font-size:0.95rem; font-weight:700; color:#F8FAFC;">Camera Ready</div>
-          <div style="font-size:0.82rem; color:#94A3B8; margin-top:4px; max-width:260px; margin-inline:auto;">
-            Click <strong>"▶ Start Camera"</strong> above to scan member badges in real time.
-          </div>
-        </div>
-
-        <div class="scanner-laser" style="display:none;"></div>
-        <div class="scanner-reticle" style="display:none;"></div>
-      </div>
-
-      <!-- Action Row: Photo QR Upload -->
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; gap:8px; flex-wrap:wrap;">
-        <span style="font-size:0.8rem; color:var(--text-muted);">No webcam or badge is on phone?</span>
-        <label for="qr-file-input" class="btn btn-outline btn-sm" style="cursor:pointer; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px;">
-          <span>🖼️</span> Scan from Photo / File
-        </label>
-        <input type="file" id="qr-file-input" accept="image/*" capture="environment" style="display:none;">
-      </div>
-
-      <!-- Live Scan Result Feedback Banner -->
-      <div id="scan-result" style="margin-top:14px; min-height:50px;">
-        <div class="alert alert-info" style="font-size:0.84rem; display:flex; align-items:center; gap:8px; margin:0;">
-          <span>💡</span> Position member QR pass in front of camera or enter member code below.
-        </div>
-      </div>
-
-      <!-- Fast Manual Token / Code Entry -->
-      <div style="margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.06);">
-        <label class="form-label" style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.04em;">
-          Quick Token, Member Code (MBR-...), or Phone Check-In
-        </label>
-        <div style="display:flex; gap:8px;">
-          <input type="text" id="manual-token-input" class="form-input" placeholder="Type MBR-code, phone, or token..." autocomplete="off">
-          <button id="btn-submit-token" class="btn btn-secondary" style="white-space:nowrap; font-weight:600;">Check In</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Column 2: Fast Member Search & 1-Click Check-In -->
-  <div class="card" style="border: 1px solid rgba(255, 255, 255, 0.08); display:flex; flex-direction:column;">
-    <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
-      <div>
-        <h3 class="card-title" style="display:flex; align-items:center; gap:8px;">
-          <span>⚡</span> Fast Member Check-In
-        </h3>
-        <p class="card-subtitle">Search by name, ID, or phone for instant 1-click check-in.</p>
-      </div>
-    </div>
-    <div class="card-body" style="display:flex; flex-direction:column; flex:1;">
-      <!-- Search Input Bar -->
-      <div class="form-group mb-3">
-        <input type="text" id="member-search-input" class="form-input" placeholder="🔍 Search by name, member code (e.g. MBR-...), or phone..." autocomplete="off" style="font-size:0.9rem; padding:10px 14px;">
-      </div>
-
-      <!-- Scrollable Member List -->
-      <div id="search-results-list" style="flex:1; max-height:380px; overflow-y:auto; padding-right:4px;">
-        {% if members_list %}
-          <div style="font-size:0.72rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; margin-bottom:8px; letter-spacing:0.04em;">
-            Active Gym Members (Click to Check In)
-          </div>
-          {% for m in members_list %}
-            <div class="member-row" id="member-card-{{ m.id }}" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:8px; margin-bottom:8px; transition:border-color 0.15s ease;">
-              <div>
-                <div style="font-weight:700; font-size:0.92rem; color:#F8FAFC;">{{ m.full_name }}</div>
-                <div style="font-size:0.78rem; color:#94A3B8; margin-top:2px;">
-                  <code style="color:#34D399; background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:4px;">{{ m.member_code }}</code> • {{ m.phone or 'No phone' }}
-                </div>
-              </div>
-              <button type="button" class="btn btn-primary btn-sm checkin-btn" data-id="{{ m.id }}" style="font-size:0.78rem; padding:5px 12px; font-weight:600;">
-                ✓ Check In
-              </button>
-            </div>
-          {% endfor %}
-        {% else %}
-          <div style="color:var(--text-muted); font-size:0.86rem; text-align:center; padding:32px 0;">
-            No active members registered yet.
-          </div>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<!-- Section 2: Today's Trainer Attendance & Duty Roster -->
-<div class="card mb-6" style="border: 1px solid rgba(255, 255, 255, 0.08);">
-  <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.06); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-    <div>
-      <h3 class="card-title" style="display:flex; align-items:center; gap:8px;">
-        <span>🏋️</span> Today's Trainer Duty & Shift Roster
-      </h3>
-      <p class="card-subtitle">Track trainer shifts, duty check-ins, and gym floor presence.</p>
-    </div>
-    <div style="font-size:0.82rem; color:var(--text-muted);">
-      Duty Status: <strong style="color:#10B981;">{{ today_trainer_records|length }} Present</strong> / {{ trainers_status|length }} Total
-    </div>
-  </div>
-  <div class="card-body" style="padding:0;">
-    {% if trainers_status %}
-      <div class="table-responsive">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Trainer Name</th>
-              <th>Specialization</th>
-              <th>Duty Status</th>
-              <th>Shift Punch-In</th>
-              <th>Shift Punch-Out</th>
-              <th>Floor Trainees</th>
-              <th style="text-align:right;">Shift Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for t in trainers_status %}
-              <tr>
-                <td>
-                  <div style="font-weight:700; color:var(--text-primary); font-size:0.92rem;">{{ t.full_name }}</div>
-                  <div style="font-size:0.76rem; color:var(--text-muted);">@{{ t.username }} • {{ t.phone or 'No phone' }}</div>
-                </td>
-                <td>
-                  <span class="badge badge-neutral" style="font-size:0.75rem;">{{ t.specialization or 'General Fitness' }}</span>
-                </td>
-                <td>
-                  {% if t.attendance_status == 'present' %}
-                    <span class="badge badge-success" style="font-size:0.75rem;">🟢 On Duty</span>
-                  {% elif t.attendance_status == 'late' %}
-                    <span class="badge badge-warning" style="font-size:0.75rem;">🟡 Late</span>
-                  {% elif t.attendance_status == 'half_day' %}
-                    <span class="badge badge-info" style="font-size:0.75rem;">🔵 Half-Day</span>
-                  {% else %}
-                    <span class="badge badge-neutral" style="font-size:0.75rem;">⚪ Not Checked In</span>
-                  {% endif %}
-                </td>
-                <td>
-                  {% if t.check_in_time %}
-                    <strong style="color:#34D399;">{{ t.check_in_time|date_format("%I:%M %p") }}</strong>
-                    <div style="font-size:0.7rem; color:var(--text-muted);">via {{ t.attendance_method }}</div>
-                  {% else %}
-                    <span style="color:var(--text-muted); font-size:0.82rem;">—</span>
-                  {% endif %}
-                </td>
-                <td>
-                  {% if t.check_out_time %}
-                    <span style="color:var(--text-muted);">{{ t.check_out_time|date_format("%I:%M %p") }}</span>
-                  {% elif t.check_in_time %}
-                    <span class="badge badge-warning" style="font-size:0.72rem;">Active Shift</span>
-                  {% else %}
-                    <span style="color:var(--text-muted); font-size:0.82rem;">—</span>
-                  {% endif %}
-                </td>
-                <td>
-                  <span style="font-size:0.85rem; font-weight:600;">{{ t.assigned_count }} Members</span>
-                </td>
-                <td style="text-align:right;">
-                  {% if not t.attendance_id %}
-                    <form action="{{ url_for('receptionist.trainer_checkin') }}" method="POST" style="display:inline;">
-                      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                      <input type="hidden" name="trainer_id" value="{{ t.id }}">
-                      <button type="submit" class="btn btn-primary btn-sm" style="font-size:0.76rem; padding:4px 10px;">
-                        ✓ Punch In
-                      </button>
-                    </form>
-                  {% elif not t.check_out_time %}
-                    <form action="{{ url_for('receptionist.trainer_checkout') }}" method="POST" style="display:inline;">
-                      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                      <input type="hidden" name="trainer_id" value="{{ t.id }}">
-                      <button type="submit" class="btn btn-outline btn-sm" style="font-size:0.76rem; padding:4px 10px;">
-                        ⏹ Punch Out
-                      </button>
-                    </form>
-                  {% else %}
-                    <span style="font-size:0.76rem; color:#10B981; font-weight:600;">✓ Shift Completed</span>
-                  {% endif %}
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% else %}
-      <div class="empty-state">
-        <p class="empty-title">No Trainers Registered</p>
-        <p class="empty-desc">Trainers added by the gym owner will appear in this attendance roster.</p>
-      </div>
-    {% endif %}
-  </div>
-</div>
-
-<!-- Section 3: Today's Live Member Attendance Log -->
-<div class="card">
-  <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.06); display:flex; justify-content:space-between; align-items:center;">
-    <div>
-      <h3 class="card-title" style="display:flex; align-items:center; gap:8px;">
-        <span>📋</span> Today's Member Check-In Feed (<span id="today-count">{{ today_records|length }}</span>)
-      </h3>
-      <p class="card-subtitle">{{ today_date }} • Click "✕ Remove" on any record to allow re-scanning for testing</p>
-    </div>
-    <a href="{{ url_for('receptionist.attendance') }}" class="btn btn-outline btn-sm">Full Attendance View →</a>
-  </div>
-  <div class="card-body" style="padding:0;">
-    <div class="table-responsive" id="today-records-wrapper" style="{% if not today_records %}display:none;{% endif %}">
-      <table class="table" id="today-records-table">
-        <thead>
-          <tr>
-            <th>Member Name</th>
-            <th>Member Code</th>
-            <th>Contact Phone</th>
-            <th>Time</th>
-            <th>Method</th>
-            <th>Verified By</th>
-            <th style="text-align:right;">Action</th>
-          </tr>
-        </thead>
-        <tbody id="today-records-tbody">
-          {% for r in today_records %}
-            <tr id="att-row-{{ r.member_id }}">
-              <td style="font-weight:700; color:var(--text-primary);">{{ r.full_name }}</td>
-              <td><code>{{ r.member_code }}</code></td>
-              <td>{{ r.phone or '—' }}</td>
-              <td><strong style="color:#34D399;">{{ r.check_in_time|date_format("%I:%M:%S %p") }}</strong></td>
-              <td><span class="badge badge-neutral">{{ r.method }}</span></td>
-              <td><small style="color:var(--text-muted);">{{ r.recorded_by_name or 'Front Desk' }}</small></td>
-              <td style="text-align:right;">
-                <button type="button" class="btn btn-outline btn-sm" onclick="undoTodayAttendance('{{ r.member_id }}')" style="font-size:0.72rem; padding:3px 8px; color:#EF4444; border-color:rgba(239,68,68,0.3);" title="Remove check-in to allow re-scanning">
-                  ✕ Remove
-                </button>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="empty-state" id="empty-feed-placeholder" style="{% if today_records %}display:none;{% endif %}">
-      <p class="empty-title">No Check-ins Yet Today</p>
-      <p class="empty-desc">Check-ins scanned or verified today will appear here immediately.</p>
-    </div>
-  </div>
-</div>
-{% endblock %}
-
-{% block scripts %}
-<!-- Safe loading of jsQR fallback -->
-<script src="{{ url_for('static', filename='js/jsQR.min.js') }}"></script>
 <script>
-  // =========================================================================
-  // VANGUARD GYM OS - BULLETPROOF FRONT DESK SCANNER & CHECK-IN CONTROLLER
-  // Zero External Script Failures • Mutex Guard • Multi-Test Safe
-  // =========================================================================
-
-  let isSubmitting = false;
-  let isCameraScanning = false;
-  let cameraStream = null;
-  let scanIntervalId = null;
-  let lastScannedToken = null;
-  let cooldownTimer = null;
-
-  // Global Audio Chime Generator (Web Audio API)
-  function playAudioChime(success = true) {
-    try {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      if (!AudioContext) return;
-      const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      if (success === true) {
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        osc.frequency.setValueAtTime(1320, ctx.currentTime + 0.08);
-        gain.gain.setValueAtTime(0.2, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.25);
-      } else if (success === false) {
-        osc.type = "sawtooth";
-        osc.frequency.setValueAtTime(220, ctx.currentTime);
-        gain.gain.setValueAtTime(0.2, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.3);
-      } else {
-        // Neutral pleasant double chime for "Already Checked In / Active Session"
-        osc.frequency.setValueAtTime(520, ctx.currentTime);
-        osc.frequency.setValueAtTime(650, ctx.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.15, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.3);
-      }
-    } catch (e) {}
-  }
-
-  // Escape HTML helper
-  function escapeHtml(str) {
-    return String(str || '').replace(/[&<>"']/g, (m) => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    }[m]));
-  }
-
-  // Live Feedback Renderer
-  function showScanFeedback(message, type = "info", memberName = null, memberCode = null, checkInTime = null) {
-    const box = document.getElementById("scan-result");
-    if (!box) return;
-
-    if (type === "success") {
-      box.innerHTML = `
-        <div class="alert alert-success animate-slide-up" style="display:flex; gap:12px; align-items:center; border:1px solid #10B981; background:rgba(16,185,129,0.14); padding:12px 16px; margin:0; border-radius:8px;">
-          <div style="font-size:1.8rem; line-height:1; color:#34D399;">✓</div>
-          <div>
-            <div style="font-weight:700; font-size:1rem; color:#ECFDF5;">${escapeHtml(memberName || 'Member Verified')}</div>
-            <div style="font-size:0.84rem; color:#A7F3D0;">
-              Code: <strong>${escapeHtml(memberCode || '—')}</strong> • Checked In at <strong>${escapeHtml(checkInTime || 'Now')}</strong>
-            </div>
-            <div style="font-size:0.8rem; margin-top:2px; color:#D1FAE5;">${escapeHtml(message)}</div>
-          </div>
-        </div>
-      `;
-    } else if (type === "danger") {
-      box.innerHTML = `
-        <div class="alert alert-danger animate-slide-up" style="display:flex; gap:12px; align-items:center; border:1px solid #EF4444; background:rgba(239,68,68,0.12); padding:12px 16px; margin:0; border-radius:8px;">
-          <div style="font-size:1.8rem; line-height:1; color:#F87171;">✕</div>
-          <div>
-            <div style="font-weight:700; font-size:0.95rem; color:#FEF2F2;">Check-In Denied</div>
-            <div style="font-size:0.84rem; color:#FECACA;">${escapeHtml(message)}</div>
-          </div>
-        </div>
-      `;
-    } else {
-      box.innerHTML = `
-        <div class="alert alert-${type} animate-fade-in" style="font-size:0.84rem; padding:10px 14px; margin:0;">
-          ${escapeHtml(message)}
-        </div>
-      `;
-    }
-  }
-
-  // Specialized Informational Banner for Already Checked In (Not a harsh denial!)
-  function showAlreadyCheckedInFeedback(data, rawToken) {
-    const box = document.getElementById("scan-result");
-    if (!box) return;
-
-    const memberName = escapeHtml(data.member_name || 'Member');
-    const memberCode = escapeHtml(data.member_code || '—');
-    const time = escapeHtml(data.check_in_time || 'Earlier Today');
-    const memberId = escapeHtml(data.member_id || '');
-
-    box.innerHTML = `
-      <div class="alert alert-warning animate-slide-up" style="display:flex; gap:12px; align-items:flex-start; border:1px solid #F59E0B; background:rgba(245,158,11,0.12); padding:12px 16px; margin:0; border-radius:8px;">
-        <div style="font-size:1.6rem; line-height:1; color:#FBBF24;">ℹ️</div>
-        <div style="flex:1;">
-          <div style="font-weight:700; font-size:0.98rem; color:#FEF3C7;">${memberName} Is Already Checked In Today</div>
-          <div style="font-size:0.84rem; color:#FDE68A; margin-top:2px;">
-            Code: <strong>${memberCode}</strong> • Checked In at <strong>${time}</strong> (Active Workout Session)
-          </div>
-          <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="undoTodayAttendance('${memberId}')" style="font-size:0.75rem; padding:3px 10px; border-color:#F59E0B; color:#FEF3C7;">
-              ↺ Clear & Re-Scan
-            </button>
-            <button type="button" class="btn btn-primary btn-sm" onclick="submitTokenOrCode('${escapeHtml(rawToken)}', true)" style="font-size:0.75rem; padding:3px 10px;">
-              ✓ Update Timestamp
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  // Dynamically append newly checked in member to today's feed without full reload
-  function addRecordToTodayFeed(name, code, phone, time, method, memberId) {
-    const tbody = document.getElementById("today-records-tbody");
-    const wrapper = document.getElementById("today-records-wrapper");
-    const emptyState = document.getElementById("empty-feed-placeholder");
-    const countBadge = document.getElementById("today-count");
-
-    if (emptyState) emptyState.style.display = "none";
-    if (wrapper) wrapper.style.display = "block";
-
-    if (tbody) {
-      // Remove previous row if exists
-      const oldRow = document.getElementById(`att-row-${memberId}`);
-      if (oldRow) oldRow.remove();
-
-      const tr = document.createElement("tr");
-      tr.id = `att-row-${memberId}`;
-      tr.style.backgroundColor = "rgba(16, 185, 129, 0.08)";
-      tr.innerHTML = `
-        <td style="font-weight:700; color:var(--text-primary);">${escapeHtml(name)}</td>
-        <td><code>${escapeHtml(code)}</code></td>
-        <td>${escapeHtml(phone || '—')}</td>
-        <td><strong style="color:#34D399;">${escapeHtml(time)}</strong></td>
-        <td><span class="badge badge-neutral">${escapeHtml(method || 'QR')}</span></td>
-        <td><small style="color:var(--text-muted);">Front Desk</small></td>
-        <td style="text-align:right;">
-          <button type="button" class="btn btn-outline btn-sm" onclick="undoTodayAttendance('${escapeHtml(memberId)}')" style="font-size:0.72rem; padding:3px 8px; color:#EF4444; border-color:rgba(239,68,68,0.3);" title="Remove check-in to allow re-scanning">
-            ✕ Remove
-          </button>
-        </td>
-      `;
-      tbody.prepend(tr);
-
-      if (countBadge) {
-        countBadge.textContent = tbody.querySelectorAll("tr").length;
-      }
-    }
-  }
-
-  // Undo / Reset today's attendance for a member so they can be re-scanned
-  async function undoTodayAttendance(memberId) {
-    if (!memberId) return;
-    try {
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
-      showScanFeedback('Resetting check-in for re-testing...', 'info');
-
-      const resp = await fetch('/api/attendance/reset-today', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken
-        },
-        body: JSON.stringify({ member_id: memberId })
-      });
-
-      const data = await resp.json();
-      if (resp.ok && data.success) {
-        playAudioChime(true);
-        showScanFeedback(data.message, 'info');
-
-        // Remove row from DOM
-        const row = document.getElementById(`att-row-${memberId}`);
-        if (row) row.remove();
-
-        // Reset check-in button on member card
-        const card = document.getElementById(`member-card-${memberId}`);
-        if (card) {
-          const btn = card.querySelector('.checkin-btn');
-          if (btn) {
-            btn.textContent = '✓ Check In';
-            btn.className = 'btn btn-primary btn-sm checkin-btn';
-            btn.disabled = false;
-          }
-        }
-
-        // Reset scanning tokens
-        lastScannedToken = null;
-        isSubmitting = false;
-      } else {
-        alert(data.message || 'Could not reset check-in');
-      }
-    } catch (e) {
-      alert('Network error resetting attendance');
-    }
-  }
-  window.undoTodayAttendance = undoTodayAttendance;
-
-  // 1. Core Token / Member Code / Phone Submission Engine with Mutex Lock
-  async function submitTokenOrCode(codeOrToken, override = false) {
-    if (!codeOrToken || !codeOrToken.trim()) return;
-    if (isSubmitting && !override) return; // Prevent double-firing race conditions!
-
-    isSubmitting = true;
-    const cleanVal = codeOrToken.trim();
-    showScanFeedback("Verifying badge / code with gym server...", "info");
-
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
-
-    try {
-      const resp = await fetch('/api/attendance/scan', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken
-        },
-        body: JSON.stringify({ qr_token: cleanVal, override: override })
-      });
-
-      const data = await resp.json();
-
-      if (resp.ok && data.success) {
-        playAudioChime(true);
-        showScanFeedback(data.message, 'success', data.member_name, data.member_code, data.check_in_time);
-        
-        // Add to live table right away
-        addRecordToTodayFeed(data.member_name, data.member_code, data.phone, data.check_in_time, 'QR', data.member_id);
-
-        // Resume scanner after 3 seconds
-        setTimeout(() => {
-          isSubmitting = false;
-          lastScannedToken = null;
-        }, 3000);
-      } else if (data.status === 'already_marked') {
-        // Informational, friendly session active banner with quick reset option
-        playAudioChime(null);
-        showAlreadyCheckedInFeedback(data, cleanVal);
-
-        // Allow next scan after 3.5 seconds
-        setTimeout(() => {
-          isSubmitting = false;
-          lastScannedToken = null;
-        }, 3500);
-      } else {
-        playAudioChime(false);
-        showScanFeedback(data.message || 'Check-in denied.', 'danger');
-
-        setTimeout(() => {
-          isSubmitting = false;
-          lastScannedToken = null;
-        }, 2500);
-      }
-    } catch (err) {
-      playAudioChime(false);
-      showScanFeedback('Network error verifying check-in. Please try again.', 'danger');
-      isSubmitting = false;
-    }
-  }
-
-  // 2. Core 1-Click Manual Member Check-In Engine (Declared Globally)
-  async function submitManualAttendance(memberId, override = false) {
-    if (!memberId) {
-      alert('Member ID missing.');
-      return;
-    }
-    if (isSubmitting && !override) return;
-    isSubmitting = true;
-
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
-    showScanFeedback('Recording member check-in...', 'info');
-
-    try {
-      const resp = await fetch('/api/attendance/manual', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken
-        },
-        body: JSON.stringify({ member_id: memberId, override: override })
-      });
-
-      const data = await resp.json();
-
-      if (resp.ok && data.success) {
-        playAudioChime(true);
-        showScanFeedback(data.message, 'success', data.member_name, data.member_code, data.check_in_time);
-        
-        // Update button visual
-        const card = document.getElementById(`member-card-${memberId}`);
-        if (card) {
-          const btn = card.querySelector('.checkin-btn');
-          if (btn) {
-            btn.textContent = '✓ Checked In';
-            btn.className = 'btn btn-secondary btn-sm';
-          }
-        }
-
-        addRecordToTodayFeed(data.member_name, data.member_code, data.phone, data.check_in_time, 'MANUAL', data.member_id);
-
-        setTimeout(() => {
-          isSubmitting = false;
-        }, 2000);
-      } else if (data.status === 'already_marked') {
-        playAudioChime(null);
-        showAlreadyCheckedInFeedback(data, memberId);
-        setTimeout(() => {
-          isSubmitting = false;
-        }, 3000);
-      } else {
-        playAudioChime(false);
-        showScanFeedback(data.message || 'Check-in denied.', 'danger');
-        setTimeout(() => {
-          isSubmitting = false;
-        }, 2000);
-      }
-    } catch (err) {
-      playAudioChime(false);
-      showScanFeedback('Network error during manual check-in.', 'danger');
-      isSubmitting = false;
-    }
-  }
-  window.submitManualAttendance = submitManualAttendance;
-
-  // 3. Photo QR Code Decoder (FileReader + Canvas)
-  function decodeBadgeImageFile(file) {
-    if (!file) return;
-    showScanFeedback('Decoding QR badge image...', 'info');
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        const maxDim = 1024;
-        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
-        const w = Math.round(img.width * scale);
-        const h = Math.round(img.height * scale);
-        canvas.width = w;
-        canvas.height = h;
-        ctx.drawImage(img, 0, 0, w, h);
-
-        // A. BarcodeDetector
-        if ('BarcodeDetector' in window) {
-          const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
-          detector.detect(canvas).then((barcodes) => {
-            if (barcodes.length > 0 && barcodes[0].rawValue) {
-              submitTokenOrCode(barcodes[0].rawValue);
-            } else {
-              fallbackJsQR(canvas, ctx, w, h);
-            }
-          }).catch(() => fallbackJsQR(canvas, ctx, w, h));
-        } else {
-          fallbackJsQR(canvas, ctx, w, h);
-        }
-      };
-      img.onerror = () => {
-        showScanFeedback('Failed to read image file.', 'danger');
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function fallbackJsQR(canvas, ctx, w, h) {
-    const jsqrFn = window.jsQR || (typeof jsQR !== 'undefined' ? jsQR : null);
-    if (typeof jsqrFn === 'function') {
-      const imgData = ctx.getImageData(0, 0, w, h);
-      const code = jsqrFn(imgData.data, w, h, { inversionAttempts: 'attemptBoth' });
-      if (code && code.data) {
-        submitTokenOrCode(code.data);
-        return;
-      }
-    }
-    showScanFeedback('Could not detect a clear QR badge in this image. Please ensure photo is well lit.', 'danger');
-  }
-
-  // 4. Standalone Live Camera Controller
-  async function startLiveCamera(deviceId = null) {
-    const video = document.getElementById('scanner-video');
-    const placeholder = document.getElementById('camera-idle-placeholder');
-    const startBtn = document.getElementById('btn-start-camera');
-    const laser = document.querySelector('.scanner-laser');
-    const reticle = document.querySelector('.scanner-reticle');
-
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      showScanFeedback('Camera access requires HTTPS or localhost. Please use the Fast Member Search below.', 'warning');
-      return false;
-    }
-
-    try {
-      if (cameraStream) {
-        stopLiveCamera();
-      }
-
-      startBtn.disabled = true;
-      startBtn.textContent = '⏳ Starting Camera...';
-
-      const constraints = { audio: false };
-      if (deviceId) {
-        constraints.video = { deviceId: { exact: deviceId } };
-      } else {
-        constraints.video = {
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        };
-      }
-
-      try {
-        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-      } catch (err1) {
-        // Fallback constraint (desktop webcams)
-        cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      }
-
-      video.srcObject = cameraStream;
-      video.setAttribute('playsinline', 'true');
-      video.muted = true;
-
-      await new Promise((resolve) => {
-        if (video.readyState >= 2) resolve();
-        else {
-          video.onloadedmetadata = () => resolve();
-          setTimeout(resolve, 800);
-        }
-      });
-
-      try {
-        await video.play();
-      } catch (playErr) {
-        console.warn('Video play warning:', playErr);
-      }
-
-      isCameraScanning = true;
-      startBtn.disabled = false;
-      startBtn.textContent = '⏹ Stop Camera';
-      startBtn.classList.replace('btn-primary', 'btn-danger');
-
-      video.style.display = 'block';
-      if (placeholder) placeholder.style.display = 'none';
-      if (laser) laser.style.display = 'block';
-      if (reticle) reticle.style.display = 'block';
-
-      showScanFeedback('Camera is live. Hold member QR badge in frame.', 'info');
-      startCameraDetectionLoop(video);
-      return true;
-    } catch (err) {
-      console.error('Camera error:', err);
-      startBtn.disabled = false;
-      startBtn.textContent = '▶ Start Camera';
-      startBtn.classList.replace('btn-danger', 'btn-primary');
-
-      let msg = 'Camera access was blocked. Please use the Fast Member Search or Photo Scan below.';
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        msg = 'Camera permission denied. Click the camera icon in your browser address bar to allow access.';
-      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        msg = 'No camera found on this device. Please use manual member search.';
-      }
-      showScanFeedback(msg, 'danger');
-      return false;
-    }
-  }
-
-  function stopLiveCamera() {
-    const video = document.getElementById('scanner-video');
-    const placeholder = document.getElementById('camera-idle-placeholder');
-    const startBtn = document.getElementById('btn-start-camera');
-    const laser = document.querySelector('.scanner-laser');
-    const reticle = document.querySelector('.scanner-reticle');
-
-    isCameraScanning = false;
-    if (scanIntervalId) {
-      clearInterval(scanIntervalId);
-      scanIntervalId = null;
-    }
-    if (cameraStream) {
-      cameraStream.getTracks().forEach((track) => track.stop());
-      cameraStream = null;
-    }
-    if (video) {
-      video.srcObject = null;
-      video.style.display = 'none';
-    }
-    if (placeholder) placeholder.style.display = 'block';
-    if (laser) laser.style.display = 'none';
-    if (reticle) reticle.style.display = 'none';
-
-    if (startBtn) {
-      startBtn.disabled = false;
-      startBtn.textContent = '▶ Start Camera';
-      startBtn.classList.replace('btn-danger', 'btn-primary');
-    }
-  }
-
-  function startCameraDetectionLoop(video) {
-    let detector = null;
-    if ('BarcodeDetector' in window) {
-      try {
-        detector = new window.BarcodeDetector({ formats: ['qr_code'] });
-      } catch (e) {
-        detector = null;
-      }
-    }
-
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-
-    scanIntervalId = setInterval(async () => {
-      if (!isCameraScanning || isSubmitting || !video || video.readyState < 2) return;
-
-      // 1. Native BarcodeDetector (instant hardware decoding)
-      if (detector) {
-        try {
-          const barcodes = await detector.detect(video);
-          if (barcodes.length > 0 && barcodes[0].rawValue) {
-            handleDetectedCode(barcodes[0].rawValue);
-            return;
-          }
-        } catch (e) {}
-      }
-
-      // 2. jsQR Engine Fallback
-      const jsqrFn = window.jsQR || (typeof jsQR !== 'undefined' ? jsQR : null);
-      if (typeof jsqrFn === 'function') {
-        try {
-          const w = video.videoWidth;
-          const h = video.videoHeight;
-          if (w > 0 && h > 0) {
-            const scale = Math.min(1, 640 / w);
-            canvas.width = Math.round(w * scale);
-            canvas.height = Math.round(h * scale);
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const code = jsqrFn(imgData.data, canvas.width, canvas.height, { inversionAttempts: 'dontInvert' });
-            if (code && code.data) {
-              handleDetectedCode(code.data);
-            }
-          }
-        } catch (e) {}
-      }
-    }, 250);
-  }
-
-  function handleDetectedCode(token) {
-    if (!token || isSubmitting || token === lastScannedToken) return;
-    lastScannedToken = token;
-    submitTokenOrCode(token);
-  }
-
-  // =========================================================================
-  // DOM EVENT BINDINGS
-  // =========================================================================
-  document.addEventListener('DOMContentLoaded', async () => {
-    const startBtn = document.getElementById('btn-start-camera');
-    const cameraSelect = document.getElementById('camera-select');
-    const fileInput = document.getElementById('qr-file-input');
-    const tokenInput = document.getElementById('manual-token-input');
-    const submitTokenBtn = document.getElementById('btn-submit-token');
-    const searchInput = document.getElementById('member-search-input');
-    const resultsContainer = document.getElementById('search-results-list');
-
-    // Populate camera devices if available
-    if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices && cameraSelect) {
-      try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = devices.filter((d) => d.kind === 'videoinput');
-        if (videoDevices.length > 1) {
-          cameraSelect.innerHTML = videoDevices.map((d, i) => 
-            `<option value="${d.deviceId}">${d.label || 'Camera ' + (i + 1)}</option>`
-          ).join('');
-          cameraSelect.style.display = 'inline-block';
-        }
-      } catch (e) {}
-
-      cameraSelect.addEventListener('change', () => {
-        if (isCameraScanning) {
-          startLiveCamera(cameraSelect.value);
-        }
-      });
-    }
-
-    // Camera Start / Stop Button Handler
-    if (startBtn) {
-      startBtn.addEventListener('click', () => {
-        if (!isCameraScanning) {
-          const deviceId = cameraSelect ? cameraSelect.value : null;
-          startLiveCamera(deviceId);
-        } else {
-          stopLiveCamera();
-        }
-      });
-    }
-
-    // Photo/File Upload QR Scanner
-    if (fileInput) {
-      fileInput.addEventListener('change', (e) => {
-        const file = e.target.files && e.target.files[0];
-        if (file) {
-          decodeBadgeImageFile(file);
-        }
-      });
-    }
-
-    // Manual Token / Member Code / Phone Input
-    if (submitTokenBtn && tokenInput) {
-      const handleTokenSubmit = () => {
-        const val = tokenInput.value.trim();
-        if (val) {
-          submitTokenOrCode(val);
-          tokenInput.value = '';
-        }
-      };
-      submitTokenBtn.addEventListener('click', handleTokenSubmit);
-      tokenInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          handleTokenSubmit();
-        }
-      });
-    }
-
-    // Delegated Click for Check-in buttons
-    if (resultsContainer) {
-      resultsContainer.addEventListener('click', (e) => {
-        const btn = e.target.closest('.checkin-btn');
-        if (btn) {
-          const memberId = btn.getAttribute('data-id');
-          if (memberId) {
-            submitManualAttendance(memberId);
-          }
-        }
-      });
-    }
-
-    // Fast Member Search with 200ms debounce
-    let searchDebounceTimer = null;
-    if (searchInput && resultsContainer) {
-      searchInput.addEventListener('input', (e) => {
-        clearTimeout(searchDebounceTimer);
-        const q = searchInput.value.trim();
-
-        if (q.length < 2) {
-          if (q.length === 0) {
-            window.location.reload();
-          }
-          return;
-        }
-
-        searchDebounceTimer = setTimeout(async () => {
-          try {
-            resultsContainer.innerHTML = '<div style="color:#94A3B8; font-size:0.86rem; text-align:center; padding:20px 0;">Searching active members...</div>';
-            const resp = await fetch(`/api/members/search?q=${encodeURIComponent(q)}`);
-            const data = await resp.json();
-
-            if (!data || data.length === 0) {
-              resultsContainer.innerHTML = `
-                <div style="color:#94A3B8; font-size:0.86rem; text-align:center; padding:24px 0;">
-                  No active members found for "<strong>${escapeHtml(q)}</strong>".
-                </div>
-              `;
-              return;
-            }
-
-            resultsContainer.innerHTML = `
-              <div style="font-size:0.72rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; margin-bottom:8px; letter-spacing:0.04em;">
-                Search Results (${data.length})
-              </div>
-              ${data.map((m) => {
-                const name = escapeHtml(m.full_name || m.name);
-                const code = escapeHtml(m.member_code || m.code);
-                const phone = escapeHtml(m.phone || 'No phone');
-                const id = escapeHtml(m.id);
-                return `
-                  <div class="member-row" id="member-card-${id}" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:8px; margin-bottom:8px;">
-                    <div>
-                      <div style="font-weight:700; font-size:0.92rem; color:#F8FAFC;">${name}</div>
-                      <div style="font-size:0.78rem; color:#94A3B8; margin-top:2px;">
-                        <code style="color:#34D399; background:rgba(16,185,129,0.1); padding:2px 6px; border-radius:4px;">${code}</code> • ${phone}
-                      </div>
-                    </div>
-                    <button type="button" class="btn btn-primary btn-sm checkin-btn" data-id="${id}" style="font-size:0.78rem; padding:5px 12px; font-weight:600;">
-                      ✓ Check In
-                    </button>
-                  </div>
-                `;
-              }).join('')}
-            `;
-          } catch (err) {
-            resultsContainer.innerHTML = '<div style="color:#EF4444; font-size:0.86rem; text-align:center; padding:16px 0;">Search failed. Please try again.</div>';
-          }
-        }, 220);
-      });
-    }
-  });
-
   function openTerminalQRModal() {
-    var modal = document.getElementById('terminal-qr-modal');
-    if (modal) {
-      modal.style.display = 'flex';
-    }
+    document.getElementById('terminal-qr-modal').style.display = 'flex';
   }
 
   function closeTerminalQRModal() {
-    var modal = document.getElementById('terminal-qr-modal');
-    if (modal) {
-      modal.style.display = 'none';
-    }
+    document.getElementById('terminal-qr-modal').style.display = 'none';
   }
 
   function printStationQR() {
-    var qrSrc = "{{ terminal_qr_data_uri }}";
-    var gymName = "{{ settings.gym_name }}";
-    var w = window.open('', '_blank', 'width=600,height=700');
-    w.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Station QR - ${gymName}</title>
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; text-align: center; padding: 40px; }
-          .card { border: 3px solid #10B981; border-radius: 24px; padding: 40px; display: inline-block; max-width: 480px; }
-          h1 { margin: 12px 0 8px; font-size: 26px; }
-          p { color: #555; margin: 0 0 24px; font-size: 14px; }
-          img { width: 300px; height: 300px; margin-bottom: 20px; display: block; margin-inline: auto; }
-          .tag { background: #ECFDF5; color: #047857; font-weight: 700; padding: 6px 16px; border-radius: 999px; font-size: 13px; text-transform: uppercase; }
-        </style>
-      </head>
-      <body>
-        <div class="card">
-          <span class="tag">OFFICIAL GYM TERMINAL PASS</span>
-          <h1>${gymName}</h1>
-          <p>Scan with your member or trainer portal camera to record Check In (Aty huay) and Check Out (Jaty huay).</p>
-          <img src="${qrSrc}" alt="Terminal QR">
-          <p style="font-size:12px; color:#888;">Display at front counter / reception tablet.</p>
-        </div>
-        <script>
-          window.onload = function() {
-            setTimeout(function() { window.print(); }, 200);
-          };
-        <\/script>
-      </body>
-      </html>
-    `);
-    w.document.close();
+    window.print();
+  }
+
+  // Instant Member Filter
+  const searchInput = document.getElementById('member-search-input');
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      const q = this.value.toLowerCase().trim();
+      const rows = document.querySelectorAll('.member-search-row');
+      rows.forEach(r => {
+        const name = r.getAttribute('data-name') || '';
+        const code = r.getAttribute('data-code') || '';
+        const phone = r.getAttribute('data-phone') || '';
+        if (!q || name.includes(q) || code.includes(q) || phone.includes(q)) {
+          r.style.display = 'flex';
+        } else {
+          r.style.display = 'none';
+        }
+      });
+    });
+  }
+
+  async function checkInMember(code) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    try {
+      const res = await fetch('/api/attendance/scan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken,
+          'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({ token: code })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert('✓ ' + (data.message || 'Check-in recorded!'));
+        window.location.reload();
+      } else {
+        alert('⚠️ ' + (data.error || data.message || 'Check-in failed.'));
+      }
+    } catch (err) {
+      alert('Network error recording check-in.');
+    }
+  }
+
+  let webcamActive = false;
+  function toggleWebcamScanner() {
+    const box = document.getElementById('desk-webcam-box');
+    webcamActive = !webcamActive;
+    box.style.display = webcamActive ? 'block' : 'none';
   }
 </script>
 {% endblock %}

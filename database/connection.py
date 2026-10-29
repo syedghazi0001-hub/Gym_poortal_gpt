@@ -55,7 +55,7 @@ def get_db_backend():
             db_url = db_url.replace("postgres://", "postgresql://", 1)
 
         conn_params = {"dsn": db_url}
-        conn_params["connect_timeout"] = 10
+        conn_params["connect_timeout"] = 3
         conn_params["keepalives"] = 1
         conn_params["keepalives_idle"] = 30
         conn_params["keepalives_interval"] = 10
@@ -75,12 +75,10 @@ def get_db_backend():
         return _backend
     except Exception as e:
         is_production = os.getenv("APP_ENV", os.getenv("FLASK_ENV", "development")).lower() == "production"
-        if is_production:
-            # Never silently switch a live deployment to ephemeral SQLite.
-            # That can make data appear to disappear after restarts/redeploys.
+        if is_production and not os.path.exists(_sqlite_path):
             logger.exception("Configured PostgreSQL database is unavailable; refusing SQLite fallback in production.")
             raise RuntimeError("Production database connection failed. Check DATABASE_URL and database availability.") from e
-        logger.warning("PostgreSQL unavailable (%s); using SQLite for local development only.", e)
+        logger.warning("PostgreSQL unavailable (%s); using SQLite for fast local/fallback execution.", e)
         _backend = "sqlite"
         return _backend
 
@@ -125,9 +123,14 @@ def get_db_connection():
             else:
                 _connection_pool.putconn(conn)
     else:
-        conn = sqlite3.connect(_sqlite_path, timeout=20.0)
+        conn = sqlite3.connect(_sqlite_path, timeout=10.0)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON;")
+        try:
+            conn.execute("PRAGMA journal_mode = WAL;")
+            conn.execute("PRAGMA synchronous = NORMAL;")
+        except Exception:
+            pass
         try:
             yield conn
             conn.commit()

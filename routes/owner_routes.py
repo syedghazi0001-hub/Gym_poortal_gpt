@@ -75,6 +75,31 @@ def dashboard():
     recent_payments = get_recent_payments(limit=6)
     today_attendance = get_today_attendance()[:6]
 
+    # 7-Day Attendance Trend Data for Graphical Chart
+    trend_data = []
+    try:
+        from datetime import timedelta
+        for i in range(6, -1, -1):
+            past_d = today - timedelta(days=i)
+            trend_data.append({
+                "date": past_d.strftime("%a"),
+                "full_date": past_d.strftime("%b %d"),
+                "date_str": str(past_d),
+                "count": 0
+            })
+        past_7_start = today - timedelta(days=6)
+        att_counts = query_all("""
+            SELECT attendance_date, COUNT(*) AS cnt
+            FROM attendance
+            WHERE attendance_date >= %s
+            GROUP BY attendance_date;
+        """, (past_7_start,))
+        counts_dict = {str(r["attendance_date"])[:10]: r["cnt"] for r in att_counts}
+        for item in trend_data:
+            item["count"] = counts_dict.get(item["date_str"], 0)
+    except Exception:
+        trend_data = []
+
     settings = get_gym_settings()
 
     return render_template(
@@ -91,6 +116,7 @@ def dashboard():
         absence_alerts=absence_alerts[:5],
         recent_payments=recent_payments,
         today_attendance=today_attendance,
+        trend_data=trend_data,
         settings=settings,
         current_month=current_month
     )

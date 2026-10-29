@@ -1,271 +1,288 @@
 {% extends "base.html" %}
 
-{% block title %}Owner Dashboard — {{ gym_settings.gym_name }}{% endblock %}
+{% block title %}Executive Analytics — {{ gym_settings.gym_name }}{% endblock %}
 {% block page_title %}Owner Command Center{% endblock %}
 
 {% block content %}
 <!-- Absence Warning Banner if unresolved 10-day alerts exist -->
 {% if active_alerts_count > 0 %}
-  <div class="alert alert-warning animate-slide-up mb-6" style="border-left: 4px solid var(--warning); border-radius:18px; padding:16px 22px;">
-    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; width:100%;">
-      <div style="display:flex; align-items:center; gap:14px;">
-        <span style="font-size:1.6rem;">⚠️</span>
+  <div class="alert alert-warning animate-slide-up mb-4" style="border-left: 4px solid var(--warning); border-radius:14px; padding:12px 18px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; width:100%;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:1.3rem;">⚠️</span>
         <div>
-          <strong style="font-size:0.95rem; display:block; color:#FDE68A;">Ten-Day Consecutive Absence Notice</strong>
-          <span style="font-size:0.84rem; color:#F8FAFC;">{{ active_alerts_count }} member(s) have not attended the gym for 10 or more consecutive days.</span>
+          <strong style="font-size:0.9rem; color:#FDE68A;">{{ active_alerts_count }} Consecutive Absence Alert(s)</strong>
+          <span style="font-size:0.8rem; color:var(--text-secondary); margin-left:6px;">Members with 10+ consecutive days absent.</span>
         </div>
       </div>
-      <a href="{{ url_for('owner.alerts') }}" class="btn btn-secondary btn-sm" style="border-color:rgba(245, 158, 11, 0.4); font-weight:700;">Resolve Alerts →</a>
+      <a href="{{ url_for('owner.alerts') }}" class="btn btn-secondary btn-sm" style="font-size:0.78rem; padding:4px 12px;">Resolve →</a>
     </div>
   </div>
 {% endif %}
 
-<!-- Apple Keynote-Inspired Executive Command Hero -->
-<div class="dashboard-hero mb-6" style="background: linear-gradient(135deg, rgba(9, 13, 20, 0.95) 0%, rgba(15, 23, 42, 0.9) 55%, rgba(16, 185, 129, 0.2) 100%), url('{{ url_for('static', filename='images/gym-hero.jpg') }}') center/cover; border: 1px solid rgba(16, 185, 129, 0.35); box-shadow: 0 16px 40px -10px rgba(0,0,0,0.7); border-radius:24px; padding:28px 32px;">
-  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px;">
-    <div>
-      <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.35); padding:4px 14px; border-radius:999px; font-size:0.75rem; color:#34D399; font-weight:700; letter-spacing:0.04em; margin-bottom:10px;">
-        <span class="pulse-dot" style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10B981;"></span>
-        SYSTEM OPERATIONAL • {{ gym_settings.timezone }}
+<!-- Executive Header: Minimalist Athletic Brand Banner -->
+<div class="card mb-4" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(15, 23, 42, 0.85) 60%, rgba(10, 14, 23, 0.95) 100%); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 18px; padding: 18px 24px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+      <div style="width:46px; height:46px; border-radius:12px; background:rgba(16,185,129,0.2); border:1.5px solid #10B981; display:flex; align-items:center; justify-content:center; color:#10B981; font-size:1.4rem;">
+        ⚡
       </div>
-      <h1 style="font-size:1.85rem; font-weight:800; color:#F8FAFC; margin:0 0 6px; letter-spacing:-0.02em;">
-        {{ gym_settings.gym_name }} Executive Hub
-      </h1>
-      <p style="font-size:0.92rem; color:#94A3B8; margin:0; max-width:620px;">
-        High-performance fitness management portal with dual-action reverse QR attendance, equipment inventory, and role-based staff operations.
-      </p>
+      <div>
+        <div style="display:inline-flex; align-items:center; gap:6px; font-size:0.72rem; color:#34D399; font-weight:800; letter-spacing:0.06em; text-transform:uppercase;">
+          <span class="pulse-dot" style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10B981;"></span>
+          LIVE OPERATIONS • {{ settings.timezone }}
+        </div>
+        <h1 style="font-size: 1.45rem; font-weight: 800; color: var(--text-primary); margin: 2px 0 0; letter-spacing: -0.01em;">
+          {{ settings.gym_name }}
+        </h1>
+      </div>
     </div>
 
-    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      <a href="{{ url_for('owner.new_member') }}" class="btn btn-primary" style="font-weight:700; padding:10px 18px; border-radius:12px;">
-        + Register Member
+    <!-- Quick Action Icon Buttons -->
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <a href="{{ url_for('owner.new_member') }}" class="btn btn-primary btn-sm" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; padding:8px 14px; border-radius:10px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        <span>Add Member</span>
       </a>
-      <a href="{{ url_for('receptionist.desk') }}" class="btn btn-secondary" style="font-weight:700; padding:10px 18px; border-radius:12px;">
-        🖥️ Front Desk Terminal
+      <a href="{{ url_for('owner.payments') }}" class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; padding:8px 14px; border-radius:10px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+        <span>Record Fee</span>
+      </a>
+      <a href="{{ url_for('receptionist.desk') }}" class="btn btn-outline btn-sm" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; padding:8px 14px; border-radius:10px; border-color:rgba(16,185,129,0.4); color:#34D399;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 7h10"/><path d="M7 12h10"/></svg>
+        <span>Desk Station</span>
       </a>
     </div>
   </div>
 </div>
 
-<!-- Category 1: Executive KPI Metrics (Apple Keynote High-Contrast Glass) -->
-<div class="grid-cols-4 mb-6">
-  <div class="stat-card" style="border-radius:18px; padding:20px;">
-    <div class="stat-header">
-      <span class="stat-title">Active Members</span>
-      <div class="stat-icon-wrapper" style="background:rgba(16,185,129,0.15); color:#34D399;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+<!-- 4 Core Athletic Metric Tiles (Symbols & Icons First, Minimum Clutter) -->
+<div class="grid-cols-4 mb-4" style="gap:14px;">
+  <!-- Metric 1: Active Athletes -->
+  <a href="{{ url_for('owner.members') }}" class="card stat-card" style="text-decoration:none; padding:16px 20px; border-radius:16px; border:1px solid rgba(255,255,255,0.08); transition:all 0.2s ease;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:800; letter-spacing:0.04em;">Active Members</span>
+      <div style="width:34px; height:34px; border-radius:10px; background:rgba(16,185,129,0.15); display:flex; align-items:center; justify-content:center; color:#34D399;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       </div>
     </div>
-    <div class="stat-value" style="font-size:1.8rem; font-weight:800; color:#F8FAFC; margin:8px 0 2px;">{{ active_members_count }}</div>
-    <div class="stat-subtext" style="color:#94A3B8;">Enrolled active gym members</div>
-  </div>
+    <div style="font-size:1.8rem; font-weight:900; color:var(--text-primary); margin:6px 0 2px;">{{ active_members_count }}</div>
+    <div style="font-size:0.75rem; color:#10B981; font-weight:700;">Enrolled Athletes →</div>
+  </a>
 
-  <div class="stat-card" style="border-radius:18px; padding:20px;">
-    <div class="stat-header">
-      <span class="stat-title">Today's Attendance</span>
-      <div class="stat-icon-wrapper" style="background:rgba(59,130,246,0.15); color:#60A5FA;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+  <!-- Metric 2: Today's Check-Ins -->
+  <a href="{{ url_for('owner.attendance') }}" class="card stat-card" style="text-decoration:none; padding:16px 20px; border-radius:16px; border:1px solid rgba(255,255,255,0.08); transition:all 0.2s ease;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:800; letter-spacing:0.04em;">Today's Check-Ins</span>
+      <div style="width:34px; height:34px; border-radius:10px; background:rgba(59,130,246,0.15); display:flex; align-items:center; justify-content:center; color:#60A5FA;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       </div>
     </div>
-    <div class="stat-value" style="font-size:1.8rem; font-weight:800; color:#60A5FA; margin:8px 0 2px;">{{ today_attendance_count }}</div>
-    <div class="stat-subtext" style="color:#94A3B8;">Members checked in today</div>
-  </div>
+    <div style="font-size:1.8rem; font-weight:900; color:#60A5FA; margin:6px 0 2px;">{{ today_attendance_count }}</div>
+    <div style="font-size:0.75rem; color:#60A5FA; font-weight:700;">{{ today_absent_count }} Absent Today →</div>
+  </a>
 
-  <div class="stat-card" style="border-radius:18px; padding:20px;">
-    <div class="stat-header">
-      <span class="stat-title">{{ current_month }} Revenue</span>
-      <div class="stat-icon-wrapper" style="background:rgba(16,185,129,0.15); color:#34D399;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+  <!-- Metric 3: Monthly Revenue -->
+  <a href="{{ url_for('owner.payments') }}" class="card stat-card" style="text-decoration:none; padding:16px 20px; border-radius:16px; border:1px solid rgba(255,255,255,0.08); transition:all 0.2s ease;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:800; letter-spacing:0.04em;">{{ current_month }} Revenue</span>
+      <div style="width:34px; height:34px; border-radius:10px; background:rgba(16,185,129,0.15); display:flex; align-items:center; justify-content:center; color:#34D399;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
       </div>
     </div>
-    <div class="stat-value" style="font-size:1.8rem; font-weight:800; color:#34D399; margin:8px 0 2px;">{{ total_collected_month|currency(gym_settings.currency) }}</div>
-    <div class="stat-subtext" style="color:#94A3B8;">{{ paid_members_count }} fees recorded this month</div>
-  </div>
+    <div style="font-size:1.6rem; font-weight:900; color:#34D399; margin:6px 0 2px;">{{ total_collected_month|currency(settings.currency) }}</div>
+    <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">{{ paid_members_count }} Paid • {{ pending_members_count }} Due →</div>
+  </a>
 
-  <div class="stat-card" style="border-radius:18px; padding:20px;">
-    <div class="stat-header">
-      <span class="stat-title">Coaching & Desk Staff</span>
-      <div class="stat-icon-wrapper" style="background:rgba(139,92,246,0.15); color:#A78BFA;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+  <!-- Metric 4: Staff & Floor Team -->
+  <a href="{{ url_for('owner.staff') }}" class="card stat-card" style="text-decoration:none; padding:16px 20px; border-radius:16px; border:1px solid rgba(255,255,255,0.08); transition:all 0.2s ease;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:800; letter-spacing:0.04em;">Gym Staff</span>
+      <div style="width:34px; height:34px; border-radius:10px; background:rgba(139,92,246,0.15); display:flex; align-items:center; justify-content:center; color:#A78BFA;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
       </div>
     </div>
-    <div class="stat-value" style="font-size:1.8rem; font-weight:800; color:#A78BFA; margin:8px 0 2px;">{{ total_trainers_count + total_receptionists_count }}</div>
-    <div class="stat-subtext" style="color:#94A3B8;">{{ total_trainers_count }} Trainers • {{ total_receptionists_count }} Front Desk</div>
-  </div>
+    <div style="font-size:1.8rem; font-weight:900; color:#A78BFA; margin:6px 0 2px;">{{ total_trainers_count + total_receptionists_count }}</div>
+    <div style="font-size:0.75rem; color:#A78BFA; font-weight:700;">{{ total_trainers_count }} Coaches • {{ total_receptionists_count }} Desk →</div>
+  </a>
 </div>
 
-<!-- Category 2: Apple Keynote Feature Launchpad (Every feature has its own button & opens dedicated page) -->
-<div style="margin-bottom:12px;">
-  <div style="margin-bottom:16px;">
-    <h3 style="font-size:1.3rem; font-weight:800; color:#F8FAFC; margin:0;">Command Launchpad</h3>
-    <p style="font-size:0.85rem; color:#94A3B8; margin:2px 0 0;">Direct access tiles to every gym module — no endless scrolling required</p>
+<!-- Real Graphic Charts & Analytics Visuals (User Requested: Professional Charts) -->
+<div class="grid-cols-2 mb-4" style="gap:16px;">
+  <!-- Graphic Chart 1: 7-Day Attendance Volume Velocity -->
+  <div class="card" style="border-radius:18px; padding:20px; border:1px solid rgba(255,255,255,0.08);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <div>
+        <h3 style="font-size:1.05rem; font-weight:800; color:var(--text-primary); margin:0;">
+          📊 7-Day Attendance Trend
+        </h3>
+        <p style="font-size:0.78rem; color:var(--text-muted); margin:2px 0 0;">Daily check-in volume across the last 7 days</p>
+      </div>
+      <a href="{{ url_for('owner.attendance') }}" class="btn btn-outline btn-sm" style="font-size:0.75rem; padding:4px 10px;">Logs →</a>
+    </div>
+
+    <!-- Interactive Athletic SVG Bar Chart -->
+    <div id="attendance-trend-chart-box" style="width:100%; height:180px; position:relative;">
+      {% if trend_data %}
+        <svg viewBox="0 0 500 170" width="100%" height="100%" preserveAspectRatio="none" style="overflow:visible;">
+          <!-- Grid Lines -->
+          <line x1="30" y1="20" x2="490" y2="20" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4" />
+          <line x1="30" y1="75" x2="490" y2="75" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4" />
+          <line x1="30" y1="130" x2="490" y2="130" stroke="rgba(255,255,255,0.12)" />
+
+          {% set max_cnt = 1 %}
+          {% for item in trend_data %}
+            {% if item.count > max_cnt %}{% set max_cnt = item.count %}{% endif %}
+          {% endfor %}
+          {% if max_cnt < 5 %}{% set max_cnt = 5 %}{% endif %}
+
+          {% for item in trend_data %}
+            {% set x = 40 + loop.index0 * 64 %}
+            {% set bar_height = (item.count / max_cnt) * 105 %}
+            {% set y = 130 - bar_height %}
+            
+            <!-- Bar Column with Glow -->
+            <rect x="{{ x }}" y="{{ y }}" width="36" height="{{ bar_height }}" rx="6" fill="url(#barNeonGrad)" opacity="0.9" style="transition:all 0.3s ease;">
+              <title>{{ item.full_date }}: {{ item.count }} check-ins</title>
+            </rect>
+            
+            <!-- Count Pill on Top -->
+            {% if item.count > 0 %}
+              <text x="{{ x + 18 }}" y="{{ y - 5 }}" fill="#34D399" font-size="10" font-weight="800" text-anchor="middle">{{ item.count }}</text>
+            {% endif %}
+
+            <!-- Day Label Below -->
+            <text x="{{ x + 18 }}" y="148" fill="#94A3B8" font-size="11" font-weight="700" text-anchor="middle">{{ item.date }}</text>
+          {% endfor %}
+
+          <!-- Neon Gradient Definition -->
+          <defs>
+            <linearGradient id="barNeonGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#10B981" />
+              <stop offset="100%" stop-color="rgba(16, 185, 129, 0.25)" />
+            </linearGradient>
+          </defs>
+        </svg>
+      {% else %}
+        <div style="height:100%; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:0.85rem;">
+          No attendance records yet this week
+        </div>
+      {% endif %}
+    </div>
   </div>
 
-  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:18px; margin-bottom:30px;">
-    <!-- Module 1: Members Management -->
-    <div class="card" style="padding:22px; border-radius:20px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(135deg, rgba(30, 41, 59, 0.45) 0%, rgba(15, 23, 42, 0.75) 100%); display:flex; flex-direction:column; justify-content:space-between;">
+  <!-- Graphic Chart 2: Fee Collections & Status Meter -->
+  <div class="card" style="border-radius:18px; padding:20px; border:1px solid rgba(255,255,255,0.08);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
       <div>
-        <div style="width:48px; height:48px; border-radius:14px; background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem; margin-bottom:14px; color:#34D399;">
-          👥
-        </div>
-        <h4 style="font-size:1.1rem; font-weight:800; color:#F8FAFC; margin:0 0 4px;">Members Directory</h4>
-        <p style="font-size:0.82rem; color:#94A3B8; margin:0; line-height:1.45;">Manage gym member profiles, pending registrations, approvals & passwords.</p>
+        <h3 style="font-size:1.05rem; font-weight:800; color:var(--text-primary); margin:0;">
+          💳 Monthly Revenue Distribution
+        </h3>
+        <p style="font-size:0.78rem; color:var(--text-muted); margin:2px 0 0;">{{ current_month }} fee collection status</p>
       </div>
-      <div style="margin-top:18px;">
-        <a href="{{ url_for('owner.members') }}" class="btn btn-outline" style="width:100%; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:700; font-size:0.86rem; border-color:rgba(16,185,129,0.4); color:#34D399;">
-          Open Members →
-        </a>
+      <a href="{{ url_for('owner.payments') }}" class="btn btn-outline btn-sm" style="font-size:0.75rem; padding:4px 10px;">Audit →</a>
+    </div>
+
+    <!-- Progress Meter -->
+    {% set total_billing_members = paid_members_count + pending_members_count %}
+    {% set paid_pct = (paid_members_count / total_billing_members * 100)|round|int if total_billing_members > 0 else 0 %}
+
+    <div style="margin-bottom:18px;">
+      <div style="display:flex; justify-content:space-between; font-size:0.82rem; font-weight:700; margin-bottom:6px;">
+        <span style="color:#10B981;">{{ paid_pct }}% Collected</span>
+        <span style="color:var(--text-muted);">{{ paid_members_count }}/{{ total_billing_members }} Members</span>
+      </div>
+      <div style="width:100%; height:12px; background:rgba(255,255,255,0.08); border-radius:999px; overflow:hidden; display:flex;">
+        <div style="width:{{ paid_pct }}%; background:linear-gradient(90deg, #10B981, #34D399); height:100%;"></div>
+        <div style="width:{{ 100 - paid_pct }}%; background:rgba(245,158,11,0.3); height:100%;"></div>
       </div>
     </div>
 
-    <!-- Module 2: Staff & Trainers -->
-    <div class="card" style="padding:22px; border-radius:20px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(135deg, rgba(30, 41, 59, 0.45) 0%, rgba(15, 23, 42, 0.75) 100%); display:flex; flex-direction:column; justify-content:space-between;">
-      <div>
-        <div style="width:48px; height:48px; border-radius:14px; background:rgba(139,92,246,0.18); border:1px solid rgba(139,92,246,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem; margin-bottom:14px; color:#A78BFA;">
-          🏋️
-        </div>
-        <h4 style="font-size:1.1rem; font-weight:800; color:#F8FAFC; margin:0 0 4px;">Staff & Trainers</h4>
-        <p style="font-size:0.82rem; color:#94A3B8; margin:0; line-height:1.45;">Coach roster, trainee allocations, receptionist staff & password overrides.</p>
+    <!-- Breakdown Stats Row -->
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+      <div style="padding:12px 14px; border-radius:12px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25);">
+        <div style="font-size:0.72rem; text-transform:uppercase; color:#34D399; font-weight:800;">Paid Revenue</div>
+        <div style="font-size:1.3rem; font-weight:800; color:#10B981; margin-top:2px;">{{ total_collected_month|currency(settings.currency) }}</div>
+        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">{{ paid_members_count }} verified receipts</div>
       </div>
-      <div style="margin-top:18px;">
-        <a href="{{ url_for('owner.staff') }}" class="btn btn-outline" style="width:100%; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:700; font-size:0.86rem; border-color:rgba(139,92,246,0.4); color:#C4B5FD;">
-          Open Staff & Trainers →
-        </a>
-      </div>
-    </div>
 
-    <!-- Module 3: Gym Equipment & Machines -->
-    <div class="card" style="padding:22px; border-radius:20px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(135deg, rgba(30, 41, 59, 0.45) 0%, rgba(15, 23, 42, 0.75) 100%); display:flex; flex-direction:column; justify-content:space-between;">
-      <div>
-        <div style="width:48px; height:48px; border-radius:14px; background:rgba(59,130,246,0.18); border:1px solid rgba(59,130,246,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem; margin-bottom:14px; color:#60A5FA;">
-          🔧
-        </div>
-        <h4 style="font-size:1.1rem; font-weight:800; color:#F8FAFC; margin:0 0 4px;">Machines & Equipment</h4>
-        <p style="font-size:0.82rem; color:#94A3B8; margin:0; line-height:1.45;">Gym workout equipment CRUD, muscle targets, categories & maintenance.</p>
-      </div>
-      <div style="margin-top:18px;">
-        <a href="{{ url_for('owner.equipment') }}" class="btn btn-outline" style="width:100%; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:700; font-size:0.86rem; border-color:rgba(59,130,246,0.4); color:#93C5FD;">
-          Open Equipment Directory →
-        </a>
-      </div>
-    </div>
-
-    <!-- Module 4: Attendance Terminal & Logs -->
-    <div class="card" style="padding:22px; border-radius:20px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(135deg, rgba(30, 41, 59, 0.45) 0%, rgba(15, 23, 42, 0.75) 100%); display:flex; flex-direction:column; justify-content:space-between;">
-      <div>
-        <div style="width:48px; height:48px; border-radius:14px; background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem; margin-bottom:14px; color:#34D399;">
-          ⏱️
-        </div>
-        <h4 style="font-size:1.1rem; font-weight:800; color:#F8FAFC; margin:0 0 4px;">Attendance Logs</h4>
-        <p style="font-size:0.82rem; color:#94A3B8; margin:0; line-height:1.45;">Real-time check-in/out records, arrival timestamps & daily trends.</p>
-      </div>
-      <div style="margin-top:18px;">
-        <a href="{{ url_for('owner.attendance') }}" class="btn btn-outline" style="width:100%; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:700; font-size:0.86rem; border-color:rgba(16,185,129,0.4); color:#34D399;">
-          Open Attendance Logs →
-        </a>
-      </div>
-    </div>
-
-    <!-- Module 5: Monthly Fee Collections -->
-    <div class="card" style="padding:22px; border-radius:20px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(135deg, rgba(30, 41, 59, 0.45) 0%, rgba(15, 23, 42, 0.75) 100%); display:flex; flex-direction:column; justify-content:space-between;">
-      <div>
-        <div style="width:48px; height:48px; border-radius:14px; background:rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem; margin-bottom:14px; color:#FBBF24;">
-          💳
-        </div>
-        <h4 style="font-size:1.1rem; font-weight:800; color:#F8FAFC; margin:0 0 4px;">Fee Collections</h4>
-        <p style="font-size:0.82rem; color:#94A3B8; margin:0; line-height:1.45;">Track monthly dues, record fee payments, print receipts & audit revenue.</p>
-      </div>
-      <div style="margin-top:18px;">
-        <a href="{{ url_for('owner.payments') }}" class="btn btn-outline" style="width:100%; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:700; font-size:0.86rem; border-color:rgba(245,158,11,0.4); color:#FCD34D;">
-          Open Fee Management →
-        </a>
-      </div>
-    </div>
-
-    <!-- Module 6: Absence Alerts -->
-    <div class="card" style="padding:22px; border-radius:20px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(135deg, rgba(30, 41, 59, 0.45) 0%, rgba(15, 23, 42, 0.75) 100%); display:flex; flex-direction:column; justify-content:space-between;">
-      <div>
-        <div style="width:48px; height:48px; border-radius:14px; background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem; margin-bottom:14px; color:#F87171;">
-          ⚠️
-        </div>
-        <h4 style="font-size:1.1rem; font-weight:800; color:#F8FAFC; margin:0 0 4px;">Absence Alerts</h4>
-        <p style="font-size:0.82rem; color:#94A3B8; margin:0; line-height:1.45;">Automated 10-day consecutive absence detection and member re-engagement.</p>
-      </div>
-      <div style="margin-top:18px;">
-        <a href="{{ url_for('owner.alerts') }}" class="btn btn-outline" style="width:100%; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:700; font-size:0.86rem; border-color:rgba(239,68,68,0.4); color:#FCA5A5;">
-          Open Absence Alerts →
-        </a>
-      </div>
-    </div>
-
-    <!-- Module 7: Front Desk Station Terminal -->
-    <div class="card" style="padding:22px; border-radius:20px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(135deg, rgba(30, 41, 59, 0.45) 0%, rgba(15, 23, 42, 0.75) 100%); display:flex; flex-direction:column; justify-content:space-between;">
-      <div>
-        <div style="width:48px; height:48px; border-radius:14px; background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.3); display:flex; align-items:center; justify-content:center; font-size:1.4rem; margin-bottom:14px; color:#34D399;">
-          🖥️
-        </div>
-        <h4 style="font-size:1.1rem; font-weight:800; color:#F8FAFC; margin:0 0 4px;">Station Terminal</h4>
-        <p style="font-size:0.82rem; color:#94A3B8; margin:0; line-height:1.45;">Official counter Station QR display for self-scan + receptionist scanner.</p>
-      </div>
-      <div style="margin-top:18px;">
-        <a href="{{ url_for('receptionist.desk') }}" class="btn btn-outline" style="width:100%; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:700; font-size:0.86rem; border-color:rgba(16,185,129,0.4); color:#34D399;">
-          Launch Terminal View →
-        </a>
-      </div>
-    </div>
-
-    <!-- Module 8: Gym Settings -->
-    <div class="card" style="padding:22px; border-radius:20px; border:1px solid rgba(255,255,255,0.08); background:linear-gradient(135deg, rgba(30, 41, 59, 0.45) 0%, rgba(15, 23, 42, 0.75) 100%); display:flex; flex-direction:column; justify-content:space-between;">
-      <div>
-        <div style="width:48px; height:48px; border-radius:14px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; font-size:1.4rem; margin-bottom:14px; color:#CBD5E1;">
-          ⚙️
-        </div>
-        <h4 style="font-size:1.1rem; font-weight:800; color:#F8FAFC; margin:0 0 4px;">Gym Configuration</h4>
-        <p style="font-size:0.82rem; color:#94A3B8; margin:0; line-height:1.45;">Edit gym business name, currency code, timezone, and Terminal QR tokens.</p>
-      </div>
-      <div style="margin-top:18px;">
-        <a href="{{ url_for('owner.settings') }}" class="btn btn-outline" style="width:100%; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:700; font-size:0.86rem; border-color:rgba(255,255,255,0.2); color:#F1F5F9;">
-          Open Gym Settings →
-        </a>
+      <div style="padding:12px 14px; border-radius:12px; background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.25);">
+        <div style="font-size:0.72rem; text-transform:uppercase; color:#FBBF24; font-weight:800;">Pending Invoices</div>
+        <div style="font-size:1.3rem; font-weight:800; color:#F59E0B; margin-top:2px;">{{ pending_members_count }} Due</div>
+        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">Uncollected this month</div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Category 3: Compact Recent Operations Highlights (Keynote Style) -->
-<div class="grid-cols-2">
+<!-- Compact Navigation Launchpad (Clean, Compact Athletic Buttons - No Long Text) -->
+<div class="card mb-4" style="border-radius:18px; padding:18px 20px; border:1px solid rgba(255,255,255,0.08);">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <span style="font-size:0.8rem; text-transform:uppercase; color:var(--text-muted); font-weight:800; letter-spacing:0.04em;">
+      Command Navigation Hub
+    </span>
+    <span style="font-size:0.75rem; color:var(--text-muted);">Quick-jump to any section</span>
+  </div>
+
+  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px;">
+    <a href="{{ url_for('owner.members') }}" class="btn btn-outline btn-sm" style="padding:10px; font-size:0.82rem; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:6px; border-radius:12px;">
+      <span style="font-size:1.2rem;">👥</span>
+      <span>Members</span>
+    </a>
+    <a href="{{ url_for('owner.staff') }}" class="btn btn-outline btn-sm" style="padding:10px; font-size:0.82rem; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:6px; border-radius:12px;">
+      <span style="font-size:1.2rem;">🏋️</span>
+      <span>Staff</span>
+    </a>
+    <a href="{{ url_for('owner.equipment') }}" class="btn btn-outline btn-sm" style="padding:10px; font-size:0.82rem; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:6px; border-radius:12px;">
+      <span style="font-size:1.2rem;">🔧</span>
+      <span>Machines</span>
+    </a>
+    <a href="{{ url_for('owner.attendance') }}" class="btn btn-outline btn-sm" style="padding:10px; font-size:0.82rem; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:6px; border-radius:12px;">
+      <span style="font-size:1.2rem;">⏱️</span>
+      <span>Attendance</span>
+    </a>
+    <a href="{{ url_for('owner.payments') }}" class="btn btn-outline btn-sm" style="padding:10px; font-size:0.82rem; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:6px; border-radius:12px;">
+      <span style="font-size:1.2rem;">💳</span>
+      <span>Payments</span>
+    </a>
+    <a href="{{ url_for('owner.alerts') }}" class="btn btn-outline btn-sm" style="padding:10px; font-size:0.82rem; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:6px; border-radius:12px;">
+      <span style="font-size:1.2rem;">⚠️</span>
+      <span>Alerts</span>
+    </a>
+    <a href="{{ url_for('receptionist.desk') }}" class="btn btn-outline btn-sm" style="padding:10px; font-size:0.82rem; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:6px; border-radius:12px; border-color:rgba(16,185,129,0.4); color:#34D399;">
+      <span style="font-size:1.2rem;">🖥️</span>
+      <span>Desk Terminal</span>
+    </a>
+    <a href="{{ url_for('owner.settings') }}" class="btn btn-outline btn-sm" style="padding:10px; font-size:0.82rem; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:6px; border-radius:12px;">
+      <span style="font-size:1.2rem;">⚙️</span>
+      <span>Settings</span>
+    </a>
+  </div>
+</div>
+
+<!-- Compact Recent Activity Row (Simplified, Clean) -->
+<div class="grid-cols-2" style="gap:16px;">
   <!-- Today's Recent Check-ins -->
-  <div class="card" style="border-radius:20px;">
-    <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.06); padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
-      <h3 class="card-title" style="display:flex; align-items:center; gap:8px; font-size:1.05rem;">
-        <span>⏱️</span> Today's Recent Attendance
-      </h3>
-      <a href="{{ url_for('owner.attendance') }}" class="btn btn-outline btn-sm">All Logs →</a>
+  <div class="card" style="border-radius:16px;">
+    <div class="card-header" style="padding:12px 18px; display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size:0.88rem; font-weight:800; color:var(--text-primary);">⏱️ Today's Recent Check-ins</span>
+      <a href="{{ url_for('owner.attendance') }}" class="btn btn-outline btn-sm" style="font-size:0.75rem; padding:3px 8px;">View All →</a>
     </div>
     <div class="card-body" style="padding:0;">
       {% if today_attendance %}
         <div class="table-responsive">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Member</th>
-                <th>Check In</th>
-                <th>Check Out</th>
-              </tr>
-            </thead>
+          <table class="table" style="font-size:0.82rem;">
             <tbody>
-              {% for a in today_attendance[:5] %}
+              {% for a in today_attendance[:4] %}
                 <tr>
-                  <td>
-                    <div style="font-weight:700; color:var(--text-primary);">{{ a.member_name }}</div>
-                    <code style="color:#34D399; font-size:0.75rem;">{{ a.member_code }}</code>
-                  </td>
+                  <td style="font-weight:700; color:var(--text-primary);">{{ a.member_name }}</td>
+                  <td><code style="color:#10B981; font-size:0.75rem;">{{ a.member_code }}</code></td>
                   <td><strong>{{ a.check_in_time|date_format("%I:%M %p") }}</strong></td>
                   <td>
                     {% if a.check_out_time %}
-                      <strong style="color:#60A5FA;">{{ a.check_out_time|date_format("%I:%M %p") }}</strong>
+                      <span style="color:#60A5FA;">{{ a.check_out_time|date_format("%I:%M %p") }}</span>
                     {% else %}
-                      <span class="badge badge-active" style="font-size:0.72rem;">Inside Gym</span>
+                      <span class="badge badge-active" style="font-size:0.68rem;">Inside</span>
                     {% endif %}
                   </td>
                 </tr>
@@ -274,49 +291,38 @@
           </table>
         </div>
       {% else %}
-        <div class="empty-state" style="padding:28px 16px;">
-          <p class="empty-desc">No member check-ins recorded yet today.</p>
+        <div style="padding:24px; text-align:center; color:var(--text-muted); font-size:0.82rem;">
+          No check-ins recorded yet today.
         </div>
       {% endif %}
     </div>
   </div>
 
   <!-- Recent Payments -->
-  <div class="card" style="border-radius:20px;">
-    <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.06); padding:16px 20px; display:flex; justify-content:space-between; align-items:center;">
-      <h3 class="card-title" style="display:flex; align-items:center; gap:8px; font-size:1.05rem;">
-        <span>💳</span> Recent Fee Receipts
-      </h3>
-      <a href="{{ url_for('owner.payments') }}" class="btn btn-outline btn-sm">All Payments →</a>
+  <div class="card" style="border-radius:16px;">
+    <div class="card-header" style="padding:12px 18px; display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size:0.88rem; font-weight:800; color:var(--text-primary);">💳 Recent Fee Payments</span>
+      <a href="{{ url_for('owner.payments') }}" class="btn btn-outline btn-sm" style="font-size:0.75rem; padding:3px 8px;">View All →</a>
     </div>
     <div class="card-body" style="padding:0;">
       {% if recent_payments %}
         <div class="table-responsive">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Member</th>
-                <th>Amount</th>
-                <th>Month</th>
-              </tr>
-            </thead>
+          <table class="table" style="font-size:0.82rem;">
             <tbody>
-              {% for p in recent_payments[:5] %}
+              {% for p in recent_payments[:4] %}
                 <tr>
-                  <td>
-                    <div style="font-weight:700; color:var(--text-primary);">{{ p.member_name }}</div>
-                    <small style="color:var(--text-muted);">{{ p.receipt_number }}</small>
-                  </td>
-                  <td><strong style="color:#34D399;">{{ p.amount|currency(gym_settings.currency) }}</strong></td>
-                  <td><span class="badge badge-neutral" style="font-size:0.75rem;">{{ p.billing_month }}</span></td>
+                  <td style="font-weight:700; color:var(--text-primary);">{{ p.member_name }}</td>
+                  <td><span class="badge badge-neutral" style="font-size:0.7rem;">{{ p.billing_month }}</span></td>
+                  <td><strong style="color:#10B981;">{{ p.amount|currency(settings.currency) }}</strong></td>
+                  <td style="color:var(--text-muted); font-size:0.75rem;">{{ p.payment_date|date_format("%b %d") }}</td>
                 </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
       {% else %}
-        <div class="empty-state" style="padding:28px 16px;">
-          <p class="empty-desc">No payment transactions recorded yet.</p>
+        <div style="padding:24px; text-align:center; color:var(--text-muted); font-size:0.82rem;">
+          No payment transactions recorded yet.
         </div>
       {% endif %}
     </div>

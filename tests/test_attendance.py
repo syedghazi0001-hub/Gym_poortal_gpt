@@ -60,11 +60,11 @@ def test_attendance_operations(app):
     # 3. Create an inactive member and verify QR scan is rejected
     inactive_m = create_member(
         full_name="Inactive Member Att",
-        phone="+923008882222",
+        phone=f"+9230{secrets.randbelow(90000000)+10000000}",
         start_date=today.strftime("%Y-%m-%d"),
         end_date="2026-11-01",
         monthly_fee=5000,
-        username="inactive_att_user",
+        username=f"inactive_att_{secrets.token_hex(4)}",
         password="Password123!",
         membership_status="inactive"
     )

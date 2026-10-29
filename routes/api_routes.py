@@ -35,24 +35,30 @@ def self_scan_attendance():
     user_id = session.get("user_id")
     role = session.get("user_role") or session.get("role")
 
-    if role == "member":
-        res = record_member_self_scan(user_id, terminal_token, action=action)
+    try:
+        if role == "member":
+            res = record_member_self_scan(user_id, terminal_token, action=action)
+        elif role == "trainer":
+            res = record_trainer_self_scan(user_id, terminal_token, action=action)
+        else:
+            return jsonify({
+                "success": False,
+                "message": "Only members and trainers can self-scan attendance.",
+                "error": "Only members and trainers can self-scan attendance."
+            }), 403
+
         if not res.get("error"):
             res["error"] = res.get("message")
-        status_code = 200 if res["success"] else (409 if res.get("status") in ("already_checked_in", "already_checked_out") else 400)
+        status_code = 200 if res.get("success") else (409 if res.get("status") in ("already_checked_in", "already_checked_out") else 400)
         return jsonify(res), status_code
-    elif role == "trainer":
-        res = record_trainer_self_scan(user_id, terminal_token, action=action)
-        if not res.get("error"):
-            res["error"] = res.get("message")
-        status_code = 200 if res["success"] else (409 if res.get("status") in ("already_checked_in", "already_checked_out") else 400)
-        return jsonify(res), status_code
-    else:
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).exception("Attendance self-scan exception: %s", e)
         return jsonify({
             "success": False,
-            "message": "Only members and trainers can self-scan attendance.",
-            "error": "Only members and trainers can self-scan attendance."
-        }), 403
+            "message": f"Attendance processing error: {str(e)}",
+            "error": str(e)
+        }), 500
 
 @api_bp.route("/attendance/quick-scan", methods=["GET"])
 @login_required
