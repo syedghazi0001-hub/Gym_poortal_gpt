@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS attendance (
     check_in_time TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     check_out_time TIMESTAMPTZ,
     recorded_by_id VARCHAR(36) REFERENCES users(id) ON DELETE SET NULL,
-    method VARCHAR(20) NOT NULL DEFAULT 'QR' CHECK (method IN ('QR', 'MANUAL', 'SELF_QR')),
+    method VARCHAR(20) NOT NULL DEFAULT 'QR' CHECK (method IN ('QR', 'MANUAL', 'SELF_QR', 'qr_scan', 'desk_terminal')),
     status VARCHAR(20) NOT NULL DEFAULT 'present' CHECK (status IN ('present', 'late', 'excused')),
     notes TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,

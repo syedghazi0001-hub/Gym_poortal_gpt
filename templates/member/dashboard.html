@@ -4,21 +4,21 @@
 {% block page_title %}Athlete Portal{% endblock %}
 
 {% block content %}
-<!-- Compact Athlete Identity Header (Zero Vertical Clutter) -->
-<div class="card mb-3" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(15, 23, 42, 0.9) 100%); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 18px; padding: 16px 20px;">
+<!-- Compact Athlete Identity Header with Rich Gym Backdrop -->
+<div class="card mb-3" style="background: linear-gradient(135deg, rgba(9, 13, 20, 0.92) 0%, rgba(15, 23, 42, 0.88) 55%, rgba(16, 185, 129, 0.25) 100%), url('{{ url_for('static', filename='images/gym-lifting.jpg') }}') center/cover; border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 18px; padding: 18px 22px; box-shadow: 0 10px 30px -8px rgba(0,0,0,0.65);">
   <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
     <!-- Athlete Info -->
-    <div style="display:flex; align-items:center; gap:12px;">
-      <div style="width:44px; height:44px; border-radius:12px; background:linear-gradient(135deg, #10B981, #059669); color:#FFFFFF; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:1.3rem; box-shadow:0 4px 14px rgba(16,185,129,0.35);">
+    <div style="display:flex; align-items:center; gap:14px;">
+      <div style="width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg, #10B981, #059669); color:#FFFFFF; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:1.35rem; box-shadow:0 4px 14px rgba(16,185,129,0.45); border:1.5px solid rgba(255,255,255,0.2);">
         {{ member.full_name[:1]|upper }}
       </div>
       <div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-          <h2 style="font-size:1.25rem; font-weight:800; color:var(--text-primary); margin:0;">{{ member.full_name }}</h2>
-          <code style="color:#10B981; background:rgba(16,185,129,0.12); padding:2px 8px; border-radius:6px; font-weight:700; font-size:0.75rem;">{{ member.member_code }}</code>
+          <h2 style="font-size:1.3rem; font-weight:800; color:#F8FAFC; margin:0; text-shadow:0 2px 4px rgba(0,0,0,0.5);">{{ member.full_name }}</h2>
+          <code style="color:#34D399; background:rgba(0,0,0,0.4); border:1px solid rgba(16,185,129,0.3); padding:2px 8px; border-radius:6px; font-weight:800; font-size:0.75rem;">{{ member.member_code }}</code>
         </div>
-        <div style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">
-          Plan: <strong style="color:var(--text-secondary);">{{ member.membership_plan }}</strong> • Valid: <strong style="color:var(--text-secondary);">{{ member.membership_end_date|date_format("%b %d, %Y") }}</strong>
+        <div style="font-size:0.82rem; color:#CBD5E1; margin-top:2px;">
+          Plan: <strong>{{ member.membership_plan }}</strong> • Valid: <strong>{{ member.membership_end_date|date_format("%b %d, %Y") }}</strong>
         </div>
       </div>
     </div>
@@ -114,24 +114,26 @@
   </div>
 </div>
 
-<!-- Primary Feature Launchpad (Compact Grid of 4 Athletic Icon Tiles — Zero Scrolling Required) -->
+<!-- Primary Feature Launchpad (Pictorial Gym Cards — Zero Scrolling Required) -->
 <div class="mb-3">
   <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px;">
-    <!-- Tile 1: Gym Equipment -->
-    <a href="{{ url_for('member.equipment') }}" class="card" style="padding:14px 16px; border:1px solid rgba(255,255,255,0.08); border-radius:16px; text-decoration:none; display:flex; align-items:center; gap:12px; background:linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%); transition:all 0.2s ease;">
-      <div style="width:40px; height:40px; border-radius:10px; background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.3); display:flex; align-items:center; justify-content:center; color:#34D399; font-size:1.2rem; flex-shrink:0;">
-        🏋️
+    <!-- Tile 1: Gym Equipment (With Pictorial Preview) -->
+    <a href="{{ url_for('member.equipment') }}" class="card" style="padding:12px 14px; border:1px solid rgba(255,255,255,0.08); border-radius:16px; text-decoration:none; display:flex; align-items:center; gap:12px; background:linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.75) 100%); transition:all 0.2s ease; overflow:hidden;">
+      <div style="width:48px; height:48px; border-radius:12px; overflow:hidden; border:1px solid rgba(16,185,129,0.3); flex-shrink:0; position:relative;">
+        <img src="{{ url_for('static', filename='images/gym-dumbbells.jpg') }}" alt="Equipment" style="width:100%; height:100%; object-fit:cover; display:block;">
+        <div style="position:absolute; inset:0; background:rgba(16,185,129,0.15);"></div>
       </div>
       <div>
         <div style="font-size:0.88rem; font-weight:800; color:var(--text-primary); margin:0;">Gym Machines</div>
-        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">Floor inventory & guides</div>
+        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">Floor weights & guides</div>
       </div>
     </a>
 
-    <!-- Tile 2: Our Coaches -->
-    <a href="{{ url_for('member.trainers') }}" class="card" style="padding:14px 16px; border:1px solid rgba(255,255,255,0.08); border-radius:16px; text-decoration:none; display:flex; align-items:center; gap:12px; background:linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%); transition:all 0.2s ease;">
-      <div style="width:40px; height:40px; border-radius:10px; background:rgba(139,92,246,0.18); border:1px solid rgba(139,92,246,0.3); display:flex; align-items:center; justify-content:center; color:#A78BFA; font-size:1.2rem; flex-shrink:0;">
-        👨‍🏫
+    <!-- Tile 2: Our Coaches (With Pictorial Preview) -->
+    <a href="{{ url_for('member.trainers') }}" class="card" style="padding:12px 14px; border:1px solid rgba(255,255,255,0.08); border-radius:16px; text-decoration:none; display:flex; align-items:center; gap:12px; background:linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.75) 100%); transition:all 0.2s ease; overflow:hidden;">
+      <div style="width:48px; height:48px; border-radius:12px; overflow:hidden; border:1px solid rgba(139,92,246,0.3); flex-shrink:0; position:relative;">
+        <img src="{{ url_for('static', filename='images/gym-trainer.jpg') }}" alt="Coaches" style="width:100%; height:100%; object-fit:cover; display:block;">
+        <div style="position:absolute; inset:0; background:rgba(139,92,246,0.15);"></div>
       </div>
       <div>
         <div style="font-size:0.88rem; font-weight:800; color:var(--text-primary); margin:0;">Our Coaches</div>
@@ -140,8 +142,8 @@
     </a>
 
     <!-- Tile 3: Attendance History -->
-    <a href="{{ url_for('member.attendance') }}" class="card" style="padding:14px 16px; border:1px solid rgba(255,255,255,0.08); border-radius:16px; text-decoration:none; display:flex; align-items:center; gap:12px; background:linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%); transition:all 0.2s ease;">
-      <div style="width:40px; height:40px; border-radius:10px; background:rgba(59,130,246,0.18); border:1px solid rgba(59,130,246,0.3); display:flex; align-items:center; justify-content:center; color:#60A5FA; font-size:1.2rem; flex-shrink:0;">
+    <a href="{{ url_for('member.attendance') }}" class="card" style="padding:12px 14px; border:1px solid rgba(255,255,255,0.08); border-radius:16px; text-decoration:none; display:flex; align-items:center; gap:12px; background:linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.75) 100%); transition:all 0.2s ease;">
+      <div style="width:48px; height:48px; border-radius:12px; background:rgba(59,130,246,0.18); border:1px solid rgba(59,130,246,0.3); display:flex; align-items:center; justify-content:center; color:#60A5FA; font-size:1.3rem; flex-shrink:0;">
         ⏱️
       </div>
       <div>
@@ -151,13 +153,13 @@
     </a>
 
     <!-- Tile 4: Fee Receipts -->
-    <a href="{{ url_for('member.payments') }}" class="card" style="padding:14px 16px; border:1px solid rgba(255,255,255,0.08); border-radius:16px; text-decoration:none; display:flex; align-items:center; gap:12px; background:linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%); transition:all 0.2s ease;">
-      <div style="width:40px; height:40px; border-radius:10px; background:rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.3); display:flex; align-items:center; justify-content:center; color:#FBBF24; font-size:1.2rem; flex-shrink:0;">
+    <a href="{{ url_for('member.payments') }}" class="card" style="padding:12px 14px; border:1px solid rgba(255,255,255,0.08); border-radius:16px; text-decoration:none; display:flex; align-items:center; gap:12px; background:linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.75) 100%); transition:all 0.2s ease;">
+      <div style="width:48px; height:48px; border-radius:12px; background:rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.3); display:flex; align-items:center; justify-content:center; color:#FBBF24; font-size:1.3rem; flex-shrink:0;">
         💳
       </div>
       <div>
         <div style="font-size:0.88rem; font-weight:800; color:var(--text-primary); margin:0;">Fee Receipts</div>
-        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">Monthly invoices & proofs</div>
+        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">Invoices & payments</div>
       </div>
     </a>
   </div>

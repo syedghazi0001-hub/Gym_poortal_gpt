@@ -111,7 +111,7 @@ def record_member_self_scan(user_id, terminal_token, action="check_in"):
         att_id = generate_uuid()
         execute_statement("""
             INSERT INTO attendance (id, member_id, attendance_date, check_in_time, method, status)
-            VALUES (%s, %s, %s, %s, 'SELF_QR', 'present');
+            VALUES (%s, %s, %s, %s, 'QR', 'present');
         """, (att_id, row["member_id"], today, now_local))
 
         # Background cleanup (non-blocking)
@@ -223,7 +223,7 @@ def record_trainer_self_scan(user_id, terminal_token, action="check_in"):
         att_id = generate_uuid()
         execute_statement("""
             INSERT INTO trainer_attendance (id, trainer_id, attendance_date, check_in_time, method, status)
-            VALUES (%s, %s, %s, %s, 'SELF_QR', 'present');
+            VALUES (%s, %s, %s, %s, 'desk_terminal', 'present');
         """, (att_id, row["trainer_id"], today, now_local))
 
         return {

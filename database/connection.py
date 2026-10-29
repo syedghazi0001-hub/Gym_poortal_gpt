@@ -266,6 +266,12 @@ def init_db(schema_file=None, force=False):
                     execute_statement("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS check_out_time TIMESTAMPTZ;")
                 except Exception:
                     pass
+                # Update attendance_method_check constraint to allow all method variants
+                try:
+                    execute_statement("ALTER TABLE attendance DROP CONSTRAINT IF EXISTS attendance_method_check;")
+                    execute_statement("ALTER TABLE attendance ADD CONSTRAINT attendance_method_check CHECK (method IN ('QR', 'MANUAL', 'SELF_QR', 'qr_scan', 'desk_terminal'));")
+                except Exception:
+                    pass
                 # Alter column terminal_qr_token on gym_settings if missing
                 try:
                     execute_statement("ALTER TABLE gym_settings ADD COLUMN IF NOT EXISTS terminal_qr_token VARCHAR(64) DEFAULT 'VANGUARD-TERMINAL-DESK-STATION';")
