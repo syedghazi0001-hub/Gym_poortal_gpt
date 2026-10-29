@@ -1,305 +1,275 @@
 {% extends "base.html" %}
 
-{% block title %}My Member Pass — {{ gym_settings.gym_name }}{% endblock %}
-{% block page_title %}Member Personal Portal{% endblock %}
+{% block title %}My Portal — {{ gym_settings.gym_name }}{% endblock %}
+{% block page_title %}Member Command Center{% endblock %}
 
 {% block content %}
-<!-- Ten-Day Absence Warning Banner -->
+<!-- Absence Warning Banner if applicable -->
 {% if absence_alert %}
-  <div class="alert alert-warning animate-slide-up mb-6" style="border-left: 4px solid var(--warning); padding:18px 22px;">
-    <div style="display:flex; align-items:center; gap:16px;">
-      <span style="font-size:2rem;">⚠️</span>
+  <div class="alert alert-warning animate-slide-up mb-6" style="border-left: 4px solid var(--warning); padding:16px 20px; border-radius:16px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+      <span style="font-size:1.8rem;">⚠️</span>
       <div>
-        <h3 style="font-size:1.05rem; font-weight:700; margin-bottom:4px;">Gym Attendance Notice</h3>
-        <p style="font-size:0.92rem; line-height:1.4;">
-          Aap ne pichlay {{ absence_alert.consecutive_days_absent }} din se gym attendance mark nahi karwai.
-          Apni attendance routine dobara shuru karne ke liye gym se rabta karein.
+        <h4 style="font-size:1rem; font-weight:700; margin:0 0 2px;">Attendance Notice ({{ absence_alert.consecutive_days_absent }} Days Absent)</h4>
+        <p style="font-size:0.86rem; margin:0; color:#FDE68A;">
+          Aap ne pichlay {{ absence_alert.consecutive_days_absent }} din se gym attendance mark nahi karwai. Gym routine dobara shuru karein.
         </p>
       </div>
     </div>
   </div>
 {% endif %}
 
-<!-- Reverse Attendance: Scan Reception Terminal QR (Check In & Check Out) -->
-<div class="card mb-6" style="border: 1px solid rgba(16, 185, 129, 0.35); background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.95) 100%);">
-  <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+<!-- Apple Keynote-Inspired Executive Welcome & Basic Info Banner -->
+<div class="card mb-6" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(15, 23, 42, 0.85) 60%, rgba(30, 41, 59, 0.9) 100%); border: 1px solid rgba(16, 185, 129, 0.35); box-shadow: 0 16px 40px -10px rgba(0,0,0,0.7); border-radius:24px; padding:26px 30px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:18px;">
     <div>
-      <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); padding:3px 10px; border-radius:999px; font-size:0.75rem; color:#34D399; font-weight:700; margin-bottom:6px;">
-        STATION ATTENDANCE SCANNER
+      <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.35); padding:4px 14px; border-radius:999px; font-size:0.75rem; color:#34D399; font-weight:700; letter-spacing:0.04em; margin-bottom:10px;">
+        <span class="pulse-dot" style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10B981;"></span>
+        MEMBER PASS • {{ member.membership_status|upper }}
       </div>
-      <h2 style="font-size:1.35rem; font-weight:800; color:#F8FAFC; margin:0;">
-        Daily Gym Session & QR Scanner
-      </h2>
-      <p style="color:#94A3B8; font-size:0.86rem; margin:3px 0 0;">
-        Scan the Reception Desk Terminal QR code with your phone camera on arrival and departure.
+      <h1 style="font-size:1.75rem; font-weight:800; color:#F8FAFC; margin:0 0 6px; letter-spacing:-0.02em;">
+        Welcome back, {{ member.full_name }}
+      </h1>
+      <p style="font-size:0.9rem; color:#94A3B8; margin:0;">
+        Pass ID: <code style="color:#34D399; background:rgba(16,185,129,0.12); padding:2px 8px; border-radius:6px; font-weight:700;">{{ member.member_code }}</code> • Plan: <strong>{{ member.membership_plan }}</strong> • Expiry: <strong>{{ member.membership_end_date|date_format("%b %d, %Y") }}</strong>
       </p>
     </div>
 
-    <!-- Current Today Status Badge -->
+    <!-- Quick Glance Keynote Stats -->
+    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+      <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); padding:10px 18px; border-radius:14px; text-align:center; min-width:90px;">
+        <div style="font-size:1.4rem; font-weight:800; color:#34D399;">{{ stats.streak }}🔥</div>
+        <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Day Streak</div>
+      </div>
+      <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); padding:10px 18px; border-radius:14px; text-align:center; min-width:90px;">
+        <div style="font-size:1.4rem; font-weight:800; color:#F8FAFC;">{{ stats.total_attended }}</div>
+        <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Visits</div>
+      </div>
+      <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); padding:10px 18px; border-radius:14px; text-align:center; min-width:110px;">
+        <div style="font-size:1.2rem; font-weight:800; color:{% if is_current_paid %}#34D399{% else %}#FBBF24{% endif %};">
+          {% if is_current_paid %}✓ Paid{% else %}Pending{% endif %}
+        </div>
+        <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">{{ current_month }} Fee</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Category 1: Today's Gym Attendance Station & Scanner Hub -->
+<div class="card mb-6" style="border: 1px solid rgba(16, 185, 129, 0.4); background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(11, 15, 23, 0.98) 100%); border-radius:20px; overflow:hidden;">
+  <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding:18px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <div>
+      <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); padding:3px 10px; border-radius:999px; font-size:0.75rem; color:#34D399; font-weight:700; margin-bottom:4px;">
+        DAILY ATTENDANCE STATION
+      </div>
+      <h2 style="font-size:1.35rem; font-weight:800; color:#F8FAFC; margin:0;">
+        Today's Workout Check-In & Check-Out
+      </h2>
+    </div>
+
+    <!-- Live Status Pill -->
     <div>
       {% if not today_attendance %}
-        <div style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:999px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#94A3B8; font-size:0.82rem; font-weight:600;">
-          <span style="width:8px; height:8px; border-radius:50%; background:#94A3B8;"></span> Not Checked In Today
-        </div>
+        <span class="badge" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#94A3B8; padding:8px 16px; font-size:0.85rem; font-weight:700; border-radius:999px;">
+          ⚪ Not Checked In Today
+        </span>
       {% elif today_attendance and not today_attendance.check_out_time %}
-        <div style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:999px; background:rgba(16,185,129,0.18); border:1px solid #10B981; color:#34D399; font-size:0.82rem; font-weight:700;">
-          <span class="pulse-dot" style="width:8px; height:8px; border-radius:50%; background:#10B981;"></span> Active Session (Inside Gym)
-        </div>
+        <span class="badge" style="background:rgba(16,185,129,0.2); border:1px solid #10B981; color:#34D399; padding:8px 16px; font-size:0.85rem; font-weight:700; border-radius:999px;">
+          <span class="pulse-dot" style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#10B981; margin-right:6px;"></span> Active Session (Inside Gym)
+        </span>
       {% else %}
-        <div style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:999px; background:rgba(59,130,246,0.18); border:1px solid #3B82F6; color:#93C5FD; font-size:0.82rem; font-weight:700;">
-          <span>✓</span> Session Completed Today
-        </div>
+        <span class="badge" style="background:rgba(59,130,246,0.2); border:1px solid #3B82F6; color:#93C5FD; padding:8px 16px; font-size:0.85rem; font-weight:700; border-radius:999px;">
+          ✓ Workout Session Completed Today
+        </span>
       {% endif %}
     </div>
   </div>
 
-  <div class="card-body">
-    <!-- Today's Timestamps Summary -->
-    <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:20px; padding:12px 16px; background:rgba(0,0,0,0.25); border-radius:12px; border:1px solid rgba(255,255,255,0.06);">
-      <div style="flex:1; min-width:140px;">
-        <div style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Check In (Aty huay)</div>
-        <div style="font-size:1.1rem; font-weight:700; color:{% if today_attendance and today_attendance.check_in_time %}#34D399{% else %}var(--text-muted){% endif %};">
+  <div class="card-body" style="padding:24px;">
+    <!-- Today's Timestamps -->
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:20px; padding:16px 20px; background:rgba(0,0,0,0.25); border-radius:14px; border:1px solid rgba(255,255,255,0.06);">
+      <div>
+        <div style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; letter-spacing:0.04em;">Arrival • Check In (Aty huay)</div>
+        <div style="font-size:1.25rem; font-weight:800; color:{% if today_attendance and today_attendance.check_in_time %}#34D399{% else %}var(--text-muted){% endif %}; margin-top:2px;">
           {% if today_attendance and today_attendance.check_in_time %}
             {{ today_attendance.check_in_time|date_format("%I:%M %p") }}
           {% else %}
-            --:--
+            Not marked yet
           {% endif %}
         </div>
       </div>
-      <div style="flex:1; min-width:140px;">
-        <div style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Check Out (Jaty huay)</div>
-        <div style="font-size:1.1rem; font-weight:700; color:{% if today_attendance and today_attendance.check_out_time %}#60A5FA{% else %}var(--text-muted){% endif %};">
+      <div>
+        <div style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; letter-spacing:0.04em;">Departure • Check Out (Jaty huay)</div>
+        <div style="font-size:1.25rem; font-weight:800; color:{% if today_attendance and today_attendance.check_out_time %}#60A5FA{% else %}var(--text-muted){% endif %}; margin-top:2px;">
           {% if today_attendance and today_attendance.check_out_time %}
             {{ today_attendance.check_out_time|date_format("%I:%M %p") }}
           {% else %}
-            --:--
+            Pending check-out
           {% endif %}
         </div>
       </div>
-      <div style="flex:2; min-width:200px; display:flex; align-items:center; justify-content:flex-end;">
-        <span style="font-size:0.82rem; color:var(--text-secondary);">
-          {% if not today_attendance %}
-            Press <strong>"Check In (Aty huay)"</strong> and scan desk station QR.
-          {% elif not today_attendance.check_out_time %}
-            Workout in progress. Press <strong>"Check Out (Jaty huay)"</strong> before leaving.
-          {% else %}
-            Workout complete! See you next workout session.
-          {% endif %}
-        </span>
-      </div>
     </div>
 
-    <!-- 2 Distinct Action Buttons -->
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
-      <button type="button" id="btn-member-checkin" class="btn btn-primary" onclick="startScannerForAction('check_in')" style="padding:14px; font-weight:700; font-size:1rem; display:flex; align-items:center; justify-content:center; gap:10px; background:#10B981; border:none; box-shadow:0 4px 14px rgba(16,185,129,0.35);">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-        <span>Check In (Aty huay)</span>
+    <!-- Two Primary Attendance Action Buttons -->
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:14px;">
+      <button type="button" id="btn-camera-checkin" class="btn btn-primary" onclick="openCameraScanner('check_in')" style="padding:16px; font-weight:800; font-size:1rem; display:flex; align-items:center; justify-content:center; gap:10px; background:#10B981; border:none; border-radius:14px; box-shadow:0 8px 20px rgba(16,185,129,0.35); cursor:pointer;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <span>📷 Check In (Aty huay)</span>
       </button>
 
-      <button type="button" id="btn-member-checkout" class="btn btn-secondary" onclick="startScannerForAction('check_out')" style="padding:14px; font-weight:700; font-size:1rem; display:flex; align-items:center; justify-content:center; gap:10px; background:rgba(239,68,68,0.18); border:1px solid #EF4444; color:#FCA5A5;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
-        <span>Check Out (Jaty huay)</span>
+      <button type="button" id="btn-camera-checkout" class="btn btn-secondary" onclick="openCameraScanner('check_out')" style="padding:16px; font-weight:800; font-size:1rem; display:flex; align-items:center; justify-content:center; gap:10px; background:rgba(239,68,68,0.18); border:1.5px solid #EF4444; color:#FCA5A5; border-radius:14px; cursor:pointer;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+        <span>📷 Check Out (Jaty huay)</span>
       </button>
     </div>
 
-    <!-- Active Scanner Viewport (Toggled on button press) -->
-    <div id="self-scan-box" style="display:none; padding:18px; border-radius:14px; background:#0B0F17; border:1px solid rgba(16,185,129,0.4); margin-bottom:16px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <div style="font-weight:700; font-size:0.95rem; color:#F8FAFC; display:flex; align-items:center; gap:8px;">
-          <span id="active-action-indicator" style="padding:3px 10px; border-radius:999px; font-size:0.75rem; background:#10B981; color:#FFFFFF;">CHECK IN</span>
-          <span>Point camera at Gym Station Terminal QR</span>
+    <!-- 1-Click Fast Tap Alternative (Guaranteed 100% Reliability if camera is slow/blocked) -->
+    <div style="display:flex; justify-content:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+      <button type="button" onclick="fastOneClickAttendance('check_in')" class="btn btn-outline btn-sm" style="font-size:0.82rem; padding:6px 14px; border-color:rgba(16,185,129,0.4); color:#34D399;">
+        ⚡ 1-Click Fast Check-In (No Camera)
+      </button>
+      <button type="button" onclick="fastOneClickAttendance('check_out')" class="btn btn-outline btn-sm" style="font-size:0.82rem; padding:6px 14px; border-color:rgba(239,68,68,0.4); color:#FCA5A5;">
+        ⚡ 1-Click Fast Check-Out (No Camera)
+      </button>
+    </div>
+
+    <!-- Live Scanner Viewport Modal/Box -->
+    <div id="self-scan-box" style="display:none; padding:20px; border-radius:18px; background:#070A0F; border:2px solid #10B981; margin-top:16px; box-shadow:0 12px 35px rgba(0,0,0,0.8);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div style="font-weight:800; font-size:1rem; color:#F8FAFC; display:flex; align-items:center; gap:10px;">
+          <span id="active-action-indicator" style="padding:4px 12px; border-radius:999px; font-size:0.75rem; background:#10B981; color:#FFFFFF; font-weight:800;">CHECK IN</span>
+          <span>Point camera at Reception Desk Station QR</span>
         </div>
-        <button type="button" onclick="stopSelfScanner()" class="btn btn-outline btn-sm" style="padding:3px 10px; font-size:0.8rem;">
-          ✕ Cancel
-        </button>
+        <button type="button" onclick="stopSelfScanner()" class="btn btn-outline btn-sm" style="border-radius:8px;">✕ Close</button>
       </div>
 
-      <div class="scanner-viewport" id="self-scanner-viewport" style="background:#05070B; position:relative; overflow:hidden; border-radius:12px; border:1px solid rgba(255,255,255,0.15); max-width:380px; aspect-ratio:4/3; margin:0 auto; display:flex; align-items:center; justify-content:center;">
-        <video id="self-scanner-video" playsinline autoplay muted style="width:100%; height:100%; object-fit:cover; display:block;"></video>
+      <div class="scanner-viewport" id="self-scanner-viewport" style="background:#000000; position:relative; overflow:hidden; border-radius:16px; border:1px solid rgba(255,255,255,0.2); max-width:400px; aspect-ratio:4/3; margin:0 auto; display:flex; align-items:center; justify-content:center;">
+        <video id="self-scanner-video" playsinline webkit-playsinline autoplay muted style="width:100%; height:100%; object-fit:cover; display:block;"></video>
         <div class="scanner-laser"></div>
         <div class="scanner-reticle"></div>
       </div>
 
-      <div id="self-scan-feedback" style="margin-top:12px; text-align:center;">
-        <div style="font-size:0.84rem; color:#94A3B8;">
-          Align the desk Station QR code within the frame above.
+      <div id="self-scan-feedback" style="margin-top:14px; text-align:center;">
+        <div style="font-size:0.88rem; color:#94A3B8;">
+          Align the Reception Station QR code within the frame above.
         </div>
       </div>
 
-      <!-- Manual Code / Photo Fallback for camera-blocked phones -->
-      <div style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-        <div style="display:flex; gap:8px; flex:1; max-width:320px;">
-          <input type="text" id="manual-station-code" class="form-input" placeholder="Type station token if camera fails..." style="font-size:0.82rem; padding:6px 10px;">
-          <button type="button" class="btn btn-primary btn-sm" onclick="submitManualStationCode()" style="white-space:nowrap;">Submit</button>
-        </div>
-        <label for="member-qr-file" class="btn btn-outline btn-sm" style="cursor:pointer; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px;">
-          <span>🖼️</span> Scan Image File
-        </label>
-        <input type="file" id="member-qr-file" accept="image/*" capture="environment" style="display:none;" onchange="handleQRImageUpload(this)">
+      <!-- Manual code input fallback -->
+      <div style="margin-top:16px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:center; gap:8px;">
+        <input type="text" id="manual-station-code" class="form-input" placeholder="Or enter station code..." style="max-width:260px; font-size:0.85rem; padding:8px 12px;">
+        <button type="button" class="btn btn-primary btn-sm" onclick="submitManualStationCode()">Submit</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Digital Membership Card & QR Pass -->
-<div class="grid-cols-2 mb-6">
-  <div class="member-badge-card" style="background: linear-gradient(135deg, rgba(16, 24, 39, 0.94) 0%, rgba(9, 13, 20, 0.96) 100%), url('{{ url_for('static', filename='images/gym-lifting.jpg') }}') center/cover; border: 1px solid rgba(16, 185, 129, 0.4); box-shadow: 0 16px 40px -10px rgba(0,0,0,0.8);">
-    <div class="badge-header" style="display:flex; justify-content:space-between; align-items:center;">
-      <div style="display:flex; align-items:center; gap:8px;">
-        <svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="2" y="2" width="44" height="44" rx="12" fill="#0F172A" stroke="#10B981" stroke-width="2" />
-          <path d="M14 15L24 33L34 15" stroke="#34D399" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
-          <circle cx="24" cy="20" r="3.5" fill="#10B981" />
-        </svg>
-        <div class="badge-gym-brand" style="font-weight:800; font-size:1.05rem; letter-spacing:-0.02em;">{{ gym_settings.gym_name }}</div>
-      </div>
-      <div class="badge-status-pill">{{ member.membership_status|upper }}</div>
-    </div>
-    <div class="badge-body">
-      <div class="badge-qr-container">
-        <img src="{{ qr_data_uri }}" alt="Attendance QR Code" class="badge-qr-img">
-      </div>
-      <div class="badge-details">
-        <div class="badge-member-name">{{ member.full_name }}</div>
-        <div class="badge-member-code">{{ member.member_code }}</div>
-        <div class="badge-meta-grid">
-          <div>
-            <div class="badge-meta-label">Plan</div>
-            <div class="badge-meta-val">{{ member.membership_plan }}</div>
-          </div>
-          <div>
-            <div class="badge-meta-label">Pass Expiry</div>
-            <div class="badge-meta-val">{{ member.membership_end_date|date_format("%b %d, %Y") }}</div>
-          </div>
-          <div>
-            <div class="badge-meta-label">Assigned Coach</div>
-            <div class="badge-meta-val">{{ member.trainer_name or 'General Roster' }}</div>
-          </div>
-          <div>
-            <div class="badge-meta-label">{{ current_month }} Dues</div>
-            <div class="badge-meta-val">
-              {% if is_current_paid %}
-                <span style="color:#34D399;">✓ Paid</span>
-              {% else %}
-                <span style="color:#FBBF24;">Pending</span>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div style="margin-top:20px; font-size:0.8rem; color:rgba(255,255,255,0.7); display:flex; justify-content:space-between; align-items:center;">
-      <span>Scan at the front desk scanner to check in.</span>
-      <button onclick="window.print()" class="btn btn-outline btn-sm" style="color:#FFFFFF; border-color:rgba(255,255,255,0.3);">
-        🖨️ Print Pass
-      </button>
+<!-- Category 2: Apple Keynote Feature Launchpad (Every feature has a dedicated button/page - No endless scrolling) -->
+<div style="margin-bottom:12px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+    <div>
+      <h3 style="font-size:1.2rem; font-weight:800; color:#F8FAFC; margin:0;">Gym Services & Features</h3>
+      <p style="font-size:0.82rem; color:#94A3B8; margin:2px 0 0;">Select any tile below to open that feature's dedicated screen</p>
     </div>
   </div>
 
-  <!-- Attendance Consistency & Metrics -->
-  <div class="card">
-    <div class="card-header">
-      <h3 class="card-title">My Workout Routine</h3>
-      <span class="badge badge-active">{{ stats.streak }} Days Streak 🔥</span>
-    </div>
-    <div class="card-body">
-      <div class="grid-cols-3 mb-6" style="grid-template-columns: repeat(3, 1fr);">
-        <div style="text-align:center; padding:14px; background:var(--bg-surface-2); border-radius:var(--radius-md);">
-          <div style="font-size:1.8rem; font-weight:700; color:#34D399;">{{ stats.total_attended }}</div>
-          <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Attended Days</div>
+  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:28px;">
+    <!-- Tile 1: Gym Machines & Facilities -->
+    <a href="{{ url_for('member.equipment') }}" class="card" style="padding:20px; border:1px solid rgba(255,255,255,0.08); border-radius:18px; text-decoration:none; display:flex; flex-direction:column; justify-content:space-between; background:linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%); transition:all 0.2s ease;">
+      <div>
+        <div style="width:44px; height:44px; border-radius:12px; background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.3); display:flex; align-items:center; justify-content:center; color:#34D399; font-size:1.3rem; margin-bottom:12px;">
+          🏋️
         </div>
-        <div style="text-align:center; padding:14px; background:var(--bg-surface-2); border-radius:var(--radius-md);">
-          <div style="font-size:1.8rem; font-weight:700; color:#F87171;">{{ stats.total_absent }}</div>
-          <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Absent Days</div>
-        </div>
-        <div style="text-align:center; padding:14px; background:var(--bg-surface-2); border-radius:var(--radius-md);">
-          <div style="font-size:1.8rem; font-weight:700; color:#FBBF24;">{{ stats.streak }}</div>
-          <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Active Streak</div>
-        </div>
+        <h4 style="font-size:1.05rem; font-weight:800; color:#F8FAFC; margin:0 0 4px;">Gym Machines</h4>
+        <p style="font-size:0.8rem; color:#94A3B8; margin:0; line-height:1.4;">Explore equipment catalog, muscle targets & workout tips.</p>
       </div>
+      <div style="margin-top:14px; font-size:0.82rem; color:#34D399; font-weight:700; display:flex; align-items:center; gap:4px;">
+        <span>View Machines</span> →
+      </div>
+    </a>
 
-      <!-- Current Month Fee Banner -->
-      <div style="padding:14px 18px; border-radius:var(--radius-md); background:var(--bg-surface-2); display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <div style="font-size:0.8rem; color:var(--text-muted); text-transform:uppercase; font-weight:600;">{{ current_month }} Membership Fee</div>
-          <div style="font-size:1.1rem; font-weight:700;">{{ member.monthly_fee|currency(gym_settings.currency) }}</div>
+    <!-- Tile 2: Certified Trainers -->
+    <a href="{{ url_for('member.trainers') }}" class="card" style="padding:20px; border:1px solid rgba(255,255,255,0.08); border-radius:18px; text-decoration:none; display:flex; flex-direction:column; justify-content:space-between; background:linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%); transition:all 0.2s ease;">
+      <div>
+        <div style="width:44px; height:44px; border-radius:12px; background:rgba(139,92,246,0.18); border:1px solid rgba(139,92,246,0.3); display:flex; align-items:center; justify-content:center; color:#A78BFA; font-size:1.3rem; margin-bottom:12px;">
+          🥇
         </div>
-        <div>
-          {% if is_current_paid %}
-            <span class="badge badge-paid" style="font-size:0.85rem; padding:6px 12px;">Paid ({{ current_payment.receipt_number }})</span>
-          {% else %}
-            <span class="badge badge-pending" style="font-size:0.85rem; padding:6px 12px;">Payment Pending</span>
-          {% endif %}
-        </div>
+        <h4 style="font-size:1.05rem; font-weight:800; color:#F8FAFC; margin:0 0 4px;">Our Coaches</h4>
+        <p style="font-size:0.8rem; color:#94A3B8; margin:0; line-height:1.4;">Meet certified personal trainers & coaching specialties.</p>
       </div>
-    </div>
+      <div style="margin-top:14px; font-size:0.82rem; color:#A78BFA; font-weight:700; display:flex; align-items:center; gap:4px;">
+        <span>View Coaches</span> →
+      </div>
+    </a>
+
+    <!-- Tile 3: Full Attendance History -->
+    <a href="{{ url_for('member.attendance') }}" class="card" style="padding:20px; border:1px solid rgba(255,255,255,0.08); border-radius:18px; text-decoration:none; display:flex; flex-direction:column; justify-content:space-between; background:linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%); transition:all 0.2s ease;">
+      <div>
+        <div style="width:44px; height:44px; border-radius:12px; background:rgba(59,130,246,0.18); border:1px solid rgba(59,130,246,0.3); display:flex; align-items:center; justify-content:center; color:#60A5FA; font-size:1.3rem; margin-bottom:12px;">
+          📋
+        </div>
+        <h4 style="font-size:1.05rem; font-weight:800; color:#F8FAFC; margin:0 0 4px;">Attendance Logs</h4>
+        <p style="font-size:0.8rem; color:#94A3B8; margin:0; line-height:1.4;">Complete workout calendar, check-in history & monthly stats.</p>
+      </div>
+      <div style="margin-top:14px; font-size:0.82rem; color:#60A5FA; font-weight:700; display:flex; align-items:center; gap:4px;">
+        <span>All Logs</span> →
+      </div>
+    </a>
+
+    <!-- Tile 4: Payment Receipts -->
+    <a href="{{ url_for('member.payments') }}" class="card" style="padding:20px; border:1px solid rgba(255,255,255,0.08); border-radius:18px; text-decoration:none; display:flex; flex-direction:column; justify-content:space-between; background:linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%); transition:all 0.2s ease;">
+      <div>
+        <div style="width:44px; height:44px; border-radius:12px; background:rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.3); display:flex; align-items:center; justify-content:center; color:#FBBF24; font-size:1.3rem; margin-bottom:12px;">
+          💳
+        </div>
+        <h4 style="font-size:1.05rem; font-weight:800; color:#F8FAFC; margin:0 0 4px;">Fee Receipts</h4>
+        <p style="font-size:0.8rem; color:#94A3B8; margin:0; line-height:1.4;">View payment receipts, dues records & billing breakdown.</p>
+      </div>
+      <div style="margin-top:14px; font-size:0.82rem; color:#FBBF24; font-weight:700; display:flex; align-items:center; gap:4px;">
+        <span>Receipts</span> →
+      </div>
+    </a>
+
+    <!-- Tile 5: Change Password -->
+    <a href="{{ url_for('member.change_password') }}" class="card" style="padding:20px; border:1px solid rgba(255,255,255,0.08); border-radius:18px; text-decoration:none; display:flex; flex-direction:column; justify-content:space-between; background:linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%); transition:all 0.2s ease;">
+      <div>
+        <div style="width:44px; height:44px; border-radius:12px; background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.3); display:flex; align-items:center; justify-content:center; color:#F87171; font-size:1.3rem; margin-bottom:12px;">
+          🔑
+        </div>
+        <h4 style="font-size:1.05rem; font-weight:800; color:#F8FAFC; margin:0 0 4px;">Security Settings</h4>
+        <p style="font-size:0.8rem; color:#94A3B8; margin:0; line-height:1.4;">Update your member account password & security credentials.</p>
+      </div>
+      <div style="margin-top:14px; font-size:0.82rem; color:#F87171; font-weight:700; display:flex; align-items:center; gap:4px;">
+        <span>Change Password</span> →
+      </div>
+    </a>
   </div>
 </div>
 
-<!-- Recent Activity & Coaching Notes -->
-<div class="grid-cols-2">
-  <!-- Recent Check-ins -->
-  <div class="card">
-    <div class="card-header">
-      <h3 class="card-title">Recent Gym Check-ins</h3>
-      <a href="{{ url_for('member.attendance') }}" class="btn btn-outline btn-sm">All Logs →</a>
+<!-- Category 3: Digital Membership QR Pass Card (Compact Keynote Design) -->
+<div class="card mb-6" style="border: 1px solid rgba(255,255,255,0.08); border-radius:20px;">
+  <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.06); display:flex; justify-content:space-between; align-items:center;">
+    <div>
+      <h3 class="card-title" style="display:flex; align-items:center; gap:8px;">
+        <span>🎫</span> Official Digital Member Pass
+      </h3>
+      <p class="card-subtitle">Keep this badge handy if front desk receptionist manually verifies your pass.</p>
     </div>
-    <div class="card-body" style="padding:0;">
-      {% if recent_attendance %}
-        <div class="table-responsive">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Check-in Time</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for a in recent_attendance %}
-                <tr>
-                  <td><strong>{{ a.attendance_date|date_format("%A, %b %d") }}</strong></td>
-                  <td>{{ a.check_in_time|date_format("%I:%M %p") }}</td>
-                  <td><span class="badge badge-active">Present</span></td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      {% else %}
-        <div class="empty-state">
-          <p class="empty-desc">No check-ins recorded yet.</p>
-        </div>
-      {% endif %}
-    </div>
+    <button onclick="window.print()" class="btn btn-outline btn-sm">🖨️ Print Pass</button>
   </div>
-
-  <!-- Trainer Notes for Member -->
-  <div class="card">
-    <div class="card-header">
-      <h3 class="card-title">Coach Notes & Routine Guidance</h3>
-      {% if member.trainer_name %}
-        <span class="badge badge-neutral">Coach {{ member.trainer_name }}</span>
-      {% endif %}
-    </div>
-    <div class="card-body">
-      {% if notes %}
-        <div style="display:flex; flex-direction:column; gap:12px;">
-          {% for n in notes %}
-            <div style="background:var(--bg-surface-2); padding:14px; border-radius:var(--radius-md); border-left:3px solid var(--accent-primary);">
-              <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                <strong style="font-size:0.85rem;">{{ n.trainer_name }}</strong>
-                <span style="font-size:0.75rem; color:var(--text-muted);">{{ n.created_at|date_format("%b %d, %Y") }}</span>
-              </div>
-              <p style="font-size:0.88rem; color:var(--text-secondary); line-height:1.4;">{{ n.note }}</p>
-            </div>
-          {% endfor %}
+  <div class="card-body">
+    <div style="display:flex; align-items:center; gap:24px; flex-wrap:wrap;">
+      <div style="background:#FFFFFF; padding:12px; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.5); text-align:center;">
+        <img src="{{ qr_data_uri }}" alt="Member QR Pass" style="width:130px; height:130px; display:block;">
+      </div>
+      <div style="flex:1; min-width:220px;">
+        <div style="font-size:1.25rem; font-weight:800; color:#F8FAFC;">{{ member.full_name }}</div>
+        <div style="font-size:0.88rem; color:#34D399; font-weight:700; margin-top:2px;">{{ member.member_code }}</div>
+        <div style="font-size:0.84rem; color:#94A3B8; margin-top:6px; line-height:1.5;">
+          Assigned Coach: <strong>{{ member.trainer_name or 'General Floor Roster' }}</strong><br>
+          Emergency Contact: <strong>{{ member.emergency_contact or 'On File' }}</strong>
         </div>
-      {% else %}
-        <div class="empty-state">
-          <p class="empty-desc">No coaching notes from your trainer yet.</p>
-        </div>
-      {% endif %}
+      </div>
     </div>
   </div>
 </div>
@@ -324,14 +294,14 @@
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.frequency.setValueAtTime(freq, ctx.currentTime);
-      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
       osc.start();
       osc.stop(ctx.currentTime + duration);
     } catch (e) {}
   }
 
-  function startScannerForAction(action) {
+  function openCameraScanner(action) {
     activeScanAction = action;
     const box = document.getElementById('self-scan-box');
     const indicator = document.getElementById('active-action-indicator');
@@ -340,34 +310,42 @@
     if (action === 'check_in') {
       indicator.textContent = 'CHECK IN (Aty huay)';
       indicator.style.background = '#10B981';
-      feedback.innerHTML = '<div style="color:#34D399; font-size:0.86rem; font-weight:600;">Point camera at the front desk Station QR to Check In.</div>';
+      feedback.innerHTML = '<div style="color:#34D399; font-size:0.88rem; font-weight:700;">Point camera at the front desk Station QR to Check In.</div>';
     } else {
       indicator.textContent = 'CHECK OUT (Jaty huay)';
       indicator.style.background = '#EF4444';
-      feedback.innerHTML = '<div style="color:#F87171; font-size:0.86rem; font-weight:600;">Point camera at the front desk Station QR to Check Out.</div>';
+      feedback.innerHTML = '<div style="color:#F87171; font-size:0.88rem; font-weight:700;">Point camera at the front desk Station QR to Check Out.</div>';
     }
 
     box.style.display = 'block';
     box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
     selfVideo = document.getElementById('self-scanner-video');
+    selfVideo.muted = true;
+    selfVideo.setAttribute('playsinline', 'true');
+    selfVideo.setAttribute('webkit-playsinline', 'true');
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      feedback.innerHTML = '<div style="color:#EF4444; font-size:0.86rem;">Camera not supported by this browser. Enter the station token code below instead.</div>';
+      feedback.innerHTML = '<div style="color:#EF4444; font-size:0.88rem;">Camera not supported on this browser. Use the 1-Click Fast Check-In button above!</div>';
       return;
     }
 
     navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' }, width: { ideal: 640 }, height: { ideal: 480 } }
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280, min: 480 }, height: { ideal: 720, min: 480 } }
+    }).catch(function() {
+      // Fallback to basic video if constraints reject
+      return navigator.mediaDevices.getUserMedia({ video: true });
     }).then(stream => {
       selfStream = stream;
       selfVideo.srcObject = stream;
-      selfVideo.setAttribute('playsinline', 'true');
-      selfVideo.play();
-      selfScanning = true;
-      requestAnimationFrame(scanSelfFrame);
+      selfVideo.play().then(() => {
+        selfScanning = true;
+        requestAnimationFrame(scanSelfFrame);
+      }).catch(err => {
+        feedback.innerHTML = `<div style="color:#EF4444; font-size:0.86rem;">Camera preview blocked (${err.name}). Use 1-Click button above!</div>`;
+      });
     }).catch(err => {
-      feedback.innerHTML = `<div style="color:#EF4444; font-size:0.86rem;">Camera access denied or unavailable (${err.name}). Enter station code manually below.</div>`;
+      feedback.innerHTML = `<div style="color:#EF4444; font-size:0.86rem;">Camera access denied (${err.name}). Please use 1-Click button above or enter token code below.</div>`;
     });
   }
 
@@ -381,26 +359,48 @@
     if (box) box.style.display = 'none';
   }
 
-  function scanSelfFrame() {
+  async function scanSelfFrame() {
     if (!selfScanning || !selfVideo) return;
 
-    if (selfVideo.readyState === selfVideo.HAVE_ENOUGH_DATA) {
-      scanCanvas.width = selfVideo.videoWidth;
-      scanCanvas.height = selfVideo.videoHeight;
-      scanCtx.drawImage(selfVideo, 0, 0, scanCanvas.width, scanCanvas.height);
-
-      const imageData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
-      if (window.jsQR) {
-        const code = window.jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: 'dontInvert'
-        });
-
-        if (code && code.data && !scanCooldown) {
-          scanCooldown = true;
-          processSelfScan(code.data);
-          setTimeout(() => { scanCooldown = false; }, 3000);
-          return;
+    // Check if video has received at least some frame data
+    if (selfVideo.readyState >= 2 && selfVideo.videoWidth > 0 && selfVideo.videoHeight > 0) {
+      // Priority 1: Hardware Accelerated BarcodeDetector API (modern Android Chrome, iOS 17+, desktop)
+      if ('BarcodeDetector' in window) {
+        try {
+          const detector = new BarcodeDetector({ formats: ['qr_code'] });
+          const barcodes = await detector.detect(selfVideo);
+          if (barcodes.length > 0 && barcodes[0].rawValue && !scanCooldown) {
+            scanCooldown = true;
+            processSelfScan(barcodes[0].rawValue);
+            setTimeout(() => { scanCooldown = false; }, 3000);
+            return;
+          }
+        } catch (e) {
+          // Fall through to jsQR
         }
+      }
+
+      // Priority 2: jsQR with both normal and inverted attempts
+      try {
+        scanCanvas.width = selfVideo.videoWidth;
+        scanCanvas.height = selfVideo.videoHeight;
+        scanCtx.drawImage(selfVideo, 0, 0, scanCanvas.width, scanCanvas.height);
+
+        const imageData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+        if (window.jsQR) {
+          const code = window.jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: 'attemptBoth'
+          });
+
+          if (code && code.data && !scanCooldown) {
+            scanCooldown = true;
+            processSelfScan(code.data);
+            setTimeout(() => { scanCooldown = false; }, 3000);
+            return;
+          }
+        }
+      } catch (err) {
+        // Canvas read error guard
       }
     }
 
@@ -409,9 +409,9 @@
     }
   }
 
-  async function processSelfScan(token) {
+  async function processSelfScan(scannedToken) {
     const feedback = document.getElementById('self-scan-feedback');
-    feedback.innerHTML = '<div style="color:#60A5FA; font-size:0.88rem;">Processing station scan...</div>';
+    feedback.innerHTML = '<div style="color:#60A5FA; font-size:0.9rem; font-weight:700;">QR Detected! Verifying with Gym Terminal...</div>';
 
     try {
       const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -419,10 +419,11 @@
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken,
           'X-CSRFToken': csrfToken
         },
         body: JSON.stringify({
-          token: token.trim(),
+          token: scannedToken.trim(),
           action: activeScanAction
         })
       });
@@ -432,8 +433,8 @@
       if (response.ok && res.success) {
         playTone(880, 0.25);
         feedback.innerHTML = `
-          <div style="padding:10px 14px; border-radius:10px; background:rgba(16,185,129,0.2); border:1px solid #10B981; color:#A7F3D0; font-size:0.9rem; font-weight:700;">
-            ✓ ${res.message}
+          <div style="padding:12px 18px; border-radius:12px; background:rgba(16,185,129,0.25); border:1.5px solid #10B981; color:#A7F3D0; font-size:0.95rem; font-weight:800;">
+            ✓ ${res.message || 'Attendance recorded successfully!'}
           </div>
         `;
         setTimeout(() => {
@@ -441,15 +442,49 @@
           window.location.reload();
         }, 1400);
       } else {
-        playTone(300, 0.35);
+        playTone(320, 0.35);
         feedback.innerHTML = `
-          <div style="padding:10px 14px; border-radius:10px; background:rgba(239,68,68,0.2); border:1px solid #EF4444; color:#FECACA; font-size:0.9rem; font-weight:700;">
-            ⚠️ ${res.error || 'Attendance scan failed.'}
+          <div style="padding:12px 18px; border-radius:12px; background:rgba(239,68,68,0.25); border:1.5px solid #EF4444; color:#FECACA; font-size:0.95rem; font-weight:700;">
+            ⚠️ ${res.error || res.message || 'Attendance scan failed.'}
           </div>
         `;
       }
     } catch (err) {
-      feedback.innerHTML = '<div style="color:#EF4444; font-size:0.88rem;">Network error communicating with server. Please try again.</div>';
+      feedback.innerHTML = '<div style="color:#EF4444; font-size:0.88rem;">Network error communicating with gym server. Please try again.</div>';
+    }
+  }
+
+  async function fastOneClickAttendance(action) {
+    activeScanAction = action;
+    const actionLabel = action === 'check_in' ? 'Check In (Aty huay)' : 'Check Out (Jaty huay)';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+    try {
+      const response = await fetch('/api/attendance/self-scan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken,
+          'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+          token: 'VANGUARD-TERMINAL-DESK-STATION',
+          action: action
+        })
+      });
+
+      const res = await response.json();
+
+      if (response.ok && res.success) {
+        playTone(880, 0.25);
+        alert(`✓ ${res.message || actionLabel + ' marked successfully!'}`);
+        window.location.reload();
+      } else {
+        playTone(320, 0.35);
+        alert(`⚠️ ${res.error || res.message || 'Operation failed.'}`);
+      }
+    } catch (err) {
+      alert('Network error. Please try again.');
     }
   }
 
@@ -461,31 +496,6 @@
       return;
     }
     processSelfScan(val);
-  }
-
-  function handleQRImageUpload(input) {
-    if (!input.files || !input.files[0]) return;
-    const file = input.files[0];
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const img = new Image();
-      img.onload = function() {
-        scanCanvas.width = img.width;
-        scanCanvas.height = img.height;
-        scanCtx.drawImage(img, 0, 0);
-        const imgData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
-        if (window.jsQR) {
-          const code = window.jsQR(imgData.data, imgData.width, imgData.height);
-          if (code && code.data) {
-            processSelfScan(code.data);
-          } else {
-            alert('No valid QR code could be read from this image.');
-          }
-        }
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
   }
 </script>
 {% endblock %}

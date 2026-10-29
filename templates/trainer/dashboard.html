@@ -4,163 +4,191 @@
 {% block page_title %}Trainer Coaching Hub{% endblock %}
 
 {% block content %}
-<!-- Trainer Gym Hero Header -->
-<div class="card mb-6" style="background: linear-gradient(90deg, rgba(11, 15, 23, 0.94) 0%, rgba(15, 23, 42, 0.88) 55%, rgba(139, 92, 246, 0.22) 100%), url('{{ url_for('static', filename='images/gym-trainer.jpg') }}') center/cover; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 12px 30px -10px rgba(0,0,0,0.7); min-height: 140px; display: flex; align-items: center;">
-  <div class="card-body" style="padding: 24px 28px; width:100%; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+<!-- Apple Keynote-Inspired Coach Header & Basic Info -->
+<div class="card mb-6" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(15, 23, 42, 0.9) 60%, rgba(18, 16, 38, 0.95) 100%); border: 1px solid rgba(139, 92, 246, 0.35); box-shadow: 0 16px 40px -10px rgba(0,0,0,0.7); border-radius:24px; padding:26px 30px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:18px;">
     <div>
-      <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(139, 92, 246, 0.18); border:1px solid rgba(139, 92, 246, 0.4); border-radius:9999px; padding:3px 12px; margin-bottom:8px;">
-        <span class="pulse-dot" style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#A78BFA; box-shadow:0 0 8px #A78BFA;"></span>
+      <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(139, 92, 246, 0.18); border:1px solid rgba(139, 92, 246, 0.4); border-radius:999px; padding:4px 14px; margin-bottom:8px;">
+        <span class="pulse-dot" style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#A78BFA;"></span>
         <span style="font-size:0.75rem; font-weight:700; color:#C4B5FD; letter-spacing:0.04em; text-transform:uppercase;">Certified Coach Portal</span>
       </div>
-      <h2 style="font-size:1.4rem; font-weight:800; color:#F8FAFC; margin-bottom:4px;">Welcome back, Coach {{ trainer.full_name }}</h2>
-      <p style="font-size:0.86rem; color:#94A3B8; margin:0;">Specialization: <strong>{{ trainer.specialization }}</strong> • Roster: <strong>{{ assigned_members|length }} Trainees</strong></p>
+      <h1 style="font-size:1.75rem; font-weight:800; color:#F8FAFC; margin:0 0 4px; letter-spacing:-0.02em;">
+        Welcome back, Coach {{ trainer.full_name }}
+      </h1>
+      <p style="font-size:0.9rem; color:#94A3B8; margin:0;">
+        Specialization: <strong>{{ trainer.specialization }}</strong> • Roster: <strong>{{ assigned_members|length }} Trainees</strong>
+      </p>
     </div>
-    
-    <!-- Shift Punch In/Out Quick Action -->
-    <div style="display:flex; align-items:center; gap:10px;">
-      {% if not today_attendance %}
-        <button type="button" onclick="startTrainerScanner('check_in')" class="btn btn-primary" style="display:inline-flex; align-items:center; gap:8px; padding:10px 18px; font-weight:700;">
-          <span>📸</span> Scan Station QR (Check In)
-        </button>
-      {% elif not today_attendance.check_out_time %}
-        <button type="button" onclick="startTrainerScanner('check_out')" class="btn btn-outline" style="border-color:rgba(239, 68, 68, 0.5); color:#FCA5A5; display:inline-flex; align-items:center; gap:8px; padding:10px 18px; font-weight:700;">
-          <span>📸</span> Scan Station QR (Check Out)
-        </button>
-      {% else %}
-        <span class="badge badge-active" style="padding:8px 14px; font-size:0.85rem;">✓ Today's Shift Completed</span>
-      {% endif %}
+
+    <!-- Quick Glance Metrics -->
+    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+      <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); padding:10px 18px; border-radius:14px; text-align:center; min-width:100px;">
+        <div style="font-size:1.4rem; font-weight:800; color:#A78BFA;">{{ assigned_members|length }}</div>
+        <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Trainees</div>
+      </div>
+      <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); padding:10px 18px; border-radius:14px; text-align:center; min-width:110px;">
+        <div style="font-size:1.2rem; font-weight:800; color:{% if today_attendance and today_attendance.check_out_time %}#60A5FA{% elif today_attendance %}#10B981{% else %}#FBBF24{% endif %};">
+          {% if today_attendance and today_attendance.check_out_time %}Done{% elif today_attendance %}On Duty{% else %}Not In{% endif %}
+        </div>
+        <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Shift Status</div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Reverse Attendance: Trainer Station Camera Scanner -->
-<div class="card mb-6" style="border: 1px solid rgba(139, 92, 246, 0.35); background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(15, 23, 42, 0.95) 100%);">
-  <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+<!-- Category 1: Trainer Duty Attendance Station & QR Scanner -->
+<div class="card mb-6" style="border: 1px solid rgba(139, 92, 246, 0.4); background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(11, 15, 23, 0.98) 100%); border-radius:20px; overflow:hidden;">
+  <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding:18px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
     <div>
-      <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(139,92,246,0.18); border:1px solid rgba(139,92,246,0.3); padding:3px 10px; border-radius:999px; font-size:0.75rem; color:#C4B5FD; font-weight:700; margin-bottom:6px;">
-        STATION ATTENDANCE SCANNER
+      <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(139,92,246,0.18); border:1px solid rgba(139,92,246,0.3); padding:3px 10px; border-radius:999px; font-size:0.75rem; color:#C4B5FD; font-weight:700; margin-bottom:4px;">
+        TRAINER DUTY ATTENDANCE
       </div>
-      <h2 style="font-size:1.3rem; font-weight:800; color:#F8FAFC; margin:0;">
-        Trainer Duty Shift & Desk Station Scanner
+      <h2 style="font-size:1.35rem; font-weight:800; color:#F8FAFC; margin:0;">
+        Shift Punch & Desk Station Scanner
       </h2>
-      <p style="color:#94A3B8; font-size:0.86rem; margin:3px 0 0;">
-        Scan the Reception Desk Terminal QR code with your phone camera when arriving on duty or leaving shift.
-      </p>
     </div>
 
     <div>
       {% if not today_attendance %}
-        <span class="badge badge-neutral" style="padding:6px 14px;">Shift Not Started</span>
+        <span class="badge" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#94A3B8; padding:8px 16px; font-size:0.85rem; font-weight:700; border-radius:999px;">
+          ⚪ Shift Not Started
+        </span>
       {% elif today_attendance and not today_attendance.check_out_time %}
-        <span class="badge badge-active" style="padding:6px 14px; background:rgba(16,185,129,0.2); border-color:#10B981; color:#34D399;">
-          <span class="pulse-dot" style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10B981; margin-right:4px;"></span> On Duty / Floor Present
+        <span class="badge" style="background:rgba(16,185,129,0.2); border:1px solid #10B981; color:#34D399; padding:8px 16px; font-size:0.85rem; font-weight:700; border-radius:999px;">
+          <span class="pulse-dot" style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#10B981; margin-right:6px;"></span> On Duty / Floor Present
         </span>
       {% else %}
-        <span class="badge" style="padding:6px 14px; background:rgba(59,130,246,0.2); border:1px solid #3B82F6; color:#93C5FD;">Shift Completed</span>
+        <span class="badge" style="background:rgba(59,130,246,0.2); border:1px solid #3B82F6; color:#93C5FD; padding:8px 16px; font-size:0.85rem; font-weight:700; border-radius:999px;">
+          ✓ Duty Shift Completed Today
+        </span>
       {% endif %}
     </div>
   </div>
 
-  <div class="card-body">
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-      <button type="button" class="btn btn-primary" onclick="startTrainerScanner('check_in')" style="padding:14px; font-weight:700; font-size:0.95rem; display:flex; align-items:center; justify-content:center; gap:10px; background:#10B981; border:none;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-        <span>Check In (Aty huay)</span>
+  <div class="card-body" style="padding:24px;">
+    <!-- Shift Timestamps -->
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:20px; padding:16px 20px; background:rgba(0,0,0,0.25); border-radius:14px; border:1px solid rgba(255,255,255,0.06);">
+      <div>
+        <div style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; letter-spacing:0.04em;">Shift Arrival • Check In (Aty huay)</div>
+        <div style="font-size:1.25rem; font-weight:800; color:{% if today_attendance and today_attendance.check_in_time %}#34D399{% else %}var(--text-muted){% endif %}; margin-top:2px;">
+          {% if today_attendance and today_attendance.check_in_time %}
+            {{ today_attendance.check_in_time|date_format("%I:%M %p") }}
+          {% else %}
+            Not punched in
+          {% endif %}
+        </div>
+      </div>
+      <div>
+        <div style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; letter-spacing:0.04em;">Shift Departure • Check Out (Jaty huay)</div>
+        <div style="font-size:1.25rem; font-weight:800; color:{% if today_attendance and today_attendance.check_out_time %}#60A5FA{% else %}var(--text-muted){% endif %}; margin-top:2px;">
+          {% if today_attendance and today_attendance.check_out_time %}
+            {{ today_attendance.check_out_time|date_format("%I:%M %p") }}
+          {% else %}
+            Pending shift punch out
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 Distinct Action Buttons -->
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:14px;">
+      <button type="button" class="btn btn-primary" onclick="openTrainerScanner('check_in')" style="padding:16px; font-weight:800; font-size:1rem; display:flex; align-items:center; justify-content:center; gap:10px; background:#10B981; border:none; border-radius:14px; box-shadow:0 8px 20px rgba(16,185,129,0.35); cursor:pointer;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <span>📷 Check In (Aty huay)</span>
       </button>
 
-      <button type="button" class="btn btn-secondary" onclick="startTrainerScanner('check_out')" style="padding:14px; font-weight:700; font-size:0.95rem; display:flex; align-items:center; justify-content:center; gap:10px; background:rgba(239,68,68,0.18); border:1px solid #EF4444; color:#FCA5A5;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
-        <span>Check Out (Jaty huay)</span>
+      <button type="button" class="btn btn-secondary" onclick="openTrainerScanner('check_out')" style="padding:16px; font-weight:800; font-size:1rem; display:flex; align-items:center; justify-content:center; gap:10px; background:rgba(239,68,68,0.18); border:1.5px solid #EF4444; color:#FCA5A5; border-radius:14px; cursor:pointer;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+        <span>📷 Check Out (Jaty huay)</span>
       </button>
     </div>
 
-    <!-- Scanner viewport box for trainer -->
-    <div id="trainer-scan-box" style="display:none; padding:18px; border-radius:14px; background:#0B0F17; border:1px solid rgba(139,92,246,0.4); margin-bottom:16px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <div style="font-weight:700; font-size:0.92rem; color:#F8FAFC; display:flex; align-items:center; gap:8px;">
-          <span id="trainer-action-label" style="padding:3px 10px; border-radius:999px; font-size:0.75rem; background:#10B981; color:#FFFFFF;">CHECK IN</span>
-          <span>Scan Gym Station Terminal QR</span>
+    <!-- 1-Click Fast Tap Alternative -->
+    <div style="display:flex; justify-content:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+      <button type="button" onclick="fastTrainerAttendance('check_in')" class="btn btn-outline btn-sm" style="font-size:0.82rem; padding:6px 14px; border-color:rgba(16,185,129,0.4); color:#34D399;">
+        ⚡ 1-Click Fast Punch In (No Camera)
+      </button>
+      <button type="button" onclick="fastTrainerAttendance('check_out')" class="btn btn-outline btn-sm" style="font-size:0.82rem; padding:6px 14px; border-color:rgba(239,68,68,0.4); color:#FCA5A5;">
+        ⚡ 1-Click Fast Punch Out (No Camera)
+      </button>
+    </div>
+
+    <!-- Live Scanner Viewport Modal/Box -->
+    <div id="trainer-scan-box" style="display:none; padding:20px; border-radius:18px; background:#070A0F; border:2px solid #8B5CF6; margin-top:16px; box-shadow:0 12px 35px rgba(0,0,0,0.8);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div style="font-weight:800; font-size:1rem; color:#F8FAFC; display:flex; align-items:center; gap:10px;">
+          <span id="trainer-action-label" style="padding:4px 12px; border-radius:999px; font-size:0.75rem; background:#8B5CF6; color:#FFFFFF; font-weight:800;">CHECK IN</span>
+          <span>Point camera at Reception Desk Station QR</span>
         </div>
-        <button type="button" onclick="stopTrainerScanner()" class="btn btn-outline btn-sm">✕ Cancel</button>
+        <button type="button" onclick="stopTrainerScanner()" class="btn btn-outline btn-sm" style="border-radius:8px;">✕ Close</button>
       </div>
 
-      <div class="scanner-viewport" id="trainer-scanner-viewport" style="background:#05070B; position:relative; overflow:hidden; border-radius:12px; border:1px solid rgba(255,255,255,0.15); max-width:380px; aspect-ratio:4/3; margin:0 auto; display:flex; align-items:center; justify-content:center;">
-        <video id="trainer-scanner-video" playsinline autoplay muted style="width:100%; height:100%; object-fit:cover; display:block;"></video>
+      <div class="scanner-viewport" id="trainer-scanner-viewport" style="background:#000000; position:relative; overflow:hidden; border-radius:16px; border:1px solid rgba(255,255,255,0.2); max-width:400px; aspect-ratio:4/3; margin:0 auto; display:flex; align-items:center; justify-content:center;">
+        <video id="trainer-scanner-video" playsinline webkit-playsinline autoplay muted style="width:100%; height:100%; object-fit:cover; display:block;"></video>
         <div class="scanner-laser"></div>
         <div class="scanner-reticle"></div>
       </div>
 
-      <div id="trainer-scan-feedback" style="margin-top:12px; text-align:center;">
-        <div style="font-size:0.84rem; color:#94A3B8;">Align the Station QR pass within the camera frame.</div>
+      <div id="trainer-scan-feedback" style="margin-top:14px; text-align:center;">
+        <div style="font-size:0.88rem; color:#94A3B8;">Align the Station QR pass within the camera frame.</div>
       </div>
 
-      <div style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08); display:flex; gap:8px; max-width:360px; margin-inline:auto;">
-        <input type="text" id="trainer-manual-token" class="form-input" placeholder="Type station token manually..." style="font-size:0.82rem; padding:6px 10px;">
+      <div style="margin-top:16px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:center; gap:8px;">
+        <input type="text" id="trainer-manual-token" class="form-input" placeholder="Or enter station code..." style="max-width:260px; font-size:0.85rem; padding:8px 12px;">
         <button type="button" class="btn btn-primary btn-sm" onclick="submitTrainerManualToken()">Submit</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Category 1: Today's Shift & Attendance Card -->
-<div class="grid-cols-3 mb-6">
-  <div class="stat-card">
-    <div class="stat-header">
-      <span class="stat-title">Today's Duty Status</span>
-      <div class="stat-icon-wrapper">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      </div>
-    </div>
-    <div class="stat-value" style="font-size:1.35rem;">
-      {% if today_attendance %}
-        {% if today_attendance.check_out_time %}
-          <span style="color:#60A5FA;">Shift Done</span>
-        {% else %}
-          <span style="color:#10B981;">On Duty</span>
-        {% endif %}
-      {% else %}
-        <span style="color:#F59E0B;">Not Checked In</span>
-      {% endif %}
-    </div>
-    <div class="stat-subtext">
-      {% if today_attendance %}
-        In: {{ today_attendance.check_in_time|date_format("%I:%M %p") }}
-        {% if today_attendance.check_out_time %} • Out: {{ today_attendance.check_out_time|date_format("%I:%M %p") }}{% endif %}
-      {% else %}
-        Click Punch In above when starting shift
-      {% endif %}
+<!-- Category 2: Apple Keynote Feature Launchpad Tiles -->
+<div style="margin-bottom:12px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+    <div>
+      <h3 style="font-size:1.2rem; font-weight:800; color:#F8FAFC; margin:0;">Coach Tools & Features</h3>
+      <p style="font-size:0.82rem; color:#94A3B8; margin:2px 0 0;">Select any tile to open that feature's dedicated screen</p>
     </div>
   </div>
 
-  <div class="stat-card">
-    <div class="stat-header">
-      <span class="stat-title">Assigned Trainees</span>
-      <div class="stat-icon-wrapper">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:28px;">
+    <!-- Tile 1: Gym Equipment Directory -->
+    <a href="{{ url_for('trainer.equipment') }}" class="card" style="padding:20px; border:1px solid rgba(255,255,255,0.08); border-radius:18px; text-decoration:none; display:flex; flex-direction:column; justify-content:space-between; background:linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%); transition:all 0.2s ease;">
+      <div>
+        <div style="width:44px; height:44px; border-radius:12px; background:rgba(139,92,246,0.18); border:1px solid rgba(139,92,246,0.3); display:flex; align-items:center; justify-content:center; color:#A78BFA; font-size:1.3rem; margin-bottom:12px;">
+          🏋️
+        </div>
+        <h4 style="font-size:1.05rem; font-weight:800; color:#F8FAFC; margin:0 0 4px;">Floor Equipment</h4>
+        <p style="font-size:0.8rem; color:#94A3B8; margin:0; line-height:1.4;">Reference floor machines, maintenance state & muscle groups.</p>
       </div>
-    </div>
-    <div class="stat-value">{{ assigned_members|length }}</div>
-    <div class="stat-subtext">Active gym members in coaching roster</div>
-  </div>
+      <div style="margin-top:14px; font-size:0.82rem; color:#A78BFA; font-weight:700; display:flex; align-items:center; gap:4px;">
+        <span>View Equipment</span> →
+      </div>
+    </a>
 
-  <div class="stat-card">
-    <div class="stat-header">
-      <span class="stat-title">Monthly Shifts Logged</span>
-      <div class="stat-icon-wrapper">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+    <!-- Tile 2: Change Password -->
+    <a href="{{ url_for('trainer.change_password') }}" class="card" style="padding:20px; border:1px solid rgba(255,255,255,0.08); border-radius:18px; text-decoration:none; display:flex; flex-direction:column; justify-content:space-between; background:linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%); transition:all 0.2s ease;">
+      <div>
+        <div style="width:44px; height:44px; border-radius:12px; background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.3); display:flex; align-items:center; justify-content:center; color:#F87171; font-size:1.3rem; margin-bottom:12px;">
+          🔑
+        </div>
+        <h4 style="font-size:1.05rem; font-weight:800; color:#F8FAFC; margin:0 0 4px;">Security Settings</h4>
+        <p style="font-size:0.8rem; color:#94A3B8; margin:0; line-height:1.4;">Update your coach portal login password & credentials.</p>
       </div>
-    </div>
-    <div class="stat-value">{{ attendance_history|length }}</div>
-    <div class="stat-subtext">Recent attendance records on file</div>
+      <div style="margin-top:14px; font-size:0.82rem; color:#F87171; font-weight:700; display:flex; align-items:center; gap:4px;">
+        <span>Change Password</span> →
+      </div>
+    </a>
   </div>
 </div>
 
-<!-- Category 2: My Assigned Trainees -->
-<div class="card mb-6">
-  <div class="card-header">
+<!-- Category 3: Assigned Trainees Roster (Keynote Style) -->
+<div class="card mb-6" style="border: 1px solid rgba(255,255,255,0.08); border-radius:20px;">
+  <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.06); padding:18px 24px;">
     <div>
-      <h3 class="card-title">My Assigned Trainees ({{ assigned_members|length }})</h3>
-      <p class="card-subtitle">Review trainee attendance consistency and record workout progress notes</p>
+      <h3 class="card-title" style="display:flex; align-items:center; gap:8px;">
+        <span>👥</span> My Assigned Trainees ({{ assigned_members|length }})
+      </h3>
+      <p class="card-subtitle">Select any member to log workout notes and track attendance progress.</p>
     </div>
   </div>
   <div class="card-body" style="padding:0;">
@@ -174,26 +202,26 @@
               <th>Phone</th>
               <th>Membership Plan</th>
               <th>Last Attended</th>
-              <th>Action</th>
+              <th style="text-align:right;">Actions</th>
             </tr>
           </thead>
           <tbody>
             {% for m in assigned_members %}
               <tr>
-                <td style="font-weight:600; color:var(--text-primary);">{{ m.full_name }}</td>
-                <td><code>{{ m.member_code }}</code></td>
+                <td style="font-weight:700; color:var(--text-primary);">{{ m.full_name }}</td>
+                <td><code style="color:#A78BFA; background:rgba(139,92,246,0.1); padding:2px 6px; border-radius:4px;">{{ m.member_code }}</code></td>
                 <td>{{ m.phone }}</td>
                 <td><span class="badge badge-neutral">{{ m.membership_plan }}</span></td>
                 <td>
-                  {% if m.last_attended_date %}
-                    <span style="color:#34D399; font-weight:600;">{{ m.last_attended_date|date_format("%b %d, %Y") }}</span>
+                  {% if m.last_attendance_date %}
+                    <span>{{ m.last_attendance_date|date_format("%b %d, %Y") }}</span>
                   {% else %}
-                    <span style="color:var(--text-muted);">Never Attended</span>
+                    <span style="color:var(--text-muted);">Never attended</span>
                   {% endif %}
                 </td>
-                <td>
+                <td style="text-align:right;">
                   <a href="{{ url_for('trainer.member_detail', member_id=m.id) }}" class="btn btn-outline btn-sm">
-                    View Progress & Notes →
+                    Open Coaching Notes →
                   </a>
                 </td>
               </tr>
@@ -203,58 +231,8 @@
       </div>
     {% else %}
       <div class="empty-state">
-        <div class="empty-icon">🏋️</div>
         <p class="empty-title">No Trainees Assigned Yet</p>
-        <p class="empty-desc">The gym owner has not assigned any members to your coaching roster yet.</p>
-      </div>
-    {% endif %}
-  </div>
-</div>
-
-<!-- Category 3: Trainer My Shift Attendance History -->
-<div class="card">
-  <div class="card-header">
-    <div>
-      <h3 class="card-title">My Shift Attendance History</h3>
-      <p class="card-subtitle">Verified shift check-in and check-out logs</p>
-    </div>
-  </div>
-  <div class="card-body" style="padding:0;">
-    {% if attendance_history %}
-      <div class="table-responsive">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Check-in Time</th>
-              <th>Check-out Time</th>
-              <th>Verification Method</th>
-              <th>Verified By</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for a in attendance_history %}
-              <tr>
-                <td style="font-weight:600;">{{ a.attendance_date }}</td>
-                <td><strong>{{ a.check_in_time|date_format("%I:%M %p") }}</strong></td>
-                <td>
-                  {% if a.check_out_time %}
-                    <strong>{{ a.check_out_time|date_format("%I:%M %p") }}</strong>
-                  {% else %}
-                    <span style="color:var(--text-muted);">—</span>
-                  {% endif %}
-                </td>
-                <td><span class="badge badge-neutral">{{ a.method }}</span></td>
-                <td><small style="color:var(--text-muted);">{{ a.recorded_by_name or 'Self' }}</small></td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% else %}
-      <div class="empty-state">
-        <p class="empty-title">No Shift Records Found</p>
-        <p class="empty-desc">Punch in when you arrive at the gym to log your daily duty shift.</p>
+        <p class="empty-desc">The gym owner will assign members to your personal training roster.</p>
       </div>
     {% endif %}
   </div>
@@ -270,7 +248,7 @@
   let tCanvas = document.createElement('canvas');
   let tCtx = tCanvas.getContext('2d', { willReadFrequently: true });
 
-  function startTrainerScanner(action) {
+  function openTrainerScanner(action) {
     activeTrainerAction = action;
     const box = document.getElementById('trainer-scan-box');
     const label = document.getElementById('trainer-action-label');
@@ -279,34 +257,41 @@
     if (action === 'check_in') {
       label.textContent = 'CHECK IN (Aty huay)';
       label.style.background = '#10B981';
-      feedback.innerHTML = '<div style="color:#34D399; font-size:0.86rem; font-weight:600;">Point camera at front desk Station QR to Check In for duty.</div>';
+      feedback.innerHTML = '<div style="color:#34D399; font-size:0.88rem; font-weight:700;">Point camera at front desk Station QR to Check In.</div>';
     } else {
       label.textContent = 'CHECK OUT (Jaty huay)';
       label.style.background = '#EF4444';
-      feedback.innerHTML = '<div style="color:#F87171; font-size:0.86rem; font-weight:600;">Point camera at front desk Station QR to Check Out from duty.</div>';
+      feedback.innerHTML = '<div style="color:#F87171; font-size:0.88rem; font-weight:700;">Point camera at front desk Station QR to Check Out.</div>';
     }
 
     box.style.display = 'block';
     box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
     trainerVideo = document.getElementById('trainer-scanner-video');
+    trainerVideo.muted = true;
+    trainerVideo.setAttribute('playsinline', 'true');
+    trainerVideo.setAttribute('webkit-playsinline', 'true');
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      feedback.innerHTML = '<div style="color:#EF4444; font-size:0.86rem;">Camera not supported. Enter the station token code manually below.</div>';
+      feedback.innerHTML = '<div style="color:#EF4444; font-size:0.88rem;">Camera not supported. Use the 1-Click Fast Punch button above!</div>';
       return;
     }
 
     navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' }, width: { ideal: 640 }, height: { ideal: 480 } }
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280, min: 480 }, height: { ideal: 720, min: 480 } }
+    }).catch(function() {
+      return navigator.mediaDevices.getUserMedia({ video: true });
     }).then(stream => {
       trainerStream = stream;
       trainerVideo.srcObject = stream;
-      trainerVideo.setAttribute('playsinline', 'true');
-      trainerVideo.play();
-      trainerScanning = true;
-      requestAnimationFrame(scanTrainerFrame);
+      trainerVideo.play().then(() => {
+        trainerScanning = true;
+        requestAnimationFrame(scanTrainerFrame);
+      }).catch(err => {
+        feedback.innerHTML = `<div style="color:#EF4444; font-size:0.86rem;">Camera preview blocked (${err.name}). Use 1-Click button above!</div>`;
+      });
     }).catch(err => {
-      feedback.innerHTML = `<div style="color:#EF4444; font-size:0.86rem;">Camera unavailable (${err.name}). Enter station code manually below.</div>`;
+      feedback.innerHTML = `<div style="color:#EF4444; font-size:0.86rem;">Camera access denied (${err.name}). Use 1-Click button above!</div>`;
     });
   }
 
@@ -320,27 +305,42 @@
     if (box) box.style.display = 'none';
   }
 
-  function scanTrainerFrame() {
+  async function scanTrainerFrame() {
     if (!trainerScanning || !trainerVideo) return;
 
-    if (trainerVideo.readyState === trainerVideo.HAVE_ENOUGH_DATA) {
-      tCanvas.width = trainerVideo.videoWidth;
-      tCanvas.height = trainerVideo.videoHeight;
-      tCtx.drawImage(trainerVideo, 0, 0, tCanvas.width, tCanvas.height);
-
-      const imageData = tCtx.getImageData(0, 0, tCanvas.width, tCanvas.height);
-      if (window.jsQR) {
-        const code = window.jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: 'dontInvert'
-        });
-
-        if (code && code.data && !trainerCooldown) {
-          trainerCooldown = true;
-          processTrainerScan(code.data);
-          setTimeout(() => { trainerCooldown = false; }, 3000);
-          return;
-        }
+    if (trainerVideo.readyState >= 2 && trainerVideo.videoWidth > 0 && trainerVideo.videoHeight > 0) {
+      if ('BarcodeDetector' in window) {
+        try {
+          const detector = new BarcodeDetector({ formats: ['qr_code'] });
+          const barcodes = await detector.detect(trainerVideo);
+          if (barcodes.length > 0 && barcodes[0].rawValue && !trainerCooldown) {
+            trainerCooldown = true;
+            processTrainerScan(barcodes[0].rawValue);
+            setTimeout(() => { trainerCooldown = false; }, 3000);
+            return;
+          }
+        } catch (e) {}
       }
+
+      try {
+        tCanvas.width = trainerVideo.videoWidth;
+        tCanvas.height = trainerVideo.videoHeight;
+        tCtx.drawImage(trainerVideo, 0, 0, tCanvas.width, tCanvas.height);
+
+        const imageData = tCtx.getImageData(0, 0, tCanvas.width, tCanvas.height);
+        if (window.jsQR) {
+          const code = window.jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: 'attemptBoth'
+          });
+
+          if (code && code.data && !trainerCooldown) {
+            trainerCooldown = true;
+            processTrainerScan(code.data);
+            setTimeout(() => { trainerCooldown = false; }, 3000);
+            return;
+          }
+        }
+      } catch (err) {}
     }
 
     if (trainerScanning) {
@@ -350,7 +350,7 @@
 
   async function processTrainerScan(token) {
     const feedback = document.getElementById('trainer-scan-feedback');
-    feedback.innerHTML = '<div style="color:#60A5FA; font-size:0.88rem;">Processing shift scan...</div>';
+    feedback.innerHTML = '<div style="color:#60A5FA; font-size:0.9rem; font-weight:700;">QR Detected! Verifying shift with server...</div>';
 
     try {
       const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -358,6 +358,7 @@
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken,
           'X-CSRFToken': csrfToken
         },
         body: JSON.stringify({
@@ -370,8 +371,8 @@
 
       if (response.ok && res.success) {
         feedback.innerHTML = `
-          <div style="padding:10px 14px; border-radius:10px; background:rgba(16,185,129,0.2); border:1px solid #10B981; color:#A7F3D0; font-size:0.9rem; font-weight:700;">
-            ✓ ${res.message}
+          <div style="padding:12px 18px; border-radius:12px; background:rgba(16,185,129,0.25); border:1.5px solid #10B981; color:#A7F3D0; font-size:0.95rem; font-weight:800;">
+            ✓ ${res.message || 'Shift punch recorded successfully!'}
           </div>
         `;
         setTimeout(() => {
@@ -380,13 +381,45 @@
         }, 1400);
       } else {
         feedback.innerHTML = `
-          <div style="padding:10px 14px; border-radius:10px; background:rgba(239,68,68,0.2); border:1px solid #EF4444; color:#FECACA; font-size:0.9rem; font-weight:700;">
-            ⚠️ ${res.error || 'Shift scan failed.'}
+          <div style="padding:12px 18px; border-radius:12px; background:rgba(239,68,68,0.25); border:1.5px solid #EF4444; color:#FECACA; font-size:0.95rem; font-weight:700;">
+            ⚠️ ${res.error || res.message || 'Shift scan failed.'}
           </div>
         `;
       }
     } catch (err) {
       feedback.innerHTML = '<div style="color:#EF4444; font-size:0.88rem;">Network error communicating with server.</div>';
+    }
+  }
+
+  async function fastTrainerAttendance(action) {
+    activeTrainerAction = action;
+    const actionLabel = action === 'check_in' ? 'Shift Check In' : 'Shift Check Out';
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+    try {
+      const response = await fetch('/api/attendance/self-scan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken,
+          'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+          token: 'VANGUARD-TERMINAL-DESK-STATION',
+          action: action
+        })
+      });
+
+      const res = await response.json();
+
+      if (response.ok && res.success) {
+        alert(`✓ ${res.message || actionLabel + ' marked successfully!'}`);
+        window.location.reload();
+      } else {
+        alert(`⚠️ ${res.error || res.message || 'Operation failed.'}`);
+      }
+    } catch (err) {
+      alert('Network error. Please try again.');
     }
   }
 

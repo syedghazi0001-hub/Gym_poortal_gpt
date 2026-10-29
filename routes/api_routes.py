@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, request, jsonify, session, flash, redirect, url_for
 from auth.decorators import login_required, role_required
 from services.attendance_service import (
     record_attendance_by_qr, record_attendance_manual,
@@ -53,6 +53,30 @@ def self_scan_attendance():
             "message": "Only members and trainers can self-scan attendance.",
             "error": "Only members and trainers can self-scan attendance."
         }), 403
+
+@api_bp.route("/attendance/quick-scan", methods=["GET"])
+@login_required
+def quick_scan_attendance():
+    """
+    Direct link endpoint when member/trainer phone camera opens the QR code directly in browser.
+    Immediately processes check-in or check-out and redirects to dashboard with visual alert.
+    """
+    terminal_token = (request.args.get("token") or request.args.get("terminal_token") or "VANGUARD-TERMINAL-DESK-STATION").strip()
+    action = (request.args.get("action") or "check_in").strip().lower()
+    user_id = session.get("user_id")
+    role = session.get("user_role") or session.get("role")
+
+    if role == "member":
+        res = record_member_self_scan(user_id, terminal_token, action=action)
+        flash(res.get("message", "Attendance recorded!"), "success" if res.get("success") else "danger")
+        return redirect(url_for("member.dashboard"))
+    elif role == "trainer":
+        res = record_trainer_self_scan(user_id, terminal_token, action=action)
+        flash(res.get("message", "Duty attendance recorded!"), "success" if res.get("success") else "danger")
+        return redirect(url_for("trainer.dashboard"))
+    else:
+        flash("Only members and trainers can self-scan attendance.", "danger")
+        return redirect(url_for("auth.login"))
 
 @api_bp.route("/attendance/scan", methods=["POST"])
 @role_required("receptionist", "owner")

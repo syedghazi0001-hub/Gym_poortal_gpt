@@ -368,3 +368,48 @@ def test_equipment_and_trainers_views_accessible(client):
     assert res_tr.status_code == 200
     assert b"Certified Gym Trainers" in res_tr.data or b"Meet Our Certified" in res_tr.data
 
+def test_quick_scan_attendance_direct_url(client):
+    """Verify quick-scan direct link works for camera-less or external QR app flow."""
+    unique_user = f"direct_scan_{uuid.uuid4().hex[:6]}"
+    unique_phone = f"0355{uuid.uuid4().int % 10000000:07d}"
+
+    from services.member_service import create_member
+    from datetime import date, timedelta
+    today = date.today()
+    m = create_member(
+        full_name="Direct Scan Tester",
+        phone=unique_phone,
+        start_date=today,
+        end_date=today + timedelta(days=30),
+        monthly_fee=5000,
+        username=unique_user,
+        password="Password123!",
+        email=f"{unique_user}@test.com"
+    )
+
+    with client.session_transaction() as sess:
+        sess["user_id"] = m["user_id"]
+        sess["username"] = unique_user
+        sess["user_role"] = "member"
+
+    # 1. Quick Scan Check In via direct GET URL
+    res_in = client.get("/api/attendance/quick-scan?action=check_in&token=VANGUARD-TERMINAL-DESK-STATION", follow_redirects=True)
+    assert res_in.status_code == 200
+    assert b"Check-in recorded" in res_in.data or b"Checked in successfully" in res_in.data or b"recorded" in res_in.data
+
+    # 2. Duplicate Quick Scan Check In -> Expect error message
+    res_dup = client.get("/api/attendance/quick-scan?action=check_in&token=VANGUARD-TERMINAL-DESK-STATION", follow_redirects=True)
+    assert res_dup.status_code == 200
+    assert b"already checked in today" in res_dup.data.lower()
+
+    # 3. Quick Scan Check Out via direct GET URL
+    res_out = client.get("/api/attendance/quick-scan?action=check_out&token=VANGUARD-TERMINAL-DESK-STATION", follow_redirects=True)
+    assert res_out.status_code == 200
+    assert b"Check-out recorded" in res_out.data or b"Checked out successfully" in res_out.data or b"recorded" in res_out.data
+
+    # 4. Duplicate Quick Scan Check Out -> Expect error message
+    res_dup_out = client.get("/api/attendance/quick-scan?action=check_out&token=VANGUARD-TERMINAL-DESK-STATION", follow_redirects=True)
+    assert res_dup_out.status_code == 200
+    assert b"already checked out today" in res_dup_out.data.lower()
+
+

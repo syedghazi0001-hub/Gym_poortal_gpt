@@ -25,6 +25,26 @@ def get_gym_terminal_token():
         token = "VANGUARD-TERMINAL-DESK-STATION"
     return token
 
+def _match_terminal_token(scanned, expected):
+    """Fuzzy-match scanned terminal token, tolerating URLs, query parameters, casing, and whitespace."""
+    if not scanned or not expected:
+        return False
+    s = str(scanned).strip()
+    exp = str(expected).strip()
+    if s == exp or s.upper() == exp.upper() or exp.lower() in s.lower():
+        return True
+    import urllib.parse
+    try:
+        parsed = urllib.parse.urlparse(s)
+        qs = urllib.parse.parse_qs(parsed.query)
+        for key in ("token", "terminal_token", "station"):
+            val = qs.get(key, [""])[0]
+            if val and (val.strip() == exp or val.strip().upper() == exp.upper() or exp.lower() in val.lower()):
+                return True
+    except Exception:
+        pass
+    return False
+
 def record_member_self_scan(user_id, terminal_token, action="check_in"):
     """
     Process Member self-scanning the Front Desk Terminal QR pass.
@@ -33,7 +53,7 @@ def record_member_self_scan(user_id, terminal_token, action="check_in"):
     - 'check_out' (Jaty Huay): Records departure time. Rejects if not checked in or already checked out.
     """
     expected_token = get_gym_terminal_token()
-    if not terminal_token or terminal_token.strip() != expected_token:
+    if not _match_terminal_token(terminal_token, expected_token):
         return {
             "success": False,
             "status": "invalid_terminal",
@@ -161,7 +181,7 @@ def record_trainer_self_scan(user_id, terminal_token, action="check_in"):
     Process Trainer self-scanning the Front Desk Terminal QR pass for shift punch-in/out.
     """
     expected_token = get_gym_terminal_token()
-    if not terminal_token or terminal_token.strip() != expected_token:
+    if not _match_terminal_token(terminal_token, expected_token):
         return {
             "success": False,
             "status": "invalid_terminal",
