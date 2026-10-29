@@ -20,11 +20,11 @@
   </div>
 {% endif %}
 
-<!-- Executive Header: Pictorial Athletic Brand Banner -->
-<div class="card mb-4" style="background: linear-gradient(135deg, rgba(9, 13, 20, 0.92) 0%, rgba(15, 23, 42, 0.88) 55%, rgba(16, 185, 129, 0.25) 100%), url('{{ url_for('static', filename='images/gym-hero.jpg') }}') center/cover; border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 18px; padding: 20px 24px; box-shadow: 0 12px 32px -8px rgba(0,0,0,0.7);">
+<!-- Executive Header: Gym OS Brand Command Center -->
+<div class="card mb-4" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(9, 13, 20, 0.98) 55%, rgba(16, 185, 129, 0.15) 100%); border: 1.5px solid rgba(16, 185, 129, 0.4); border-radius: 18px; padding: 22px 26px; box-shadow: 0 12px 32px -8px rgba(0,0,0,0.7);">
   <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
     <div style="display:flex; align-items:center; gap:14px;">
-      <div style="width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg, #10B981, #059669); border:1.5px solid rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; color:#FFFFFF; font-size:1.4rem; box-shadow:0 4px 14px rgba(16,185,129,0.45);">
+      <div style="width:50px; height:50px; border-radius:14px; background:linear-gradient(135deg, #10B981, #059669); border:1.5px solid rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; color:#FFFFFF; font-size:1.4rem; box-shadow:0 4px 14px rgba(16,185,129,0.45);">
         ⚡
       </div>
       <div>
@@ -32,7 +32,7 @@
           <span class="pulse-dot" style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10B981;"></span>
           LIVE COMMAND • {{ settings.timezone }}
         </div>
-        <h1 style="font-size: 1.55rem; font-weight: 800; color: #F8FAFC; margin: 2px 0 0; letter-spacing: -0.01em; text-shadow:0 2px 4px rgba(0,0,0,0.5);">
+        <h1 style="font-size: 1.55rem; font-weight: 800; color: #F8FAFC; margin: 2px 0 0; letter-spacing: -0.01em;">
           {{ settings.gym_name }}
         </h1>
       </div>
@@ -229,12 +229,12 @@
       <span style="font-size:1.2rem;">👥</span>
       <span>Members</span>
     </a>
-    <a href="{{ url_for('owner.staff') }}" class="btn btn-outline btn-sm" style="padding:8px 10px; font-size:0.82rem; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:4px; border-radius:12px;">
-      <img src="{{ url_for('static', filename='images/gym-trainer.jpg') }}" alt="Staff" style="width:24px; height:24px; border-radius:6px; object-fit:cover;">
+    <a href="{{ url_for('owner.staff') }}" class="btn btn-outline btn-sm" style="padding:10px; font-size:0.82rem; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:6px; border-radius:12px;">
+      <span style="font-size:1.2rem;">🧑‍🏫</span>
       <span>Staff</span>
     </a>
-    <a href="{{ url_for('owner.equipment') }}" class="btn btn-outline btn-sm" style="padding:8px 10px; font-size:0.82rem; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:4px; border-radius:12px;">
-      <img src="{{ url_for('static', filename='images/gym-dumbbells.jpg') }}" alt="Machines" style="width:24px; height:24px; border-radius:6px; object-fit:cover;">
+    <a href="{{ url_for('owner.equipment') }}" class="btn btn-outline btn-sm" style="padding:10px; font-size:0.82rem; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:6px; border-radius:12px;">
+      <span style="font-size:1.2rem;">🏋️</span>
       <span>Machines</span>
     </a>
     <a href="{{ url_for('owner.attendance') }}" class="btn btn-outline btn-sm" style="padding:10px; font-size:0.82rem; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:6px; border-radius:12px;">

@@ -90,24 +90,35 @@ def create_member(
 
     return get_member_by_id(member_id)
 
-def register_member_self(full_name, phone, email, username, password, membership_plan="Standard Monthly"):
+def register_member_self(full_name, phone=None, email=None, username=None, password=None, membership_plan="Standard Monthly", payment_preference="pay_later"):
     """
     Self-registration for new gym members (pending admin approval).
     Creates inactive user record and pending member record until admin approval.
+    Username, password, and full name are required; phone and email are optional.
     """
-    if not full_name or not phone or not username or not password:
-        raise ValueError("Full name, phone, username, and password are required.")
+    if not full_name or not (full_name.strip()):
+        raise ValueError("Full name is required.")
+    if not username or not (username.strip()):
+        raise ValueError("Username is required.")
+    if not password:
+        raise ValueError("Password is required.")
+
+    clean_username = username.strip()
+    clean_full_name = full_name.strip()
+    clean_phone = (phone or "").strip()
+    clean_email = (email or "").strip()
 
     if len(password) < 6:
         raise ValueError("Password must be at least 6 characters.")
 
-    existing_user = query_one("SELECT id FROM users WHERE LOWER(username) = LOWER(%s);", (username.strip(),))
+    existing_user = query_one("SELECT id FROM users WHERE LOWER(username) = LOWER(%s);", (clean_username,))
     if existing_user:
-        raise ValueError(f"Username '{username}' is already in use.")
+        raise ValueError(f"Username '{clean_username}' is already in use.")
 
-    existing_member_phone = query_one("SELECT id, full_name FROM members WHERE phone = %s;", (phone.strip(),))
-    if existing_member_phone:
-        raise ValueError(f"Phone number '{phone}' is already registered to {existing_member_phone['full_name']}.")
+    if clean_phone:
+        existing_member_phone = query_one("SELECT id, full_name FROM members WHERE phone = %s;", (clean_phone,))
+        if existing_member_phone:
+            raise ValueError(f"Phone number '{clean_phone}' is already registered to {existing_member_phone['full_name']}.")
 
     from datetime import timedelta
     from services.attendance_service import get_gym_local_date
@@ -119,18 +130,21 @@ def register_member_self(full_name, phone, email, username, password, membership
     qr_token = generate_qr_token()
     p_hash = hash_password(password)
 
+    fee_pref_label = "Pay Now (Online/Cash ready)" if payment_preference == "pay_now" else "Pay Later (At Front Desk)"
+    notes = f"Self-registered online — Pending Approval | Fee Preference: {fee_pref_label} | Reg Date: {today.isoformat()}"
+
     # 1. Create inactive user
     execute_statement("""
         INSERT INTO users (id, username, password_hash, role, is_active)
         VALUES (%s, %s, %s, 'member', 0);
-    """, (user_id, username.strip(), p_hash))
+    """, (user_id, clean_username, p_hash))
 
     # 2. Create Profile
     profile_id = generate_uuid()
     execute_statement("""
         INSERT INTO profiles (id, user_id, full_name, phone, email, avatar_color)
         VALUES (%s, %s, %s, %s, %s, '#10B981');
-    """, (profile_id, user_id, full_name.strip(), phone.strip(), (email or "").strip()))
+    """, (profile_id, user_id, clean_full_name, clean_phone, clean_email))
 
     # 3. Create Pending Member
     execute_statement("""
@@ -141,18 +155,18 @@ def register_member_self(full_name, phone, email, username, password, membership
         ) VALUES (
             %s, %s, %s, %s, %s, %s,
             %s, %s, %s,
-            5000.0, 'pending', %s, 'Self-registered via public portal - Pending Approval'
+            5000.0, 'pending', %s, %s
         );
     """, (
-        member_id, user_id, member_code, full_name.strip(), phone.strip(),
-        (email or "").strip() or None, (membership_plan or "Standard Monthly").strip(),
-        today, today + timedelta(days=30), qr_token
+        member_id, user_id, member_code, clean_full_name, clean_phone or "None",
+        clean_email or None, (membership_plan or "Standard Monthly").strip(),
+        today, today + timedelta(days=30), qr_token, notes
     ))
 
     execute_statement("""
         INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details)
         VALUES (%s, %s, 'SELF_REGISTER', 'MEMBER', %s, %s);
-    """, (generate_uuid(), user_id, member_id, f"Self-registered {full_name} ({member_code})"))
+    """, (generate_uuid(), user_id, member_id, f"Self-registered {clean_full_name} ({member_code})"))
 
     return get_member_by_id(member_id)
 

@@ -73,7 +73,7 @@ def dashboard():
 
     # Recent activity
     recent_payments = get_recent_payments(limit=6)
-    today_attendance = get_today_attendance()[:6]
+    today_attendance = get_today_attendance(limit=6)
 
     # 7-Day Attendance Trend Data for Graphical Chart
     trend_data = []
@@ -761,10 +761,90 @@ def approve_member(member_id):
 @owner_bp.route("/members/<member_id>/reject", methods=["POST"])
 @role_required("owner")
 def reject_member(member_id):
-    """Reject and remove a pending self-registration."""
+    """Reject and remove a pending self-registration (allows applicant to re-register anytime)."""
     success, msg = delete_member(member_id, owner_id=session.get("user_id"))
-    flash(f"Registration rejected. {msg}", "info")
+    flash(f"Application rejected and removed. User is free to re-apply anytime.", "info")
     return redirect(url_for("owner.members"))
+
+@owner_bp.route("/members/<member_id>/prompt-fee", methods=["POST"])
+@role_required("owner")
+def prompt_member_fee(member_id):
+    """Prompt fee payment before enrollment."""
+    member = get_member_by_id(member_id)
+    if not member:
+        flash("Member record not found.", "danger")
+        return redirect(url_for("owner.members"))
+
+    today, _ = get_gym_local_date()
+    cur_notes = member.get("notes") or ""
+    prompt_tag = f"[Fee Prompt: First pay fee to enroll ({today.isoformat()})]"
+    if prompt_tag not in cur_notes:
+        new_notes = f"{cur_notes} | {prompt_tag}".strip(" |")
+        execute_statement("UPDATE members SET notes = %s WHERE id = %s;", (new_notes, member_id))
+
+    flash(f"Fee prompt recorded for '{member['full_name']}'. Direct them to pay fee before enrollment.", "info")
+    return redirect(url_for("owner.members"))
+
+@owner_bp.route("/members/<member_id>/status", methods=["POST"])
+@role_required("owner")
+def set_member_status(member_id):
+    """Owner administrative toggle: active, inactive, suspended, terminated, or pending."""
+    new_status = (request.form.get("status") or request.form.get("membership_status") or "").strip().lower()
+    if new_status not in ("active", "inactive", "suspended", "terminated", "pending"):
+        flash("Invalid membership status option.", "danger")
+        return redirect(url_for("owner.member_detail", member_id=member_id))
+
+    member = get_member_by_id(member_id)
+    if not member:
+        flash("Member record not found.", "danger")
+        return redirect(url_for("owner.members"))
+
+    user_active = 1 if new_status == "active" else 0
+    execute_statement("UPDATE users SET is_active = %s WHERE id = %s;", (user_active, member["user_id"]))
+    execute_statement("UPDATE members SET membership_status = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s;", (new_status, member_id))
+
+    flash(f"Member '{member['full_name']}' status updated to {new_status.upper()}.", "success")
+    return redirect(request.referrer or url_for("owner.member_detail", member_id=member_id))
+
+@owner_bp.route("/members/<member_id>/credentials", methods=["POST"])
+@role_required("owner")
+def update_member_credentials(member_id):
+    """Owner full administrative override for username and/or password."""
+    member = get_member_by_id(member_id)
+    if not member:
+        flash("Member not found.", "danger")
+        return redirect(url_for("owner.members"))
+
+    new_username = request.form.get("username", "").strip()
+    new_password = request.form.get("password", "").strip()
+
+    updates = []
+    params = []
+
+    if new_username and new_username.lower() != member["username"].lower():
+        existing = query_one("SELECT id FROM users WHERE LOWER(username) = LOWER(%s) AND id != %s;", (new_username, member["user_id"]))
+        if existing:
+            flash(f"Username '{new_username}' is already in use by another user.", "danger")
+            return redirect(url_for("owner.member_detail", member_id=member_id))
+        updates.append("username = %s")
+        params.append(new_username)
+
+    if new_password:
+        if len(new_password) < 6:
+            flash("Password must be at least 6 characters.", "danger")
+            return redirect(url_for("owner.member_detail", member_id=member_id))
+        updates.append("password_hash = %s")
+        params.append(hash_password(new_password))
+
+    if updates:
+        params.append(member["user_id"])
+        sql = f"UPDATE users SET {', '.join(updates)} WHERE id = %s;"
+        execute_statement(sql, tuple(params))
+        flash(f"Administrative credentials override saved for '{member['full_name']}'.", "success")
+    else:
+        flash("No changes were made to credentials.", "info")
+
+    return redirect(url_for("owner.member_detail", member_id=member_id))
 
 @owner_bp.route("/members/<member_id>/reset-password", methods=["POST"])
 @role_required("owner")

@@ -51,44 +51,90 @@
 
 <!-- Pending Self-Registrations Awaiting Approval -->
 {% if pending_members %}
-  <div class="card mb-6" style="border: 1px solid #F59E0B; background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(15, 23, 42, 0.95) 100%);">
-    <div class="card-header" style="border-bottom: 1px solid rgba(245, 158, 11, 0.2); display:flex; justify-content:space-between; align-items:center;">
+  <div class="card mb-6" style="border: 1.5px solid #F59E0B; background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(15, 23, 42, 0.96) 100%); border-radius:18px; box-shadow:0 8px 24px rgba(245, 158, 11, 0.12);">
+    <div class="card-header" style="border-bottom: 1px solid rgba(245, 158, 11, 0.2); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding:16px 20px;">
       <div>
-        <h3 class="card-title" style="color:#FBBF24; display:flex; align-items:center; gap:8px;">
-          <span>⏳</span> Pending Self-Registrations Awaiting Approval ({{ pending_members|length }})
+        <h3 class="card-title" style="color:#FBBF24; display:flex; align-items:center; gap:8px; font-size:1.15rem; font-weight:800; margin:0;">
+          <span>⏳</span> Pending Applications & Owner Approvals ({{ pending_members|length }})
         </h3>
-        <p class="card-subtitle">Review prospective members who registered online and activate their accounts.</p>
+        <p class="card-subtitle" style="color:#CBD5E1; margin:4px 0 0; font-size:0.82rem;">
+          Verify fee, message applicant on WhatsApp, approve & activate account, or prompt fee payment before enrollment.
+        </p>
       </div>
-      <span class="badge badge-warning" style="font-size:0.8rem;">Action Required</span>
+      <span class="badge badge-warning" style="font-size:0.8rem; font-weight:800;">Action Required</span>
     </div>
     <div class="card-body" style="padding:0;">
       <div class="table-responsive">
-        <table class="table">
+        <table class="table" style="font-size:0.85rem;">
           <thead>
             <tr>
-              <th>Member Name</th>
+              <th>Applicant</th>
               <th>Username</th>
-              <th>Phone</th>
-              <th>Requested Plan</th>
-              <th>Registered At</th>
-              <th style="text-align:right;">Admin Actions</th>
+              <th>Phone / WhatsApp</th>
+              <th>Plan & Fee Pref</th>
+              <th>Registered</th>
+              <th style="text-align:right;">Owner Actions</th>
             </tr>
           </thead>
           <tbody>
             {% for pm in pending_members %}
               <tr>
-                <td><strong>{{ pm.full_name }}</strong></td>
-                <td><code>@{{ pm.username }}</code></td>
-                <td>{{ pm.phone }}</td>
-                <td><span class="badge badge-neutral">{{ pm.membership_plan }}</span></td>
+                <td>
+                  <strong style="color:#F8FAFC; font-size:0.92rem;">{{ pm.full_name }}</strong>
+                  {% if pm.email %}
+                    <div style="font-size:0.75rem; color:var(--text-muted);">{{ pm.email }}</div>
+                  {% endif %}
+                </td>
+                <td><code style="color:#34D399; font-weight:700;">@{{ pm.username }}</code></td>
+                <td>
+                  {% if pm.phone and pm.phone != 'None' %}
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <span>{{ pm.phone }}</span>
+                      <!-- WhatsApp Quick Launch Button -->
+                      <button type="button" onclick="openWhatsAppModal('{{ pm.full_name|escape }}', '{{ pm.username|escape }}', '{{ pm.phone|escape }}')" class="btn btn-outline btn-sm" style="padding:2px 8px; font-size:0.72rem; color:#34D399; border-color:rgba(16,185,129,0.4); border-radius:6px; display:inline-flex; align-items:center; gap:4px;" title="Send WhatsApp Message">
+                        <span>💬</span> WhatsApp
+                      </button>
+                    </div>
+                  {% else %}
+                    <span style="color:var(--text-muted);">Not provided</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge badge-neutral" style="font-size:0.75rem;">{{ pm.membership_plan }}</span>
+                  <div style="font-size:0.72rem; color:#FBBF24; margin-top:2px;">
+                    {% if 'Pay Now' in (pm.notes or '') %}
+                      ⚡ Pay Now Ready
+                    {% elif 'Pay Later' in (pm.notes or '') %}
+                      ⏳ Pay Later at Desk
+                    {% else %}
+                      Standard Plan
+                    {% endif %}
+                  </div>
+                </td>
                 <td>{{ pm.created_at|date_format("%b %d, %Y") }}</td>
                 <td style="text-align:right; white-space:nowrap;">
-                  <button type="button" class="btn btn-primary btn-sm" onclick='openApproveModal({{ pm|tojson }})' style="padding:5px 12px; font-size:0.8rem; font-weight:700;">
-                    ✓ Approve & Activate
+                  <!-- View Details Button -->
+                  <button type="button" class="btn btn-outline btn-sm" onclick='openApplicationDetailsModal({{ pm|tojson }})' style="padding:4px 8px; font-size:0.75rem; margin-right:4px;">
+                    👁️ Details
                   </button>
-                  <form method="POST" action="{{ url_for('owner.reject_member', member_id=pm.id) }}" style="display:inline;" onsubmit="return confirm('Reject and remove registration for {{ pm.full_name }}?');">
+
+                  <!-- Prompt Fee Button ("First pay your fee, then you will be able to enroll") -->
+                  <form method="POST" action="{{ url_for('owner.prompt_member_fee', member_id=pm.id) }}" style="display:inline; margin-right:4px;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button type="submit" class="btn btn-outline btn-sm" style="padding:5px 10px; font-size:0.8rem; color:#F87171; border-color:rgba(239,68,68,0.3);">
+                    <button type="submit" class="btn btn-secondary btn-sm" style="padding:4px 9px; font-size:0.75rem; font-weight:700; background:rgba(245,158,11,0.2); border:1px solid #F59E0B; color:#FDE68A;" title="Prompt Fee: First pay your fee, then you will be able to enroll">
+                      💳 Prompt Fee
+                    </button>
+                  </form>
+
+                  <!-- Approve & Activate -->
+                  <button type="button" class="btn btn-primary btn-sm" onclick='openApproveModal({{ pm|tojson }})' style="padding:4px 10px; font-size:0.75rem; font-weight:700; margin-right:4px;">
+                    ✓ Activate
+                  </button>
+
+                  <!-- Reject (Allows Re-apply) -->
+                  <form method="POST" action="{{ url_for('owner.reject_member', member_id=pm.id) }}" style="display:inline;" onsubmit="return confirm('Reject application for {{ pm.full_name }}? They will be able to re-register anytime.');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn btn-outline btn-sm" style="padding:4px 8px; font-size:0.75rem; color:#F87171; border-color:rgba(239,68,68,0.3);" title="Reject (Allows candidate to re-apply)">
                       ✕ Reject
                     </button>
                   </form>
@@ -299,6 +345,94 @@
   </div>
 </div>
 
+<!-- Modal: View Application Details -->
+<div id="app-details-modal" class="modal" style="display:none; position:fixed; inset:0; z-index:999; background:rgba(0,0,0,0.8); backdrop-filter:blur(6px); align-items:center; justify-content:center; padding:16px;">
+  <div style="background:#0F172A; border:1px solid rgba(255,255,255,0.15); border-radius:18px; padding:24px 28px; max-width:480px; width:100%; box-shadow:0 16px 40px rgba(0,0,0,0.8);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="font-size:1.15rem; font-weight:800; color:#F8FAFC; margin:0;">Application Details</h3>
+      <button type="button" onclick="closeAppDetailsModal()" style="background:none; border:none; color:#94A3B8; font-size:1.3rem; cursor:pointer;">✕</button>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:10px; font-size:0.85rem; color:#CBD5E1;">
+      <div style="display:flex; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.06);">
+        <span style="color:var(--text-muted);">Full Name:</span>
+        <strong id="det-name" style="color:#FFFFFF;">—</strong>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.06);">
+        <span style="color:var(--text-muted);">Username:</span>
+        <code id="det-user" style="color:#34D399;">—</code>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.06);">
+        <span style="color:var(--text-muted);">Phone / WhatsApp:</span>
+        <span id="det-phone" style="color:#FFFFFF;">—</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.06);">
+        <span style="color:var(--text-muted);">Email / Gmail:</span>
+        <span id="det-email" style="color:#FFFFFF;">—</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.06);">
+        <span style="color:var(--text-muted);">Requested Plan:</span>
+        <span id="det-plan" style="color:#FBBF24; font-weight:700;">—</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.06);">
+        <span style="color:var(--text-muted);">Application Notes:</span>
+        <span id="det-notes" style="color:#94A3B8; text-align:right; max-width:240px;">—</span>
+      </div>
+    </div>
+
+    <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="closeAppDetailsModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Direct WhatsApp Messaging -->
+<div id="whatsapp-modal" class="modal" style="display:none; position:fixed; inset:0; z-index:999; background:rgba(0,0,0,0.8); backdrop-filter:blur(6px); align-items:center; justify-content:center; padding:16px;">
+  <div style="background:#0F172A; border:1.5px solid #10B981; border-radius:18px; padding:24px 28px; max-width:480px; width:100%; box-shadow:0 16px 40px rgba(0,0,0,0.8);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:1.3rem;">💬</span>
+        <h3 style="font-size:1.15rem; font-weight:800; color:#F8FAFC; margin:0;">Tell Him on WhatsApp</h3>
+      </div>
+      <button type="button" onclick="closeWhatsAppModal()" style="background:none; border:none; color:#94A3B8; font-size:1.3rem; cursor:pointer;">✕</button>
+    </div>
+
+    <p style="font-size:0.82rem; color:#94A3B8; margin:0 0 16px;">
+      Send an instant WhatsApp message to <strong id="wa-name" style="color:#FFFFFF;">—</strong> (<span id="wa-phone">—</span>). Choose a message template:
+    </p>
+
+    <!-- Message Option 1: Fee Prompt -->
+    <div style="background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.3); border-radius:12px; padding:12px 14px; margin-bottom:12px;">
+      <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:#FBBF24; margin-bottom:4px;">
+        Option A: Prompt Fee Payment (Pehle Fee Submit Karein)
+      </div>
+      <div style="font-size:0.8rem; color:#E2E8F0; line-height:1.4; margin-bottom:8px;" id="wa-fee-preview">
+        "Salam! First pay your fee, then you will be able to enroll in the gym."
+      </div>
+      <a id="wa-fee-link" href="#" target="_blank" class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; font-size:0.78rem; background:rgba(245,158,11,0.2); border:1px solid #F59E0B; color:#FDE68A; text-decoration:none;">
+        <span>💬</span> Send Fee Prompt on WhatsApp →
+      </a>
+    </div>
+
+    <!-- Message Option 2: Account Approved -->
+    <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.3); border-radius:12px; padding:12px 14px; margin-bottom:16px;">
+      <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:#34D399; margin-bottom:4px;">
+        Option B: Membership Approved (Login With Password)
+      </div>
+      <div style="font-size:0.8rem; color:#E2E8F0; line-height:1.4; margin-bottom:8px;" id="wa-approved-preview">
+        "Salam! Your membership has been approved. You can now login using your username and self-set password."
+      </div>
+      <a id="wa-approved-link" href="#" target="_blank" class="btn btn-primary btn-sm" style="display:inline-flex; align-items:center; gap:6px; font-weight:700; font-size:0.78rem; background:#10B981; text-decoration:none;">
+        <span>💬</span> Send Approval on WhatsApp →
+      </a>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end;">
+      <button type="button" class="btn btn-outline btn-sm" onclick="closeWhatsAppModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <script>
   function openApproveModal(pm) {
     const form = document.getElementById('approve-member-form');
@@ -312,6 +446,54 @@
   }
   function closeApproveModal() {
     document.getElementById('approve-member-modal').style.display = 'none';
+  }
+
+  function openApplicationDetailsModal(pm) {
+    document.getElementById('det-name').textContent = pm.full_name || '—';
+    document.getElementById('det-user').textContent = '@' + (pm.username || '—');
+    document.getElementById('det-phone').textContent = pm.phone || 'Not provided';
+    document.getElementById('det-email').textContent = pm.email || 'Not provided';
+    document.getElementById('det-plan').textContent = pm.membership_plan || 'Standard Monthly';
+    document.getElementById('det-notes').textContent = pm.notes || 'None';
+    document.getElementById('app-details-modal').style.display = 'flex';
+  }
+  function closeAppDetailsModal() {
+    document.getElementById('app-details-modal').style.display = 'none';
+  }
+
+  function cleanWhatsAppNumber(rawPhone) {
+    if (!rawPhone) return '';
+    let digits = rawPhone.replace(/\D/g, '');
+    if (digits.startsWith('03')) {
+      digits = '923' + digits.slice(2);
+    } else if (digits.startsWith('923')) {
+      // already good
+    } else if (digits.length === 10 && digits.startsWith('3')) {
+      digits = '92' + digits;
+    }
+    return digits;
+  }
+
+  function openWhatsAppModal(name, username, phone) {
+    const cleanNum = cleanWhatsAppNumber(phone);
+    const gymName = {{ gym_settings.gym_name|tojson }};
+    document.getElementById('wa-name').textContent = name;
+    document.getElementById('wa-phone').textContent = phone || 'No number';
+
+    // Option A: Fee Prompt Message
+    const feeMsg = `Salam ${name}! Thank you for registering at ${gymName}. First pay your fee, then you will be able to enroll and start your gym workouts. Please visit the reception desk or submit your fee to activate your membership.`;
+    document.getElementById('wa-fee-preview').textContent = `"${feeMsg}"`;
+    document.getElementById('wa-fee-link').href = `https://wa.me/${cleanNum}?text=${encodeURIComponent(feeMsg)}`;
+
+    // Option B: Approval Message
+    const approveMsg = `Salam ${name}! Congratulations, your membership at ${gymName} has been APPROVED! You can now log in to the portal using your username '@${username}' and the password you set during registration. Welcome to ${gymName}!`;
+    document.getElementById('wa-approved-preview').textContent = `"${approveMsg}"`;
+    document.getElementById('wa-approved-link').href = `https://wa.me/${cleanNum}?text=${encodeURIComponent(approveMsg)}`;
+
+    document.getElementById('whatsapp-modal').style.display = 'flex';
+  }
+  function closeWhatsAppModal() {
+    document.getElementById('whatsapp-modal').style.display = 'none';
   }
 
   function openMemberPwdModal(memberId, name, username) {

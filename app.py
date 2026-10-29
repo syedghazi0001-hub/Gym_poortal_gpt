@@ -159,6 +159,43 @@ def create_app(config_class=Config):
     def date_format(val, fmt="%b %d, %Y"):
         if not val:
             return "N/A"
+        import zoneinfo
+        from datetime import datetime, date
+
+        gym_tz_name = "Asia/Karachi"
+        try:
+            settings = get_gym_settings()
+            gym_tz_name = settings.get("timezone", "Asia/Karachi")
+        except Exception:
+            pass
+
+        try:
+            gym_tz = zoneinfo.ZoneInfo(gym_tz_name)
+        except Exception:
+            gym_tz = zoneinfo.ZoneInfo("Asia/Karachi")
+
+        dt = None
+        if isinstance(val, datetime):
+            dt = val
+        elif isinstance(val, str):
+            clean_str = val.strip()
+            try:
+                if clean_str.endswith("Z"):
+                    clean_str = clean_str[:-1] + "+00:00"
+                dt = datetime.fromisoformat(clean_str)
+            except Exception:
+                try:
+                    d = date.fromisoformat(clean_str[:10])
+                    return d.strftime(fmt)
+                except Exception:
+                    return str(val)
+
+        if dt:
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=zoneinfo.ZoneInfo("UTC"))
+            local_dt = dt.astimezone(gym_tz)
+            return local_dt.strftime(fmt)
+
         if hasattr(val, "strftime"):
             return val.strftime(fmt)
         return str(val)

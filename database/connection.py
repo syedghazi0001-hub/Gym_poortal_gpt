@@ -272,6 +272,12 @@ def init_db(schema_file=None, force=False):
                     execute_statement("ALTER TABLE attendance ADD CONSTRAINT attendance_method_check CHECK (method IN ('QR', 'MANUAL', 'SELF_QR', 'qr_scan', 'desk_terminal'));")
                 except Exception:
                     pass
+                # Update membership_status check constraint to allow terminated
+                try:
+                    execute_statement("ALTER TABLE members DROP CONSTRAINT IF EXISTS members_membership_status_check;")
+                    execute_statement("ALTER TABLE members ADD CONSTRAINT members_membership_status_check CHECK (membership_status IN ('active', 'inactive', 'suspended', 'expired', 'pending', 'terminated'));")
+                except Exception:
+                    pass
                 # Alter column terminal_qr_token on gym_settings if missing
                 try:
                     execute_statement("ALTER TABLE gym_settings ADD COLUMN IF NOT EXISTS terminal_qr_token VARCHAR(64) DEFAULT 'VANGUARD-TERMINAL-DESK-STATION';")

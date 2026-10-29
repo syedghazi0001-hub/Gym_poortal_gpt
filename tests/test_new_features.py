@@ -413,3 +413,119 @@ def test_quick_scan_attendance_direct_url(client):
     assert b"already checked out today" in res_dup_out.data.lower()
 
 
+def test_self_registration_optional_contact_and_fee_preference(client):
+    """Verify self-registration succeeds without phone/email and captures fee preference."""
+    import uuid
+    from database.connection import query_one
+    test_user = f"reg_{uuid.uuid4().hex[:8]}"
+
+    # Registration without phone and email, with pay_now fee preference
+    res = client.post("/register", data={
+        "full_name": "No Phone Candidate",
+        "username": test_user,
+        "password": "Password123!",
+        "confirm_password": "Password123!",
+        "phone": "",
+        "email": "",
+        "membership_plan": "Strength & Conditioning",
+        "payment_preference": "pay_now"
+    }, follow_redirects=True)
+
+    assert res.status_code == 200
+    assert b"pending admin approval" in res.data.lower()
+
+    # Verify pending state in database
+    u = query_one("SELECT id, is_active FROM users WHERE username = %s;", (test_user,))
+    assert u is not None
+    assert u["is_active"] in (0, False)
+
+    m = query_one("SELECT * FROM members WHERE user_id = %s;", (u["id"],))
+    assert m is not None
+    assert m["membership_status"] == "pending"
+    assert "Pay Now" in (m["notes"] or "")
+
+
+def test_owner_prompt_fee_and_status_toggle_and_credentials_override(client):
+    """Verify owner prompt fee, status toggle (active/inactive/suspended/terminated), and credentials override."""
+    import uuid
+    from database.connection import query_one
+    owner = query_one("SELECT id, username FROM users WHERE role = 'owner' LIMIT 1;")
+    assert owner is not None
+    cand_user = f"cand_{uuid.uuid4().hex[:8]}"
+
+    # 1. Register candidate
+    client.post("/register", data={
+        "full_name": "Applicant Test",
+        "username": cand_user,
+        "password": "InitialPass123!",
+        "confirm_password": "InitialPass123!",
+        "phone": "03001234567",
+        "membership_plan": "Standard Monthly",
+        "payment_preference": "pay_later"
+    })
+
+    cand = query_one("SELECT m.id, m.user_id FROM members m JOIN users u ON u.id = m.user_id WHERE u.username = %s;", (cand_user,))
+    assert cand is not None
+    member_id = cand["id"]
+
+    # Log in as Owner
+    with client.session_transaction() as sess:
+        sess["user_id"] = owner["id"]
+        sess["username"] = owner["username"]
+        sess["user_role"] = "owner"
+
+    # 2. Owner prompts fee payment
+    res_prompt = client.post(f"/owner/members/{member_id}/prompt-fee", follow_redirects=True)
+    assert res_prompt.status_code == 200
+    m_prompted = query_one("SELECT notes FROM members WHERE id = %s;", (member_id,))
+    assert "Fee Prompt" in m_prompted["notes"]
+
+    # 3. Owner approves and activates
+    res_app = client.post(f"/owner/members/{member_id}/approve", data={
+        "membership_plan": "Standard Monthly",
+        "monthly_fee": "5000",
+        "record_payment": "1"
+    }, follow_redirects=True)
+    assert res_app.status_code == 200
+    m_active = query_one("SELECT membership_status FROM members WHERE id = %s;", (member_id,))
+    assert m_active["membership_status"] == "active"
+
+    # 4. Owner toggles status to 'suspended'
+    res_susp = client.post(f"/owner/members/{member_id}/status", data={"status": "suspended"}, follow_redirects=True)
+    assert res_susp.status_code == 200
+    m_susp = query_one("SELECT membership_status FROM members WHERE id = %s;", (member_id,))
+    assert m_susp["membership_status"] == "suspended"
+
+    # 5. Owner toggles status to 'terminated'
+    res_term = client.post(f"/owner/members/{member_id}/status", data={"status": "terminated"}, follow_redirects=True)
+    assert res_term.status_code == 200
+    m_term = query_one("SELECT membership_status FROM members WHERE id = %s;", (member_id,))
+    assert m_term["membership_status"] == "terminated"
+
+    # 6. Owner overrides username and password
+    new_user = f"new_{uuid.uuid4().hex[:8]}"
+    res_cred = client.post(f"/owner/members/{member_id}/credentials", data={
+        "username": new_user,
+        "password": "OverriddenPass999!"
+    }, follow_redirects=True)
+    assert res_cred.status_code == 200
+
+    u_upd = query_one("SELECT username, password_hash FROM users WHERE id = %s;", (cand["user_id"],))
+    assert u_upd["username"] == new_user
+    from auth.security import verify_password
+    assert verify_password("OverriddenPass999!", u_upd["password_hash"])
+
+
+def test_timezone_conversion_filter(app):
+    """Verify UTC datetime strings/objects are accurately formatted in gym's Asia/Karachi timezone (+5 hrs)."""
+    from datetime import datetime, timezone
+    utc_dt = datetime(2026, 10, 29, 12, 12, 0, tzinfo=timezone.utc)
+    
+    with app.app_context():
+        date_format = app.jinja_env.filters["date_format"]
+        res_time = date_format(utc_dt, "%I:%M %p")
+        # 12:12 UTC + 5 hours is 05:12 PM PKT
+        assert res_time == "05:12 PM"
+
+
+

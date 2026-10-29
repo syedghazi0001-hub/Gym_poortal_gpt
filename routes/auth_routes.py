@@ -78,9 +78,10 @@ def register():
         password = request.form.get("password", "").strip()
         confirm_password = request.form.get("confirm_password", "").strip()
         membership_plan = request.form.get("membership_plan", "Standard Monthly").strip()
+        payment_preference = request.form.get("payment_preference", "pay_later").strip()
 
-        if not full_name or not phone or not username or not password:
-            flash("Please fill in all required fields.", "danger")
+        if not full_name or not username or not password:
+            flash("Full name, desired username, and password are required.", "danger")
             return render_template("auth/register.html", settings=settings)
 
         if len(password) < 6:
@@ -99,9 +100,10 @@ def register():
                 email=email,
                 username=username,
                 password=password,
-                membership_plan=membership_plan
+                membership_plan=membership_plan,
+                payment_preference=payment_preference
             )
-            flash("Registration submitted successfully! Your account is pending admin approval. You will be able to sign in once approved.", "success")
+            flash("Registration submitted successfully! Your account is pending admin approval. You will be able to sign in with your chosen password once approved by the gym owner.", "success")
             return redirect(url_for("auth.login"))
         except ValueError as e:
             flash(str(e), "danger")

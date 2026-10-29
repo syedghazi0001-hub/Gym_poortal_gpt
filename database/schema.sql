@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS members (
     membership_start_date DATE NOT NULL,
     membership_end_date DATE NOT NULL,
     monthly_fee NUMERIC(10,2) NOT NULL DEFAULT 5000.00,
-    membership_status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (membership_status IN ('active', 'inactive', 'suspended', 'expired', 'pending')),
+    membership_status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (membership_status IN ('active', 'inactive', 'suspended', 'expired', 'pending', 'terminated')),
     assigned_trainer_id VARCHAR(36) REFERENCES trainers(id) ON DELETE SET NULL,
     qr_token VARCHAR(64) NOT NULL UNIQUE,
     notes TEXT,

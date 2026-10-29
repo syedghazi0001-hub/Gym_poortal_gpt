@@ -21,21 +21,39 @@
   </div>
 
   <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-    <button onclick="window.print()" class="btn btn-secondary">
+    <!-- Status Quick Toggle Form -->
+    <form method="POST" action="{{ url_for('owner.set_member_status', member_id=member.id) }}" style="display:inline-flex; align-items:center; gap:6px;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <span style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Status:</span>
+      <select name="status" class="form-select form-select-sm" onchange="this.form.submit()" style="padding:4px 10px; font-size:0.8rem; font-weight:700; border-radius:8px;">
+        <option value="active" {% if member.membership_status == 'active' %}selected{% endif %}>Active</option>
+        <option value="inactive" {% if member.membership_status == 'inactive' %}selected{% endif %}>Inactive</option>
+        <option value="suspended" {% if member.membership_status == 'suspended' %}selected{% endif %}>Suspended</option>
+        <option value="terminated" {% if member.membership_status == 'terminated' %}selected{% endif %}>Terminated</option>
+      </select>
+    </form>
+
+    {% if member.phone and member.phone != 'None' %}
+      <a href="https://wa.me/{{ member.phone|replace(' ', '')|replace('-', '')|replace('+', '') }}" target="_blank" class="btn btn-outline btn-sm" style="color:#34D399; border-color:rgba(16,185,129,0.4); text-decoration:none;">
+        💬 WhatsApp
+      </a>
+    {% endif %}
+
+    <button onclick="window.print()" class="btn btn-secondary btn-sm">
       🖨️ Print Badge
     </button>
-    <button onclick="openModal('reset-member-pwd-modal')" class="btn btn-secondary">
-      🔑 Reset Password
+    <button onclick="openModal('reset-member-pwd-modal')" class="btn btn-secondary btn-sm">
+      🔑 Account & Password
     </button>
-    <a href="{{ url_for('owner.edit_member', member_id=member.id) }}" class="btn btn-secondary">
+    <a href="{{ url_for('owner.edit_member', member_id=member.id) }}" class="btn btn-secondary btn-sm">
       ✏️ Edit Profile
     </a>
-    <button onclick="openModal('record-payment-modal')" class="btn btn-primary">
+    <button onclick="openModal('record-payment-modal')" class="btn btn-primary btn-sm">
       💳 Record Fee
     </button>
     <form method="POST" action="{{ url_for('owner.remove_member', member_id=member.id) }}" onsubmit="return confirm('Are you sure you want to permanently remove this member? All attendance and payment records for this member will be deleted.');" style="display:inline;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <button type="submit" class="btn btn-danger">
+      <button type="submit" class="btn btn-danger btn-sm">
         🗑️ Remove Member
       </button>
     </form>
@@ -268,27 +286,31 @@
   </div>
 </div>
 
-<!-- Modal: Reset Member Password -->
+<!-- Modal: Reset Member Password & Override Username -->
 <div id="reset-member-pwd-modal" class="modal">
   <div class="modal-dialog" style="max-width:440px;">
     <div class="modal-header">
-      <h3 class="modal-title">Reset Member Password</h3>
+      <h3 class="modal-title">Admin Account Credentials Override</h3>
       <button class="modal-close" onclick="closeModal('reset-member-pwd-modal')">✕</button>
     </div>
-    <form method="POST" action="{{ url_for('owner.reset_member_password', member_id=member.id) }}">
+    <form method="POST" action="{{ url_for('owner.update_member_credentials', member_id=member.id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <div class="modal-body">
         <p style="font-size:0.86rem; color:var(--text-secondary); margin-bottom:14px;">
-          Set a new login password for <strong>{{ member.full_name }}</strong> (Username: <code>@{{ member.username }}</code>).
+          Update credentials for <strong>{{ member.full_name }}</strong>. Leave password blank if only changing username.
         </p>
+        <div class="form-group mb-3">
+          <label class="form-label">Username</label>
+          <input type="text" name="username" class="form-input" value="{{ member.username }}" required>
+        </div>
         <div class="form-group">
-          <label class="form-label">New Password * (Min 6 characters)</label>
-          <input type="text" name="new_password" class="form-input" placeholder="Type new password..." required minlength="6">
+          <label class="form-label">New Password (Min 6 characters, or leave blank to keep unchanged)</label>
+          <input type="text" name="password" class="form-input" placeholder="Type new password or leave blank...">
         </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" onclick="closeModal('reset-member-pwd-modal')">Cancel</button>
-        <button type="submit" class="btn btn-primary">Update Password</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
       </div>
     </form>
   </div>

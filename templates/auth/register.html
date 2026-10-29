@@ -121,24 +121,33 @@
 
         <div class="grid-2">
           <div class="form-group">
-            <label class="form-label">Phone Number *</label>
-            <input type="tel" name="phone" class="form-input" placeholder="0300-1234567" required>
+            <label class="form-label">Phone / WhatsApp Number (Optional)</label>
+            <input type="tel" name="phone" class="form-input" placeholder="0300-1234567">
           </div>
           <div class="form-group">
-            <label class="form-label">Email Address (Optional)</label>
+            <label class="form-label">Gmail / Email Address (Optional)</label>
             <input type="email" name="email" class="form-input" placeholder="name@example.com">
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Membership Plan</label>
-          <select name="membership_plan" class="form-select">
-            <option value="Standard Monthly" selected>Standard Monthly (Gym & Cardio)</option>
-            <option value="Strength & Conditioning">Strength & Conditioning</option>
-            <option value="Personal Training Package">Personal Training Package</option>
-            <option value="Quarterly Premium">Quarterly Premium</option>
-            <option value="Annual VIP All-Access">Annual VIP All-Access</option>
-          </select>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Membership Plan</label>
+            <select name="membership_plan" class="form-select">
+              <option value="Standard Monthly" selected>Standard Monthly (Gym & Cardio)</option>
+              <option value="Strength & Conditioning">Strength & Conditioning</option>
+              <option value="Personal Training Package">Personal Training Package</option>
+              <option value="Quarterly Premium">Quarterly Premium</option>
+              <option value="Annual VIP All-Access">Annual VIP All-Access</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Monthly Fee Payment Option</label>
+            <select name="payment_preference" class="form-select">
+              <option value="pay_later" selected>Pay Later (At Front Desk Upon Approval)</option>
+              <option value="pay_now">Pay Now (Fee Ready / Online Transfer)</option>
+            </select>
+          </div>
         </div>
 
         <div class="form-group">
@@ -148,7 +157,7 @@
 
         <div class="grid-2">
           <div class="form-group">
-            <label class="form-label">Password *</label>
+            <label class="form-label">Self-Set Password *</label>
             <input type="password" name="password" class="form-input" placeholder="Min 6 characters" required autocomplete="new-password">
           </div>
           <div class="form-group">

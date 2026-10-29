@@ -421,8 +421,8 @@ def _process_attendance_record(member, recorded_by_id, method="QR", notes=None, 
         "method": method
     }
 
-def get_today_attendance():
-    """Retrieve all attendance records for today."""
+def get_today_attendance(limit=None):
+    """Retrieve attendance records for today, with optional limit to speed up dashboard queries."""
     today, _ = get_gym_local_date()
     sql = """
         SELECT a.*, m.full_name, m.member_code, m.phone,
@@ -431,8 +431,10 @@ def get_today_attendance():
         JOIN members m ON m.id = a.member_id
         LEFT JOIN users u_rec ON u_rec.id = a.recorded_by_id
         WHERE a.attendance_date = %s
-        ORDER BY a.check_in_time DESC;
+        ORDER BY a.check_in_time DESC
     """
+    if limit:
+        sql += f" LIMIT {int(limit)}"
     return query_all(sql, (today,))
 
 def delete_attendance_record(attendance_id, requested_by_id=None):
