@@ -66,6 +66,50 @@ def setup():
 
     return render_template("setup.html")
 
+@auth_bp.route("/register", methods=["GET", "POST"])
+def register():
+    """Public member self-registration."""
+    settings = get_gym_settings()
+    if request.method == "POST":
+        full_name = request.form.get("full_name", "").strip()
+        phone = request.form.get("phone", "").strip()
+        email = request.form.get("email", "").strip()
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+        confirm_password = request.form.get("confirm_password", "").strip()
+        membership_plan = request.form.get("membership_plan", "Standard Monthly").strip()
+
+        if not full_name or not phone or not username or not password:
+            flash("Please fill in all required fields.", "danger")
+            return render_template("auth/register.html", settings=settings)
+
+        if len(password) < 6:
+            flash("Password must be at least 6 characters long.", "danger")
+            return render_template("auth/register.html", settings=settings)
+
+        if password != confirm_password:
+            flash("Passwords do not match.", "danger")
+            return render_template("auth/register.html", settings=settings)
+
+        from services.member_service import register_member_self
+        try:
+            member = register_member_self(
+                full_name=full_name,
+                phone=phone,
+                email=email,
+                username=username,
+                password=password,
+                membership_plan=membership_plan
+            )
+            flash("Registration submitted successfully! Your account is pending admin approval. You will be able to sign in once approved.", "success")
+            return redirect(url_for("auth.login"))
+        except ValueError as e:
+            flash(str(e), "danger")
+        except Exception as e:
+            flash(f"Registration failed: {str(e)}", "danger")
+
+    return render_template("auth/register.html", settings=settings)
+
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     """Sign-in page for all user roles."""

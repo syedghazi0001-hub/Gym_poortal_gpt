@@ -24,6 +24,9 @@
     <button onclick="window.print()" class="btn btn-secondary">
       🖨️ Print Badge
     </button>
+    <button onclick="openModal('reset-member-pwd-modal')" class="btn btn-secondary">
+      🔑 Reset Password
+    </button>
     <a href="{{ url_for('owner.edit_member', member_id=member.id) }}" class="btn btn-secondary">
       ✏️ Edit Profile
     </a>
@@ -260,6 +263,32 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" onclick="closeModal('record-payment-modal')">Cancel</button>
         <button type="submit" class="btn btn-primary">Confirm & Issue Receipt</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Reset Member Password -->
+<div id="reset-member-pwd-modal" class="modal">
+  <div class="modal-dialog" style="max-width:440px;">
+    <div class="modal-header">
+      <h3 class="modal-title">Reset Member Password</h3>
+      <button class="modal-close" onclick="closeModal('reset-member-pwd-modal')">✕</button>
+    </div>
+    <form method="POST" action="{{ url_for('owner.reset_member_password', member_id=member.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="modal-body">
+        <p style="font-size:0.86rem; color:var(--text-secondary); margin-bottom:14px;">
+          Set a new login password for <strong>{{ member.full_name }}</strong> (Username: <code>@{{ member.username }}</code>).
+        </p>
+        <div class="form-group">
+          <label class="form-label">New Password * (Min 6 characters)</label>
+          <input type="text" name="new_password" class="form-input" placeholder="Type new password..." required minlength="6">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('reset-member-pwd-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Update Password</button>
       </div>
     </form>
   </div>

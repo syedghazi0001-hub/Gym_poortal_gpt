@@ -3,7 +3,8 @@ from auth.decorators import login_required, role_required
 from services.attendance_service import (
     record_attendance_by_qr, record_attendance_manual,
     get_daily_attendance_trend, delete_attendance_record,
-    reset_member_today_attendance
+    reset_member_today_attendance, record_member_self_scan,
+    record_trainer_self_scan, get_gym_terminal_token
 )
 from services.payment_service import (
     record_monthly_payment, get_monthly_revenue_trend,
@@ -12,6 +13,46 @@ from services.payment_service import (
 from services.member_service import get_all_members
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
+
+@api_bp.route("/attendance/self-scan", methods=["POST"])
+@login_required
+def self_scan_attendance():
+    """
+    Endpoint for members and trainers self-scanning the Front Desk Terminal Station QR pass.
+    Distinguishes between 'check_in' (arrival) and 'check_out' (departure).
+    """
+    data = request.get_json(silent=True) or request.form
+    terminal_token = (data.get("terminal_token") or data.get("token") or "").strip()
+    action = (data.get("action") or "check_in").strip().lower()
+
+    if not terminal_token:
+        return jsonify({
+            "success": False,
+            "message": "Gym Station QR pass code is required.",
+            "error": "Gym Station QR pass code is required."
+        }), 400
+
+    user_id = session.get("user_id")
+    role = session.get("user_role") or session.get("role")
+
+    if role == "member":
+        res = record_member_self_scan(user_id, terminal_token, action=action)
+        if not res.get("error"):
+            res["error"] = res.get("message")
+        status_code = 200 if res["success"] else (409 if res.get("status") in ("already_checked_in", "already_checked_out") else 400)
+        return jsonify(res), status_code
+    elif role == "trainer":
+        res = record_trainer_self_scan(user_id, terminal_token, action=action)
+        if not res.get("error"):
+            res["error"] = res.get("message")
+        status_code = 200 if res["success"] else (409 if res.get("status") in ("already_checked_in", "already_checked_out") else 400)
+        return jsonify(res), status_code
+    else:
+        return jsonify({
+            "success": False,
+            "message": "Only members and trainers can self-scan attendance.",
+            "error": "Only members and trainers can self-scan attendance."
+        }), 403
 
 @api_bp.route("/attendance/scan", methods=["POST"])
 @role_required("receptionist", "owner")

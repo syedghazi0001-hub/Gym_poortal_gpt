@@ -18,12 +18,82 @@
       </p>
     </div>
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button type="button" class="btn btn-outline btn-sm" onclick="openTerminalQRModal()" style="display:inline-flex; align-items:center; gap:6px; border-color:#10B981; color:#34D399;">
+        <span>🔍</span> Enlarge Station QR
+      </button>
       <a href="{{ url_for('receptionist.attendance') }}" class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
         <span>📋</span> Full Logs
       </a>
       <a href="{{ url_for('receptionist.payments') }}" class="btn btn-primary btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
         <span>💳</span> Fee Collections
       </a>
+    </div>
+  </div>
+</div>
+
+<!-- Gym Station Terminal QR Pass for Reverse Self-Scan -->
+<div class="card mb-6" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, rgba(30, 41, 59, 0.4) 100%); border: 1px solid rgba(16, 185, 129, 0.3); padding: 20px;">
+  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px;">
+    <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+      <div style="background:#FFFFFF; padding:10px; border-radius:12px; box-shadow:0 0 20px rgba(16,185,129,0.25); text-align:center;">
+        {% if terminal_qr_data_uri %}
+          <img src="{{ terminal_qr_data_uri }}" alt="Gym Station Terminal QR" style="width:130px; height:130px; display:block; border-radius:6px;">
+        {% else %}
+          <div style="width:130px; height:130px; display:flex; align-items:center; justify-content:center; background:#0F172A; color:#94A3B8; font-size:0.8rem;">
+            Station QR
+          </div>
+        {% endif %}
+      </div>
+      <div>
+        <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); padding:3px 10px; border-radius:999px; font-size:0.75rem; color:#34D399; font-weight:700; margin-bottom:6px;">
+          REVERSE SCAN TERMINAL
+        </div>
+        <h2 style="font-size:1.35rem; font-weight:800; color:#F8FAFC; margin:0 0 4px;">
+          Official Gym Station QR Pass
+        </h2>
+        <p style="font-size:0.88rem; color:#94A3B8; margin:0; max-width:550px; line-height:1.45;">
+          Display this station QR pass at the front counter. Members and Trainers scan this station pass on their personal phone cameras to record their daily <strong>Check In (Aty huay)</strong> and <strong>Check Out (Jaty huay)</strong>.
+        </p>
+        <div style="margin-top:10px; font-size:0.8rem; color:#64748B;">
+          Token: <code style="color:#34D399; background:rgba(0,0,0,0.3); padding:2px 8px; border-radius:4px;">{{ terminal_token }}</code>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <button type="button" class="btn btn-primary" onclick="openTerminalQRModal()" style="display:inline-flex; align-items:center; gap:8px; font-weight:600; padding:10px 18px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+        <span>Enlarge for Desk Stand</span>
+      </button>
+      <button type="button" class="btn btn-outline" onclick="printStationQR()" style="display:inline-flex; align-items:center; gap:8px; font-size:0.86rem; padding:8px 16px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+        <span>Print Station QR</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Enlarge Terminal Station QR for Desk Stand / Tablet Display -->
+<div id="terminal-qr-modal" class="modal" style="display:none; position:fixed; inset:0; z-index:999; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:20px;">
+  <div style="background:#0F172A; border:2px solid #10B981; border-radius:24px; padding:36px; max-width:440px; width:100%; text-align:center; box-shadow:0 0 40px rgba(16,185,129,0.35);">
+    <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); padding:4px 12px; border-radius:999px; font-size:0.75rem; color:#34D399; font-weight:700; margin-bottom:12px;">
+      {{ settings.gym_name|upper }} TERMINAL
+    </div>
+    <h2 style="font-size:1.6rem; font-weight:800; color:#FFFFFF; margin:0 0 6px;">Station Check-In Pass</h2>
+    <p style="font-size:0.88rem; color:#94A3B8; margin:0 0 20px;">
+      Open Member or Trainer portal camera and scan below to Check In or Check Out.
+    </p>
+
+    <div style="background:#FFFFFF; padding:16px; border-radius:18px; display:inline-block; margin-bottom:20px; box-shadow:0 8px 30px rgba(0,0,0,0.5);">
+      <img src="{{ terminal_qr_data_uri }}" alt="Station Terminal QR Large" style="width:260px; height:260px; display:block;">
+    </div>
+
+    <div style="display:flex; justify-content:center; gap:12px;">
+      <button type="button" class="btn btn-outline" onclick="printStationQR()" style="padding:10px 20px;">
+        🖨️ Print Poster
+      </button>
+      <button type="button" class="btn btn-primary" onclick="closeTerminalQRModal()" style="padding:10px 24px;">
+        ✕ Close
+      </button>
     </div>
   </div>
 </div>
@@ -1008,5 +1078,56 @@
       });
     }
   });
+
+  function openTerminalQRModal() {
+    var modal = document.getElementById('terminal-qr-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+    }
+  }
+
+  function closeTerminalQRModal() {
+    var modal = document.getElementById('terminal-qr-modal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  }
+
+  function printStationQR() {
+    var qrSrc = "{{ terminal_qr_data_uri }}";
+    var gymName = "{{ settings.gym_name }}";
+    var w = window.open('', '_blank', 'width=600,height=700');
+    w.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Station QR - ${gymName}</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; text-align: center; padding: 40px; }
+          .card { border: 3px solid #10B981; border-radius: 24px; padding: 40px; display: inline-block; max-width: 480px; }
+          h1 { margin: 12px 0 8px; font-size: 26px; }
+          p { color: #555; margin: 0 0 24px; font-size: 14px; }
+          img { width: 300px; height: 300px; margin-bottom: 20px; display: block; margin-inline: auto; }
+          .tag { background: #ECFDF5; color: #047857; font-weight: 700; padding: 6px 16px; border-radius: 999px; font-size: 13px; text-transform: uppercase; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <span class="tag">OFFICIAL GYM TERMINAL PASS</span>
+          <h1>${gymName}</h1>
+          <p>Scan with your member or trainer portal camera to record Check In (Aty huay) and Check Out (Jaty huay).</p>
+          <img src="${qrSrc}" alt="Terminal QR">
+          <p style="font-size:12px; color:#888;">Display at front counter / reception tablet.</p>
+        </div>
+        <script>
+          window.onload = function() {
+            setTimeout(function() { window.print(); }, 200);
+          };
+        <\/script>
+      </body>
+      </html>
+    `);
+    w.document.close();
+  }
 </script>
 {% endblock %}

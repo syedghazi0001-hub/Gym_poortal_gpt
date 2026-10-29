@@ -19,22 +19,85 @@
     <!-- Shift Punch In/Out Quick Action -->
     <div style="display:flex; align-items:center; gap:10px;">
       {% if not today_attendance %}
-        <form method="POST" action="{{ url_for('trainer.punch_in') }}" style="margin:0;">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button type="submit" class="btn btn-primary" style="display:inline-flex; align-items:center; gap:8px; padding:10px 18px; font-weight:700;">
-            <span>⏱️</span> Punch In Shift
-          </button>
-        </form>
+        <button type="button" onclick="startTrainerScanner('check_in')" class="btn btn-primary" style="display:inline-flex; align-items:center; gap:8px; padding:10px 18px; font-weight:700;">
+          <span>📸</span> Scan Station QR (Check In)
+        </button>
       {% elif not today_attendance.check_out_time %}
-        <form method="POST" action="{{ url_for('trainer.punch_out') }}" style="margin:0;">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button type="submit" class="btn btn-outline" style="border-color:rgba(239, 68, 68, 0.5); color:#FCA5A5; display:inline-flex; align-items:center; gap:8px; padding:10px 18px; font-weight:700;">
-            <span>⏹</span> Punch Out Shift
-          </button>
-        </form>
+        <button type="button" onclick="startTrainerScanner('check_out')" class="btn btn-outline" style="border-color:rgba(239, 68, 68, 0.5); color:#FCA5A5; display:inline-flex; align-items:center; gap:8px; padding:10px 18px; font-weight:700;">
+          <span>📸</span> Scan Station QR (Check Out)
+        </button>
       {% else %}
         <span class="badge badge-active" style="padding:8px 14px; font-size:0.85rem;">✓ Today's Shift Completed</span>
       {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Reverse Attendance: Trainer Station Camera Scanner -->
+<div class="card mb-6" style="border: 1px solid rgba(139, 92, 246, 0.35); background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(15, 23, 42, 0.95) 100%);">
+  <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <div>
+      <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(139,92,246,0.18); border:1px solid rgba(139,92,246,0.3); padding:3px 10px; border-radius:999px; font-size:0.75rem; color:#C4B5FD; font-weight:700; margin-bottom:6px;">
+        STATION ATTENDANCE SCANNER
+      </div>
+      <h2 style="font-size:1.3rem; font-weight:800; color:#F8FAFC; margin:0;">
+        Trainer Duty Shift & Desk Station Scanner
+      </h2>
+      <p style="color:#94A3B8; font-size:0.86rem; margin:3px 0 0;">
+        Scan the Reception Desk Terminal QR code with your phone camera when arriving on duty or leaving shift.
+      </p>
+    </div>
+
+    <div>
+      {% if not today_attendance %}
+        <span class="badge badge-neutral" style="padding:6px 14px;">Shift Not Started</span>
+      {% elif today_attendance and not today_attendance.check_out_time %}
+        <span class="badge badge-active" style="padding:6px 14px; background:rgba(16,185,129,0.2); border-color:#10B981; color:#34D399;">
+          <span class="pulse-dot" style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10B981; margin-right:4px;"></span> On Duty / Floor Present
+        </span>
+      {% else %}
+        <span class="badge" style="padding:6px 14px; background:rgba(59,130,246,0.2); border:1px solid #3B82F6; color:#93C5FD;">Shift Completed</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card-body">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+      <button type="button" class="btn btn-primary" onclick="startTrainerScanner('check_in')" style="padding:14px; font-weight:700; font-size:0.95rem; display:flex; align-items:center; justify-content:center; gap:10px; background:#10B981; border:none;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        <span>Check In (Aty huay)</span>
+      </button>
+
+      <button type="button" class="btn btn-secondary" onclick="startTrainerScanner('check_out')" style="padding:14px; font-weight:700; font-size:0.95rem; display:flex; align-items:center; justify-content:center; gap:10px; background:rgba(239,68,68,0.18); border:1px solid #EF4444; color:#FCA5A5;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+        <span>Check Out (Jaty huay)</span>
+      </button>
+    </div>
+
+    <!-- Scanner viewport box for trainer -->
+    <div id="trainer-scan-box" style="display:none; padding:18px; border-radius:14px; background:#0B0F17; border:1px solid rgba(139,92,246,0.4); margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div style="font-weight:700; font-size:0.92rem; color:#F8FAFC; display:flex; align-items:center; gap:8px;">
+          <span id="trainer-action-label" style="padding:3px 10px; border-radius:999px; font-size:0.75rem; background:#10B981; color:#FFFFFF;">CHECK IN</span>
+          <span>Scan Gym Station Terminal QR</span>
+        </div>
+        <button type="button" onclick="stopTrainerScanner()" class="btn btn-outline btn-sm">✕ Cancel</button>
+      </div>
+
+      <div class="scanner-viewport" id="trainer-scanner-viewport" style="background:#05070B; position:relative; overflow:hidden; border-radius:12px; border:1px solid rgba(255,255,255,0.15); max-width:380px; aspect-ratio:4/3; margin:0 auto; display:flex; align-items:center; justify-content:center;">
+        <video id="trainer-scanner-video" playsinline autoplay muted style="width:100%; height:100%; object-fit:cover; display:block;"></video>
+        <div class="scanner-laser"></div>
+        <div class="scanner-reticle"></div>
+      </div>
+
+      <div id="trainer-scan-feedback" style="margin-top:12px; text-align:center;">
+        <div style="font-size:0.84rem; color:#94A3B8;">Align the Station QR pass within the camera frame.</div>
+      </div>
+
+      <div style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08); display:flex; gap:8px; max-width:360px; margin-inline:auto;">
+        <input type="text" id="trainer-manual-token" class="form-input" placeholder="Type station token manually..." style="font-size:0.82rem; padding:6px 10px;">
+        <button type="button" class="btn btn-primary btn-sm" onclick="submitTrainerManualToken()">Submit</button>
+      </div>
     </div>
   </div>
 </div>
@@ -196,4 +259,145 @@
     {% endif %}
   </div>
 </div>
+
+<script src="{{ url_for('static', filename='js/jsQR.min.js') }}"></script>
+<script>
+  let trainerVideo = null;
+  let trainerStream = null;
+  let trainerScanning = false;
+  let activeTrainerAction = 'check_in';
+  let trainerCooldown = false;
+  let tCanvas = document.createElement('canvas');
+  let tCtx = tCanvas.getContext('2d', { willReadFrequently: true });
+
+  function startTrainerScanner(action) {
+    activeTrainerAction = action;
+    const box = document.getElementById('trainer-scan-box');
+    const label = document.getElementById('trainer-action-label');
+    const feedback = document.getElementById('trainer-scan-feedback');
+
+    if (action === 'check_in') {
+      label.textContent = 'CHECK IN (Aty huay)';
+      label.style.background = '#10B981';
+      feedback.innerHTML = '<div style="color:#34D399; font-size:0.86rem; font-weight:600;">Point camera at front desk Station QR to Check In for duty.</div>';
+    } else {
+      label.textContent = 'CHECK OUT (Jaty huay)';
+      label.style.background = '#EF4444';
+      feedback.innerHTML = '<div style="color:#F87171; font-size:0.86rem; font-weight:600;">Point camera at front desk Station QR to Check Out from duty.</div>';
+    }
+
+    box.style.display = 'block';
+    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    trainerVideo = document.getElementById('trainer-scanner-video');
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      feedback.innerHTML = '<div style="color:#EF4444; font-size:0.86rem;">Camera not supported. Enter the station token code manually below.</div>';
+      return;
+    }
+
+    navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 640 }, height: { ideal: 480 } }
+    }).then(stream => {
+      trainerStream = stream;
+      trainerVideo.srcObject = stream;
+      trainerVideo.setAttribute('playsinline', 'true');
+      trainerVideo.play();
+      trainerScanning = true;
+      requestAnimationFrame(scanTrainerFrame);
+    }).catch(err => {
+      feedback.innerHTML = `<div style="color:#EF4444; font-size:0.86rem;">Camera unavailable (${err.name}). Enter station code manually below.</div>`;
+    });
+  }
+
+  function stopTrainerScanner() {
+    trainerScanning = false;
+    if (trainerStream) {
+      trainerStream.getTracks().forEach(t => t.stop());
+      trainerStream = null;
+    }
+    const box = document.getElementById('trainer-scan-box');
+    if (box) box.style.display = 'none';
+  }
+
+  function scanTrainerFrame() {
+    if (!trainerScanning || !trainerVideo) return;
+
+    if (trainerVideo.readyState === trainerVideo.HAVE_ENOUGH_DATA) {
+      tCanvas.width = trainerVideo.videoWidth;
+      tCanvas.height = trainerVideo.videoHeight;
+      tCtx.drawImage(trainerVideo, 0, 0, tCanvas.width, tCanvas.height);
+
+      const imageData = tCtx.getImageData(0, 0, tCanvas.width, tCanvas.height);
+      if (window.jsQR) {
+        const code = window.jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'dontInvert'
+        });
+
+        if (code && code.data && !trainerCooldown) {
+          trainerCooldown = true;
+          processTrainerScan(code.data);
+          setTimeout(() => { trainerCooldown = false; }, 3000);
+          return;
+        }
+      }
+    }
+
+    if (trainerScanning) {
+      requestAnimationFrame(scanTrainerFrame);
+    }
+  }
+
+  async function processTrainerScan(token) {
+    const feedback = document.getElementById('trainer-scan-feedback');
+    feedback.innerHTML = '<div style="color:#60A5FA; font-size:0.88rem;">Processing shift scan...</div>';
+
+    try {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+      const response = await fetch('/api/attendance/self-scan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+          token: token.trim(),
+          action: activeTrainerAction
+        })
+      });
+
+      const res = await response.json();
+
+      if (response.ok && res.success) {
+        feedback.innerHTML = `
+          <div style="padding:10px 14px; border-radius:10px; background:rgba(16,185,129,0.2); border:1px solid #10B981; color:#A7F3D0; font-size:0.9rem; font-weight:700;">
+            ✓ ${res.message}
+          </div>
+        `;
+        setTimeout(() => {
+          stopTrainerScanner();
+          window.location.reload();
+        }, 1400);
+      } else {
+        feedback.innerHTML = `
+          <div style="padding:10px 14px; border-radius:10px; background:rgba(239,68,68,0.2); border:1px solid #EF4444; color:#FECACA; font-size:0.9rem; font-weight:700;">
+            ⚠️ ${res.error || 'Shift scan failed.'}
+          </div>
+        `;
+      }
+    } catch (err) {
+      feedback.innerHTML = '<div style="color:#EF4444; font-size:0.88rem;">Network error communicating with server.</div>';
+    }
+  }
+
+  function submitTrainerManualToken() {
+    const input = document.getElementById('trainer-manual-token');
+    const val = input ? input.value.trim() : '';
+    if (!val) {
+      alert('Please enter station token.');
+      return;
+    }
+    processTrainerScan(val);
+  }
+</script>
 {% endblock %}

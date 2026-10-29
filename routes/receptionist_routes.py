@@ -1,13 +1,13 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from auth.decorators import role_required, get_current_user
 from services.auth_service import get_gym_settings
-from services.member_service import get_all_members, get_member_by_id
+from services.member_service import get_all_members, get_member_by_id, generate_qr_code_image_data
 from services.attendance_service import (
     record_attendance_by_qr, record_attendance_manual,
     get_today_attendance, get_gym_local_date,
     record_trainer_checkin, record_trainer_checkout,
     get_today_trainer_attendance, get_all_trainers_with_today_status,
-    delete_attendance_record
+    delete_attendance_record, get_gym_terminal_token
 )
 from services.payment_service import (
     get_current_billing_month, get_monthly_payment_status,
@@ -46,6 +46,12 @@ def desk():
     except Exception:
         settings = {"gym_name": "Vanguard Fitness Club", "currency": "PKR", "timezone": "Asia/Karachi"}
 
+    terminal_token = get_gym_terminal_token()
+    try:
+        terminal_qr_data_uri = generate_qr_code_image_data(terminal_token)
+    except Exception:
+        terminal_qr_data_uri = ""
+
     current_month = get_current_billing_month()
 
     return render_template(
@@ -56,6 +62,8 @@ def desk():
         members_list=members_res,
         today_date=today.strftime("%A, %B %d, %Y"),
         settings=settings,
+        terminal_token=terminal_token,
+        terminal_qr_data_uri=terminal_qr_data_uri,
         current_month=current_month
     )
 

@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS gym_settings (
     contact_email VARCHAR(120) DEFAULT 'admin@vanguardfitness.com',
     address TEXT DEFAULT 'Main Boulevard, Sports Complex, Jalalpur Jattan',
     absence_threshold_days INT NOT NULL DEFAULT 10,
+    terminal_qr_token VARCHAR(64) DEFAULT 'VANGUARD-TERMINAL-DESK-STATION',
     last_absence_check_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -86,7 +87,7 @@ CREATE TABLE IF NOT EXISTS members (
     membership_start_date DATE NOT NULL,
     membership_end_date DATE NOT NULL,
     monthly_fee NUMERIC(10,2) NOT NULL DEFAULT 5000.00,
-    membership_status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (membership_status IN ('active', 'inactive', 'suspended', 'expired')),
+    membership_status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (membership_status IN ('active', 'inactive', 'suspended', 'expired', 'pending')),
     assigned_trainer_id VARCHAR(36) REFERENCES trainers(id) ON DELETE SET NULL,
     qr_token VARCHAR(64) NOT NULL UNIQUE,
     notes TEXT,
@@ -94,14 +95,15 @@ CREATE TABLE IF NOT EXISTS members (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 7. ATTENDANCE (Daily check-ins with duplicate prevention)
+-- 7. ATTENDANCE (Daily check-ins & check-outs with duplicate prevention)
 CREATE TABLE IF NOT EXISTS attendance (
     id VARCHAR(36) PRIMARY KEY,
     member_id VARCHAR(36) NOT NULL REFERENCES members(id) ON DELETE CASCADE,
     attendance_date DATE NOT NULL,
     check_in_time TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    check_out_time TIMESTAMPTZ,
     recorded_by_id VARCHAR(36) REFERENCES users(id) ON DELETE SET NULL,
-    method VARCHAR(20) NOT NULL DEFAULT 'QR' CHECK (method IN ('QR', 'MANUAL')),
+    method VARCHAR(20) NOT NULL DEFAULT 'QR' CHECK (method IN ('QR', 'MANUAL', 'SELF_QR')),
     status VARCHAR(20) NOT NULL DEFAULT 'present' CHECK (status IN ('present', 'late', 'excused')),
     notes TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -188,6 +190,23 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     ip_address VARCHAR(45),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 13. GYM EQUIPMENT & MACHINES DIRECTORY
+CREATE TABLE IF NOT EXISTS equipment (
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    category VARCHAR(50) NOT NULL, -- 'Cardio', 'Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Free Weights'
+    target_muscle VARCHAR(100),
+    quantity INT NOT NULL DEFAULT 1,
+    status VARCHAR(20) NOT NULL DEFAULT 'operational' CHECK (status IN ('operational', 'maintenance', 'out_of_order')),
+    description TEXT,
+    instructions TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_equipment_category ON equipment(category);
+CREATE INDEX IF NOT EXISTS idx_equipment_status ON equipment(status);
 
 -- ============================================================================
 -- PERFORMANCE INDEXES

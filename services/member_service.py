@@ -90,6 +90,72 @@ def create_member(
 
     return get_member_by_id(member_id)
 
+def register_member_self(full_name, phone, email, username, password, membership_plan="Standard Monthly"):
+    """
+    Self-registration for new gym members (pending admin approval).
+    Creates inactive user record and pending member record until admin approval.
+    """
+    if not full_name or not phone or not username or not password:
+        raise ValueError("Full name, phone, username, and password are required.")
+
+    if len(password) < 6:
+        raise ValueError("Password must be at least 6 characters.")
+
+    existing_user = query_one("SELECT id FROM users WHERE LOWER(username) = LOWER(%s);", (username.strip(),))
+    if existing_user:
+        raise ValueError(f"Username '{username}' is already in use.")
+
+    existing_member_phone = query_one("SELECT id, full_name FROM members WHERE phone = %s;", (phone.strip(),))
+    if existing_member_phone:
+        raise ValueError(f"Phone number '{phone}' is already registered to {existing_member_phone['full_name']}.")
+
+    from datetime import timedelta
+    from services.attendance_service import get_gym_local_date
+    today, _ = get_gym_local_date()
+
+    user_id = generate_uuid()
+    member_id = generate_uuid()
+    member_code = generate_next_member_code()
+    qr_token = generate_qr_token()
+    p_hash = hash_password(password)
+
+    # 1. Create inactive user
+    execute_statement("""
+        INSERT INTO users (id, username, password_hash, role, is_active)
+        VALUES (%s, %s, %s, 'member', 0);
+    """, (user_id, username.strip(), p_hash))
+
+    # 2. Create Profile
+    profile_id = generate_uuid()
+    execute_statement("""
+        INSERT INTO profiles (id, user_id, full_name, phone, email, avatar_color)
+        VALUES (%s, %s, %s, %s, %s, '#10B981');
+    """, (profile_id, user_id, full_name.strip(), phone.strip(), (email or "").strip()))
+
+    # 3. Create Pending Member
+    execute_statement("""
+        INSERT INTO members (
+            id, user_id, member_code, full_name, phone, email,
+            membership_plan, membership_start_date, membership_end_date,
+            monthly_fee, membership_status, qr_token, notes
+        ) VALUES (
+            %s, %s, %s, %s, %s, %s,
+            %s, %s, %s,
+            5000.0, 'pending', %s, 'Self-registered via public portal - Pending Approval'
+        );
+    """, (
+        member_id, user_id, member_code, full_name.strip(), phone.strip(),
+        (email or "").strip() or None, (membership_plan or "Standard Monthly").strip(),
+        today, today + timedelta(days=30), qr_token
+    ))
+
+    execute_statement("""
+        INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details)
+        VALUES (%s, %s, 'SELF_REGISTER', 'MEMBER', %s, %s);
+    """, (generate_uuid(), user_id, member_id, f"Self-registered {full_name} ({member_code})"))
+
+    return get_member_by_id(member_id)
+
 def update_member(
     member_id, full_name, phone, email, dob, emergency_contact,
     membership_plan, start_date, end_date, monthly_fee,

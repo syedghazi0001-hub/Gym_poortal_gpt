@@ -17,6 +17,244 @@ def get_gym_local_date():
         tz = zoneinfo.ZoneInfo("Asia/Karachi")
     return datetime.now(tz).date(), datetime.now(tz)
 
+def get_gym_terminal_token():
+    """Retrieve or initialize the official Gym Front Desk Terminal QR token."""
+    settings = get_gym_settings()
+    token = settings.get("terminal_qr_token")
+    if not token:
+        token = "VANGUARD-TERMINAL-DESK-STATION"
+    return token
+
+def record_member_self_scan(user_id, terminal_token, action="check_in"):
+    """
+    Process Member self-scanning the Front Desk Terminal QR pass.
+    Supports 2 distinct actions:
+    - 'check_in' (Aty Huay): Records arrival time. Rejects if already checked in today.
+    - 'check_out' (Jaty Huay): Records departure time. Rejects if not checked in or already checked out.
+    """
+    expected_token = get_gym_terminal_token()
+    if not terminal_token or terminal_token.strip() != expected_token:
+        return {
+            "success": False,
+            "status": "invalid_terminal",
+            "message": "Invalid Gym Terminal QR code. Please scan the official Front Desk QR Pass."
+        }
+
+    member = query_one("""
+        SELECT m.id, m.user_id, m.member_code, m.full_name, m.membership_status,
+               m.membership_end_date, u.is_active AS user_is_active
+        FROM members m
+        JOIN users u ON u.id = m.user_id
+        WHERE m.user_id = %s;
+    """, (user_id,))
+
+    if not member:
+        return {
+            "success": False,
+            "status": "not_found",
+            "message": "Member record not found."
+        }
+
+    if not member["user_is_active"] or member["membership_status"] in ("inactive", "suspended", "pending"):
+        return {
+            "success": False,
+            "status": "inactive",
+            "message": f"Your membership is currently {member['membership_status'].upper()}. Access denied."
+        }
+
+    today, now_local = get_gym_local_date()
+
+    # Check existing record for today
+    existing = query_one("""
+        SELECT id, check_in_time, check_out_time
+        FROM attendance
+        WHERE member_id = %s AND attendance_date = %s;
+    """, (member["id"], today))
+
+    if action == "check_in":
+        if existing:
+            fmt_in = existing["check_in_time"].strftime("%I:%M %p") if hasattr(existing["check_in_time"], "strftime") else str(existing["check_in_time"])
+            return {
+                "success": False,
+                "status": "already_checked_in",
+                "message": f"You have already checked in today at {fmt_in}! Cannot check in twice.",
+                "check_in_time": fmt_in,
+                "check_out_time": existing["check_out_time"].strftime("%I:%M %p") if existing.get("check_out_time") else None
+            }
+
+        att_id = generate_uuid()
+        execute_statement("""
+            INSERT INTO attendance (id, member_id, attendance_date, check_in_time, method, status)
+            VALUES (%s, %s, %s, %s, 'SELF_QR', 'present');
+        """, (att_id, member["id"], today, now_local))
+
+        # Resolve any absence alert
+        execute_statement("""
+            UPDATE absence_alerts
+            SET is_resolved = TRUE, resolved_date = %s
+            WHERE member_id = %s AND is_resolved = FALSE;
+        """, (today, member["id"]))
+
+        execute_statement("""
+            INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, details)
+            VALUES (%s, %s, 'MEMBER_SELF_CHECKIN', 'ATTENDANCE', %s, %s);
+        """, (generate_uuid(), user_id, att_id, f"Member {member['full_name']} self checked in via Terminal QR"))
+
+        return {
+            "success": True,
+            "action": "check_in",
+            "message": f"Welcome, {member['full_name']}! Checked in at {now_local.strftime('%I:%M %p')}. Have a great workout!",
+            "check_in_time": now_local.strftime("%I:%M %p"),
+            "member_name": member["full_name"],
+            "member_code": member["member_code"]
+        }
+
+    elif action == "check_out":
+        if not existing:
+            return {
+                "success": False,
+                "status": "not_checked_in",
+                "message": "Cannot check out before checking in! Please scan the Check-In pass first."
+            }
+
+        if existing.get("check_out_time"):
+            fmt_out = existing["check_out_time"].strftime("%I:%M %p") if hasattr(existing["check_out_time"], "strftime") else str(existing["check_out_time"])
+            return {
+                "success": False,
+                "status": "already_checked_out",
+                "message": f"You have already checked out today at {fmt_out}! Cannot check out twice."
+            }
+
+        execute_statement("""
+            UPDATE attendance SET check_out_time = %s WHERE id = %s;
+        """, (now_local, existing["id"]))
+
+        duration_str = ""
+        try:
+            in_time = existing["check_in_time"]
+            if isinstance(in_time, str):
+                in_time = datetime.fromisoformat(in_time.replace("Z", "+00:00"))
+            mins = int((now_local - in_time).total_seconds() / 60)
+            hours = mins // 60
+            rem_mins = mins % 60
+            duration_str = f" Workout Duration: {hours}h {rem_mins}m." if hours > 0 else f" Workout Duration: {mins} mins."
+        except Exception:
+            pass
+
+        return {
+            "success": True,
+            "action": "check_out",
+            "message": f"Checked out at {now_local.strftime('%I:%M %p')}!{duration_str} Great job today!",
+            "check_out_time": now_local.strftime("%I:%M %p"),
+            "member_name": member["full_name"],
+            "member_code": member["member_code"]
+        }
+
+    return {
+        "success": False,
+        "status": "bad_action",
+        "message": "Invalid action specified."
+    }
+
+def record_trainer_self_scan(user_id, terminal_token, action="check_in"):
+    """
+    Process Trainer self-scanning the Front Desk Terminal QR pass for shift punch-in/out.
+    """
+    expected_token = get_gym_terminal_token()
+    if not terminal_token or terminal_token.strip() != expected_token:
+        return {
+            "success": False,
+            "status": "invalid_terminal",
+            "message": "Invalid Gym Terminal QR code. Please scan the official Front Desk QR Pass."
+        }
+
+    trainer = query_one("""
+        SELECT t.*, u.is_active AS user_is_active
+        FROM trainers t
+        JOIN users u ON u.id = t.user_id
+        WHERE t.user_id = %s;
+    """, (user_id,))
+
+    if not trainer:
+        return {
+            "success": False,
+            "status": "not_found",
+            "message": "Trainer profile not found."
+        }
+
+    if not trainer["is_active"]:
+        return {
+            "success": False,
+            "status": "inactive",
+            "message": "Trainer account is deactivated."
+        }
+
+    today, now_local = get_gym_local_date()
+    _ensure_trainer_attendance_table()
+
+    existing = query_one("""
+        SELECT id, check_in_time, check_out_time
+        FROM trainer_attendance
+        WHERE trainer_id = %s AND attendance_date = %s;
+    """, (trainer["id"], today))
+
+    if action == "check_in":
+        if existing:
+            fmt_in = existing["check_in_time"].strftime("%I:%M %p") if hasattr(existing["check_in_time"], "strftime") else str(existing["check_in_time"])
+            return {
+                "success": False,
+                "status": "already_checked_in",
+                "message": f"Trainer {trainer['full_name']}, you have already punched in today at {fmt_in}!"
+            }
+
+        att_id = generate_uuid()
+        execute_statement("""
+            INSERT INTO trainer_attendance (id, trainer_id, attendance_date, check_in_time, status, method, notes)
+            VALUES (%s, %s, %s, %s, 'present', 'qr_scan', 'Shift In via Station QR');
+        """, (att_id, trainer["id"], today, now_local))
+
+        return {
+            "success": True,
+            "action": "check_in",
+            "message": f"Shift started! Punched in at {now_local.strftime('%I:%M %p')}.",
+            "check_in_time": now_local.strftime("%I:%M %p"),
+            "trainer_name": trainer["full_name"]
+        }
+
+    elif action == "check_out":
+        if not existing:
+            return {
+                "success": False,
+                "status": "not_checked_in",
+                "message": "Cannot punch out before punching in today! Please punch in first."
+            }
+
+        if existing.get("check_out_time"):
+            fmt_out = existing["check_out_time"].strftime("%I:%M %p") if hasattr(existing["check_out_time"], "strftime") else str(existing["check_out_time"])
+            return {
+                "success": False,
+                "status": "already_checked_out",
+                "message": f"You have already punched out today at {fmt_out}!"
+            }
+
+        execute_statement("""
+            UPDATE trainer_attendance SET check_out_time = %s WHERE id = %s;
+        """, (now_local, existing["id"]))
+
+        return {
+            "success": True,
+            "action": "check_out",
+            "message": f"Shift completed! Punched out at {now_local.strftime('%I:%M %p')}.",
+            "check_out_time": now_local.strftime("%I:%M %p"),
+            "trainer_name": trainer["full_name"]
+        }
+
+    return {
+        "success": False,
+        "status": "bad_action",
+        "message": "Invalid action specified."
+    }
+
 def record_attendance_by_qr(qr_token, recorded_by_id, allow_override=False):
     """
     Process QR code or member code check-in from receptionist terminal.

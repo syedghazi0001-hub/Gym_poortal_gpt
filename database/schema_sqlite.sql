@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS gym_settings (
     contact_email TEXT DEFAULT 'admin@vanguardfitness.com',
     address TEXT DEFAULT 'Main Boulevard, Sports Complex, Jalalpur Jattan',
     absence_threshold_days INTEGER NOT NULL DEFAULT 10,
+    terminal_qr_token TEXT DEFAULT 'VANGUARD-TERMINAL-DESK-STATION',
     last_absence_check_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -84,7 +85,7 @@ CREATE TABLE IF NOT EXISTS members (
     membership_start_date DATE NOT NULL,
     membership_end_date DATE NOT NULL,
     monthly_fee REAL NOT NULL DEFAULT 5000.0,
-    membership_status TEXT NOT NULL DEFAULT 'active' CHECK (membership_status IN ('active', 'inactive', 'suspended', 'expired')),
+    membership_status TEXT NOT NULL DEFAULT 'active' CHECK (membership_status IN ('active', 'inactive', 'suspended', 'expired', 'pending')),
     assigned_trainer_id TEXT REFERENCES trainers(id) ON DELETE SET NULL,
     qr_token TEXT NOT NULL UNIQUE,
     notes TEXT,
@@ -98,8 +99,9 @@ CREATE TABLE IF NOT EXISTS attendance (
     member_id TEXT NOT NULL REFERENCES members(id) ON DELETE CASCADE,
     attendance_date DATE NOT NULL,
     check_in_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    check_out_time TIMESTAMP,
     recorded_by_id TEXT REFERENCES users(id) ON DELETE SET NULL,
-    method TEXT NOT NULL DEFAULT 'QR' CHECK (method IN ('QR', 'MANUAL')),
+    method TEXT NOT NULL DEFAULT 'QR' CHECK (method IN ('QR', 'MANUAL', 'SELF_QR')),
     status TEXT NOT NULL DEFAULT 'present' CHECK (status IN ('present', 'late', 'excused')),
     notes TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -185,6 +187,20 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     details TEXT,
     ip_address TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 13. GYM EQUIPMENT & MACHINES DIRECTORY
+CREATE TABLE IF NOT EXISTS equipment (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    category TEXT NOT NULL,
+    target_muscle TEXT,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    status TEXT NOT NULL DEFAULT 'operational' CHECK (status IN ('operational', 'maintenance', 'out_of_order')),
+    description TEXT,
+    instructions TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- INDEXES

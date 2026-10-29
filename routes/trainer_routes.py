@@ -11,7 +11,9 @@ from services.attendance_service import (
     get_trainer_attendance_history, get_gym_local_date
 )
 from services.auth_service import get_gym_settings
-from database.connection import query_one
+from services.equipment_service import get_all_equipment, STANDARD_CATEGORIES
+from auth.security import hash_password, verify_password
+from database.connection import query_one, execute_statement
 
 trainer_bp = Blueprint("trainer", __name__, url_prefix="/trainer")
 
@@ -136,3 +138,52 @@ def add_note(member_id):
         flash(f"Failed to add note: {str(e)}", "danger")
 
     return redirect(url_for("trainer.member_detail", member_id=member_id))
+
+@trainer_bp.route("/equipment")
+@role_required("trainer")
+def equipment():
+    """Trainer view of gym equipment & facilities directory."""
+    trainer = get_trainer_by_user_id(session["user_id"])
+    category = request.args.get("category", "all")
+    items = get_all_equipment(category=category, status="all")
+    settings = get_gym_settings()
+    return render_template(
+        "trainer/equipment.html",
+        trainer=trainer,
+        equipment=items,
+        categories=STANDARD_CATEGORIES,
+        current_category=category,
+        settings=settings
+    )
+
+@trainer_bp.route("/change-password", methods=["GET", "POST"])
+@role_required("trainer")
+def change_password():
+    """Trainer password update."""
+    user_id = session["user_id"]
+    trainer = get_trainer_by_user_id(user_id)
+    settings = get_gym_settings()
+
+    if request.method == "POST":
+        current_pwd = request.form.get("current_password", "")
+        new_pwd = request.form.get("new_password", "").strip()
+        confirm_pwd = request.form.get("confirm_password", "").strip()
+
+        user = query_one("SELECT password_hash FROM users WHERE id = %s;", (user_id,))
+        if not user or not verify_password(current_pwd, user["password_hash"]):
+            flash("Current password is incorrect.", "danger")
+            return render_template("trainer/change_password.html", trainer=trainer, settings=settings)
+
+        if len(new_pwd) < 6:
+            flash("New password must be at least 6 characters.", "danger")
+            return render_template("trainer/change_password.html", trainer=trainer, settings=settings)
+
+        if new_pwd != confirm_pwd:
+            flash("New passwords do not match.", "danger")
+            return render_template("trainer/change_password.html", trainer=trainer, settings=settings)
+
+        execute_statement("UPDATE users SET password_hash = %s WHERE id = %s;", (hash_password(new_pwd), user_id))
+        flash("Password updated successfully!", "success")
+        return redirect(url_for("trainer.dashboard"))
+
+    return render_template("trainer/change_password.html", trainer=trainer, settings=settings)

@@ -25,7 +25,12 @@ from services.absence_service import (
     run_ten_day_absence_check, get_active_absence_alerts,
     get_all_absence_alerts_history, acknowledge_alert
 )
-from database.connection import query_one
+from services.equipment_service import (
+    get_all_equipment, get_equipment_by_id, create_equipment,
+    update_equipment, delete_equipment, STANDARD_CATEGORIES
+)
+from auth.security import hash_password
+from database.connection import query_one, execute_statement, query_all
 
 owner_bp = Blueprint("owner", __name__, url_prefix="/owner")
 
@@ -112,10 +117,22 @@ def members():
     trainers = get_all_trainers(active_only=True)
     total_pages = max(1, (total_count + per_page - 1) // per_page)
 
+    try:
+        pending_members = query_all("""
+            SELECT m.*, u.username, u.is_active
+            FROM members m
+            JOIN users u ON u.id = m.user_id
+            WHERE m.membership_status = 'pending' OR u.is_active = 0
+            ORDER BY m.created_at DESC;
+        """)
+    except Exception:
+        pending_members = []
+
     return render_template(
         "owner/members.html",
         members=member_list,
         trainers=trainers,
+        pending_members=pending_members,
         total_count=total_count,
         page=page,
         total_pages=total_pages,
@@ -594,4 +611,188 @@ def remove_receptionist(receptionist_id):
     """Permanently remove a receptionist."""
     success, msg = delete_receptionist(receptionist_id, owner_id=session.get("user_id"))
     flash(msg, "success" if success else "danger")
+    return redirect(url_for("owner.staff"))
+
+# ============================================================================
+# GYM EQUIPMENT & MACHINES DIRECTORY MANAGEMENT
+# ============================================================================
+
+@owner_bp.route("/equipment")
+@role_required("owner")
+def equipment():
+    """Gym equipment and machines management."""
+    category = request.args.get("category", "all")
+    status = request.args.get("status", "all")
+    items = get_all_equipment(category=category, status=status)
+    settings = get_gym_settings()
+    return render_template(
+        "owner/equipment.html",
+        equipment=items,
+        categories=STANDARD_CATEGORIES,
+        current_category=category,
+        current_status=status,
+        settings=settings
+    )
+
+@owner_bp.route("/equipment/add", methods=["POST"])
+@role_required("owner")
+def add_equipment():
+    """Add a new machine or equipment to the gym."""
+    name = request.form.get("name", "").strip()
+    category = request.form.get("category", "").strip()
+    target_muscle = request.form.get("target_muscle", "").strip()
+    quantity = int(request.form.get("quantity") or 1)
+    status = request.form.get("status", "operational").strip()
+    description = request.form.get("description", "").strip()
+    instructions = request.form.get("instructions", "").strip()
+
+    if not name or not category:
+        flash("Machine name and category are required.", "danger")
+        return redirect(url_for("owner.equipment"))
+
+    try:
+        create_equipment(name, category, target_muscle, quantity, status, description, instructions)
+        flash(f"Machine '{name}' added to gym equipment directory.", "success")
+    except Exception as e:
+        flash(f"Could not add equipment: {str(e)}", "danger")
+
+    return redirect(url_for("owner.equipment"))
+
+@owner_bp.route("/equipment/<equipment_id>/edit", methods=["POST"])
+@role_required("owner")
+def edit_equipment(equipment_id):
+    """Update details of an existing machine."""
+    name = request.form.get("name", "").strip()
+    category = request.form.get("category", "").strip()
+    target_muscle = request.form.get("target_muscle", "").strip()
+    quantity = int(request.form.get("quantity") or 1)
+    status = request.form.get("status", "operational").strip()
+    description = request.form.get("description", "").strip()
+    instructions = request.form.get("instructions", "").strip()
+
+    try:
+        update_equipment(equipment_id, name, category, target_muscle, quantity, status, description, instructions)
+        flash(f"Machine '{name}' updated successfully.", "success")
+    except Exception as e:
+        flash(f"Could not update equipment: {str(e)}", "danger")
+
+    return redirect(url_for("owner.equipment"))
+
+@owner_bp.route("/equipment/<equipment_id>/delete", methods=["POST"])
+@role_required("owner")
+def remove_equipment(equipment_id):
+    """Delete a machine from the gym equipment directory."""
+    try:
+        delete_equipment(equipment_id)
+        flash("Equipment removed successfully.", "success")
+    except Exception as e:
+        flash(f"Could not remove equipment: {str(e)}", "danger")
+
+    return redirect(url_for("owner.equipment"))
+
+# ============================================================================
+# MEMBER APPROVAL & ADMIN PASSWORD RESET WORKFLOWS
+# ============================================================================
+
+@owner_bp.route("/members/<member_id>/approve", methods=["POST"])
+@role_required("owner")
+def approve_member(member_id):
+    """Approve and activate a self-registered member."""
+    member = get_member_by_id(member_id)
+    if not member:
+        flash("Member record not found.", "danger")
+        return redirect(url_for("owner.members"))
+
+    monthly_fee = float(request.form.get("monthly_fee") or member.get("monthly_fee") or 5000)
+    membership_plan = request.form.get("membership_plan") or member.get("membership_plan") or "Standard Monthly"
+    assigned_trainer_id = request.form.get("assigned_trainer_id") or None
+
+    execute_statement("UPDATE users SET is_active = 1 WHERE id = %s;", (member["user_id"],))
+    execute_statement("""
+        UPDATE members 
+        SET membership_status = 'active', monthly_fee = %s, membership_plan = %s,
+            assigned_trainer_id = %s, updated_at = CURRENT_TIMESTAMP
+        WHERE id = %s;
+    """, (monthly_fee, membership_plan, assigned_trainer_id, member_id))
+
+    if request.form.get("record_payment"):
+        try:
+            current_month = get_current_billing_month()
+            record_monthly_payment(
+                member_id=member_id,
+                billing_month=current_month,
+                amount=monthly_fee,
+                payment_method=request.form.get("payment_method", "cash"),
+                recorded_by_id=session.get("user_id"),
+                notes="Initial membership fee on approval"
+            )
+        except Exception:
+            pass
+
+    flash(f"Member '{member['full_name']}' approved and activated successfully!", "success")
+    return redirect(url_for("owner.members"))
+
+@owner_bp.route("/members/<member_id>/reject", methods=["POST"])
+@role_required("owner")
+def reject_member(member_id):
+    """Reject and remove a pending self-registration."""
+    success, msg = delete_member(member_id, owner_id=session.get("user_id"))
+    flash(f"Registration rejected. {msg}", "info")
+    return redirect(url_for("owner.members"))
+
+@owner_bp.route("/members/<member_id>/reset-password", methods=["POST"])
+@role_required("owner")
+def reset_member_password(member_id):
+    """Admin manually resets a member's login password."""
+    new_password = request.form.get("new_password", "").strip()
+    if len(new_password) < 6:
+        flash("Password must be at least 6 characters.", "danger")
+        return redirect(url_for("owner.member_detail", member_id=member_id))
+
+    member = get_member_by_id(member_id)
+    if not member:
+        flash("Member not found.", "danger")
+        return redirect(url_for("owner.members"))
+
+    p_hash = hash_password(new_password)
+    execute_statement("UPDATE users SET password_hash = %s WHERE id = %s;", (p_hash, member["user_id"]))
+    flash(f"Password updated for member '{member['full_name']}' (Username: {member['username']}).", "success")
+    return redirect(url_for("owner.member_detail", member_id=member_id))
+
+@owner_bp.route("/staff/trainers/<trainer_id>/reset-password", methods=["POST"])
+@role_required("owner")
+def reset_trainer_password(trainer_id):
+    """Admin manually resets a trainer's login password."""
+    new_password = request.form.get("new_password", "").strip()
+    if len(new_password) < 6:
+        flash("Password must be at least 6 characters.", "danger")
+        return redirect(url_for("owner.staff"))
+
+    trainer = query_one("SELECT * FROM trainers WHERE id = %s;", (trainer_id,))
+    if not trainer:
+        flash("Trainer not found.", "danger")
+        return redirect(url_for("owner.staff"))
+
+    p_hash = hash_password(new_password)
+    execute_statement("UPDATE users SET password_hash = %s WHERE id = %s;", (p_hash, trainer["user_id"]))
+    flash(f"Password updated for trainer '{trainer['full_name']}'.", "success")
+    return redirect(url_for("owner.staff"))
+
+@owner_bp.route("/staff/receptionists/<receptionist_id>/reset-password", methods=["POST"])
+@role_required("owner")
+def reset_receptionist_password(receptionist_id):
+    """Admin manually resets a receptionist's login password."""
+    new_password = request.form.get("new_password", "").strip()
+    if len(new_password) < 6:
+        flash("Password must be at least 6 characters.", "danger")
+        return redirect(url_for("owner.staff"))
+
+    rec = query_one("SELECT * FROM receptionists WHERE id = %s;", (receptionist_id,))
+    if not rec:
+        flash("Receptionist not found.", "danger")
+        return redirect(url_for("owner.staff"))
+
+    p_hash = hash_password(new_password)
+    execute_statement("UPDATE users SET password_hash = %s WHERE id = %s;", (p_hash, rec["user_id"]))
+    flash(f"Password updated for receptionist '{rec['full_name']}'.", "success")
     return redirect(url_for("owner.staff"))

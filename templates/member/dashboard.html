@@ -20,6 +20,127 @@
   </div>
 {% endif %}
 
+<!-- Reverse Attendance: Scan Reception Terminal QR (Check In & Check Out) -->
+<div class="card mb-6" style="border: 1px solid rgba(16, 185, 129, 0.35); background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.95) 100%);">
+  <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <div>
+      <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); padding:3px 10px; border-radius:999px; font-size:0.75rem; color:#34D399; font-weight:700; margin-bottom:6px;">
+        STATION ATTENDANCE SCANNER
+      </div>
+      <h2 style="font-size:1.35rem; font-weight:800; color:#F8FAFC; margin:0;">
+        Daily Gym Session & QR Scanner
+      </h2>
+      <p style="color:#94A3B8; font-size:0.86rem; margin:3px 0 0;">
+        Scan the Reception Desk Terminal QR code with your phone camera on arrival and departure.
+      </p>
+    </div>
+
+    <!-- Current Today Status Badge -->
+    <div>
+      {% if not today_attendance %}
+        <div style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:999px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#94A3B8; font-size:0.82rem; font-weight:600;">
+          <span style="width:8px; height:8px; border-radius:50%; background:#94A3B8;"></span> Not Checked In Today
+        </div>
+      {% elif today_attendance and not today_attendance.check_out_time %}
+        <div style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:999px; background:rgba(16,185,129,0.18); border:1px solid #10B981; color:#34D399; font-size:0.82rem; font-weight:700;">
+          <span class="pulse-dot" style="width:8px; height:8px; border-radius:50%; background:#10B981;"></span> Active Session (Inside Gym)
+        </div>
+      {% else %}
+        <div style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:999px; background:rgba(59,130,246,0.18); border:1px solid #3B82F6; color:#93C5FD; font-size:0.82rem; font-weight:700;">
+          <span>✓</span> Session Completed Today
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card-body">
+    <!-- Today's Timestamps Summary -->
+    <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:20px; padding:12px 16px; background:rgba(0,0,0,0.25); border-radius:12px; border:1px solid rgba(255,255,255,0.06);">
+      <div style="flex:1; min-width:140px;">
+        <div style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Check In (Aty huay)</div>
+        <div style="font-size:1.1rem; font-weight:700; color:{% if today_attendance and today_attendance.check_in_time %}#34D399{% else %}var(--text-muted){% endif %};">
+          {% if today_attendance and today_attendance.check_in_time %}
+            {{ today_attendance.check_in_time|date_format("%I:%M %p") }}
+          {% else %}
+            --:--
+          {% endif %}
+        </div>
+      </div>
+      <div style="flex:1; min-width:140px;">
+        <div style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Check Out (Jaty huay)</div>
+        <div style="font-size:1.1rem; font-weight:700; color:{% if today_attendance and today_attendance.check_out_time %}#60A5FA{% else %}var(--text-muted){% endif %};">
+          {% if today_attendance and today_attendance.check_out_time %}
+            {{ today_attendance.check_out_time|date_format("%I:%M %p") }}
+          {% else %}
+            --:--
+          {% endif %}
+        </div>
+      </div>
+      <div style="flex:2; min-width:200px; display:flex; align-items:center; justify-content:flex-end;">
+        <span style="font-size:0.82rem; color:var(--text-secondary);">
+          {% if not today_attendance %}
+            Press <strong>"Check In (Aty huay)"</strong> and scan desk station QR.
+          {% elif not today_attendance.check_out_time %}
+            Workout in progress. Press <strong>"Check Out (Jaty huay)"</strong> before leaving.
+          {% else %}
+            Workout complete! See you next workout session.
+          {% endif %}
+        </span>
+      </div>
+    </div>
+
+    <!-- 2 Distinct Action Buttons -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+      <button type="button" id="btn-member-checkin" class="btn btn-primary" onclick="startScannerForAction('check_in')" style="padding:14px; font-weight:700; font-size:1rem; display:flex; align-items:center; justify-content:center; gap:10px; background:#10B981; border:none; box-shadow:0 4px 14px rgba(16,185,129,0.35);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        <span>Check In (Aty huay)</span>
+      </button>
+
+      <button type="button" id="btn-member-checkout" class="btn btn-secondary" onclick="startScannerForAction('check_out')" style="padding:14px; font-weight:700; font-size:1rem; display:flex; align-items:center; justify-content:center; gap:10px; background:rgba(239,68,68,0.18); border:1px solid #EF4444; color:#FCA5A5;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+        <span>Check Out (Jaty huay)</span>
+      </button>
+    </div>
+
+    <!-- Active Scanner Viewport (Toggled on button press) -->
+    <div id="self-scan-box" style="display:none; padding:18px; border-radius:14px; background:#0B0F17; border:1px solid rgba(16,185,129,0.4); margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div style="font-weight:700; font-size:0.95rem; color:#F8FAFC; display:flex; align-items:center; gap:8px;">
+          <span id="active-action-indicator" style="padding:3px 10px; border-radius:999px; font-size:0.75rem; background:#10B981; color:#FFFFFF;">CHECK IN</span>
+          <span>Point camera at Gym Station Terminal QR</span>
+        </div>
+        <button type="button" onclick="stopSelfScanner()" class="btn btn-outline btn-sm" style="padding:3px 10px; font-size:0.8rem;">
+          ✕ Cancel
+        </button>
+      </div>
+
+      <div class="scanner-viewport" id="self-scanner-viewport" style="background:#05070B; position:relative; overflow:hidden; border-radius:12px; border:1px solid rgba(255,255,255,0.15); max-width:380px; aspect-ratio:4/3; margin:0 auto; display:flex; align-items:center; justify-content:center;">
+        <video id="self-scanner-video" playsinline autoplay muted style="width:100%; height:100%; object-fit:cover; display:block;"></video>
+        <div class="scanner-laser"></div>
+        <div class="scanner-reticle"></div>
+      </div>
+
+      <div id="self-scan-feedback" style="margin-top:12px; text-align:center;">
+        <div style="font-size:0.84rem; color:#94A3B8;">
+          Align the desk Station QR code within the frame above.
+        </div>
+      </div>
+
+      <!-- Manual Code / Photo Fallback for camera-blocked phones -->
+      <div style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div style="display:flex; gap:8px; flex:1; max-width:320px;">
+          <input type="text" id="manual-station-code" class="form-input" placeholder="Type station token if camera fails..." style="font-size:0.82rem; padding:6px 10px;">
+          <button type="button" class="btn btn-primary btn-sm" onclick="submitManualStationCode()" style="white-space:nowrap;">Submit</button>
+        </div>
+        <label for="member-qr-file" class="btn btn-outline btn-sm" style="cursor:pointer; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px;">
+          <span>🖼️</span> Scan Image File
+        </label>
+        <input type="file" id="member-qr-file" accept="image/*" capture="environment" style="display:none;" onchange="handleQRImageUpload(this)">
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Digital Membership Card & QR Pass -->
 <div class="grid-cols-2 mb-6">
   <div class="member-badge-card" style="background: linear-gradient(135deg, rgba(16, 24, 39, 0.94) 0%, rgba(9, 13, 20, 0.96) 100%), url('{{ url_for('static', filename='images/gym-lifting.jpg') }}') center/cover; border: 1px solid rgba(16, 185, 129, 0.4); box-shadow: 0 16px 40px -10px rgba(0,0,0,0.8);">
@@ -182,4 +303,189 @@
     </div>
   </div>
 </div>
+
+<script src="{{ url_for('static', filename='js/jsQR.min.js') }}"></script>
+<script>
+  let selfVideo = null;
+  let selfStream = null;
+  let selfScanning = false;
+  let activeScanAction = 'check_in';
+  let scanCooldown = false;
+  let scanCanvas = document.createElement('canvas');
+  let scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
+
+  function playTone(freq, duration) {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    } catch (e) {}
+  }
+
+  function startScannerForAction(action) {
+    activeScanAction = action;
+    const box = document.getElementById('self-scan-box');
+    const indicator = document.getElementById('active-action-indicator');
+    const feedback = document.getElementById('self-scan-feedback');
+
+    if (action === 'check_in') {
+      indicator.textContent = 'CHECK IN (Aty huay)';
+      indicator.style.background = '#10B981';
+      feedback.innerHTML = '<div style="color:#34D399; font-size:0.86rem; font-weight:600;">Point camera at the front desk Station QR to Check In.</div>';
+    } else {
+      indicator.textContent = 'CHECK OUT (Jaty huay)';
+      indicator.style.background = '#EF4444';
+      feedback.innerHTML = '<div style="color:#F87171; font-size:0.86rem; font-weight:600;">Point camera at the front desk Station QR to Check Out.</div>';
+    }
+
+    box.style.display = 'block';
+    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    selfVideo = document.getElementById('self-scanner-video');
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      feedback.innerHTML = '<div style="color:#EF4444; font-size:0.86rem;">Camera not supported by this browser. Enter the station token code below instead.</div>';
+      return;
+    }
+
+    navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 640 }, height: { ideal: 480 } }
+    }).then(stream => {
+      selfStream = stream;
+      selfVideo.srcObject = stream;
+      selfVideo.setAttribute('playsinline', 'true');
+      selfVideo.play();
+      selfScanning = true;
+      requestAnimationFrame(scanSelfFrame);
+    }).catch(err => {
+      feedback.innerHTML = `<div style="color:#EF4444; font-size:0.86rem;">Camera access denied or unavailable (${err.name}). Enter station code manually below.</div>`;
+    });
+  }
+
+  function stopSelfScanner() {
+    selfScanning = false;
+    if (selfStream) {
+      selfStream.getTracks().forEach(track => track.stop());
+      selfStream = null;
+    }
+    const box = document.getElementById('self-scan-box');
+    if (box) box.style.display = 'none';
+  }
+
+  function scanSelfFrame() {
+    if (!selfScanning || !selfVideo) return;
+
+    if (selfVideo.readyState === selfVideo.HAVE_ENOUGH_DATA) {
+      scanCanvas.width = selfVideo.videoWidth;
+      scanCanvas.height = selfVideo.videoHeight;
+      scanCtx.drawImage(selfVideo, 0, 0, scanCanvas.width, scanCanvas.height);
+
+      const imageData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+      if (window.jsQR) {
+        const code = window.jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'dontInvert'
+        });
+
+        if (code && code.data && !scanCooldown) {
+          scanCooldown = true;
+          processSelfScan(code.data);
+          setTimeout(() => { scanCooldown = false; }, 3000);
+          return;
+        }
+      }
+    }
+
+    if (selfScanning) {
+      requestAnimationFrame(scanSelfFrame);
+    }
+  }
+
+  async function processSelfScan(token) {
+    const feedback = document.getElementById('self-scan-feedback');
+    feedback.innerHTML = '<div style="color:#60A5FA; font-size:0.88rem;">Processing station scan...</div>';
+
+    try {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+      const response = await fetch('/api/attendance/self-scan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+          token: token.trim(),
+          action: activeScanAction
+        })
+      });
+
+      const res = await response.json();
+
+      if (response.ok && res.success) {
+        playTone(880, 0.25);
+        feedback.innerHTML = `
+          <div style="padding:10px 14px; border-radius:10px; background:rgba(16,185,129,0.2); border:1px solid #10B981; color:#A7F3D0; font-size:0.9rem; font-weight:700;">
+            ✓ ${res.message}
+          </div>
+        `;
+        setTimeout(() => {
+          stopSelfScanner();
+          window.location.reload();
+        }, 1400);
+      } else {
+        playTone(300, 0.35);
+        feedback.innerHTML = `
+          <div style="padding:10px 14px; border-radius:10px; background:rgba(239,68,68,0.2); border:1px solid #EF4444; color:#FECACA; font-size:0.9rem; font-weight:700;">
+            ⚠️ ${res.error || 'Attendance scan failed.'}
+          </div>
+        `;
+      }
+    } catch (err) {
+      feedback.innerHTML = '<div style="color:#EF4444; font-size:0.88rem;">Network error communicating with server. Please try again.</div>';
+    }
+  }
+
+  function submitManualStationCode() {
+    const input = document.getElementById('manual-station-code');
+    const val = input ? input.value.trim() : '';
+    if (!val) {
+      alert('Please enter the station token code.');
+      return;
+    }
+    processSelfScan(val);
+  }
+
+  function handleQRImageUpload(input) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        scanCanvas.width = img.width;
+        scanCanvas.height = img.height;
+        scanCtx.drawImage(img, 0, 0);
+        const imgData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+        if (window.jsQR) {
+          const code = window.jsQR(imgData.data, imgData.width, imgData.height);
+          if (code && code.data) {
+            processSelfScan(code.data);
+          } else {
+            alert('No valid QR code could be read from this image.');
+          }
+        }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+</script>
 {% endblock %}

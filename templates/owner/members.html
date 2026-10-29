@@ -49,6 +49,59 @@
   </div>
 </div>
 
+<!-- Pending Self-Registrations Awaiting Approval -->
+{% if pending_members %}
+  <div class="card mb-6" style="border: 1px solid #F59E0B; background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(15, 23, 42, 0.95) 100%);">
+    <div class="card-header" style="border-bottom: 1px solid rgba(245, 158, 11, 0.2); display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <h3 class="card-title" style="color:#FBBF24; display:flex; align-items:center; gap:8px;">
+          <span>⏳</span> Pending Self-Registrations Awaiting Approval ({{ pending_members|length }})
+        </h3>
+        <p class="card-subtitle">Review prospective members who registered online and activate their accounts.</p>
+      </div>
+      <span class="badge badge-warning" style="font-size:0.8rem;">Action Required</span>
+    </div>
+    <div class="card-body" style="padding:0;">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Member Name</th>
+              <th>Username</th>
+              <th>Phone</th>
+              <th>Requested Plan</th>
+              <th>Registered At</th>
+              <th style="text-align:right;">Admin Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pm in pending_members %}
+              <tr>
+                <td><strong>{{ pm.full_name }}</strong></td>
+                <td><code>@{{ pm.username }}</code></td>
+                <td>{{ pm.phone }}</td>
+                <td><span class="badge badge-neutral">{{ pm.membership_plan }}</span></td>
+                <td>{{ pm.created_at|date_format("%b %d, %Y") }}</td>
+                <td style="text-align:right; white-space:nowrap;">
+                  <button type="button" class="btn btn-primary btn-sm" onclick='openApproveModal({{ pm|tojson }})' style="padding:5px 12px; font-size:0.8rem; font-weight:700;">
+                    ✓ Approve & Activate
+                  </button>
+                  <form method="POST" action="{{ url_for('owner.reject_member', member_id=pm.id) }}" style="display:inline;" onsubmit="return confirm('Reject and remove registration for {{ pm.full_name }}?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn btn-outline btn-sm" style="padding:5px 10px; font-size:0.8rem; color:#F87171; border-color:rgba(239,68,68,0.3);">
+                      ✕ Reject
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endif %}
+
 <!-- Members Table -->
 <div class="card">
   <div class="card-header">
@@ -120,6 +173,9 @@
                     <a href="{{ url_for('owner.member_detail', member_id=m.id) }}" class="btn btn-outline btn-sm">
                       View
                     </a>
+                    <button type="button" class="btn btn-outline btn-sm" title="Reset Member Password" onclick="openMemberPwdModal('{{ m.id }}', '{{ m.full_name }}', '{{ m.username }}')" style="padding:4px 8px; font-size:0.75rem;">
+                      🔑
+                    </button>
                     <form method="POST" action="{{ url_for('owner.remove_member', member_id=m.id) }}" onsubmit="return confirm('Permanently remove {{ m.full_name }}?');" style="display:inline; margin:0;">
                       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                       <button type="submit" class="btn btn-danger btn-sm" title="Remove Member" style="padding:4px 8px; font-size:0.75rem;">
@@ -158,4 +214,115 @@
     {% endif %}
   </div>
 </div>
+
+<!-- Modal: Approve & Activate Member -->
+<div id="approve-member-modal" class="modal" style="display:none; position:fixed; inset:0; z-index:999; background:rgba(0,0,0,0.8); backdrop-filter:blur(6px); align-items:center; justify-content:center; padding:16px;">
+  <div style="background:#0F172A; border:1px solid #10B981; border-radius:18px; padding:28px; max-width:500px; width:100%; box-shadow:0 16px 40px rgba(0,0,0,0.8);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+      <h3 style="font-size:1.2rem; font-weight:800; color:#F8FAFC; margin:0;">Approve & Activate Member</h3>
+      <button type="button" onclick="closeApproveModal()" style="background:none; border:none; color:#94A3B8; font-size:1.4rem; cursor:pointer;">✕</button>
+    </div>
+
+    <form id="approve-member-form" method="POST" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <div style="margin-bottom:14px; padding:12px; border-radius:10px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);">
+        <div style="font-weight:700; color:#FFFFFF; font-size:1rem;" id="approve-name">—</div>
+        <div style="font-size:0.82rem; color:#94A3B8; margin-top:2px;">
+          Username: <span id="approve-username" style="color:#34D399;">—</span> • Phone: <span id="approve-phone">—</span>
+        </div>
+      </div>
+
+      <div class="form-group mb-3">
+        <label class="form-label">Membership Plan *</label>
+        <input type="text" id="approve-plan" name="membership_plan" class="form-input" required>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+        <div class="form-group">
+          <label class="form-label">Monthly Fee ({{ gym_settings.currency }}) *</label>
+          <input type="number" id="approve-fee" name="monthly_fee" class="form-input" value="5000" min="0" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Assign Trainer</label>
+          <select name="assigned_trainer_id" class="form-select">
+            <option value="">No Assigned Trainer</option>
+            {% for t in trainers %}
+              <option value="{{ t.id }}">{{ t.full_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-bottom:18px; padding:10px 12px; border-radius:8px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25);">
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:#A7F3D0; cursor:pointer;">
+          <input type="checkbox" name="record_payment" value="1" checked>
+          <span>Mark current month fee as paid now (Cash)</span>
+        </label>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" class="btn btn-outline" onclick="closeApproveModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" style="font-weight:700;">Approve & Activate →</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Admin Reset Member Password -->
+<div id="reset-member-pwd-modal" class="modal" style="display:none; position:fixed; inset:0; z-index:999; background:rgba(0,0,0,0.8); backdrop-filter:blur(6px); align-items:center; justify-content:center; padding:16px;">
+  <div style="background:#0F172A; border:1px solid rgba(59,130,246,0.4); border-radius:18px; padding:28px; max-width:460px; width:100%; box-shadow:0 16px 40px rgba(0,0,0,0.8);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="font-size:1.2rem; font-weight:800; color:#F8FAFC; margin:0;">Admin Password Override</h3>
+      <button type="button" onclick="closeMemberPwdModal()" style="background:none; border:none; color:#94A3B8; font-size:1.4rem; cursor:pointer;">✕</button>
+    </div>
+
+    <form id="reset-member-pwd-form" method="POST" action="">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <div style="margin-bottom:16px; padding:12px; border-radius:10px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);">
+        <div style="font-weight:700; color:#FFFFFF; font-size:0.95rem;" id="pwd-member-name">—</div>
+        <div style="font-size:0.82rem; color:#94A3B8;">Username: <code id="pwd-member-user" style="color:#60A5FA;">—</code></div>
+      </div>
+
+      <div class="form-group mb-4">
+        <label class="form-label">Set New Password * (Min 6 chars)</label>
+        <input type="text" name="new_password" class="form-input" placeholder="Type new password for member..." required minlength="6">
+        <small style="color:var(--text-muted); font-size:0.75rem; margin-top:4px; display:block;">The member will be able to log in with this new password immediately.</small>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" class="btn btn-outline" onclick="closeMemberPwdModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" style="font-weight:700;">Set Password</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openApproveModal(pm) {
+    const form = document.getElementById('approve-member-form');
+    form.action = `/owner/members/${pm.id}/approve`;
+    document.getElementById('approve-name').textContent = pm.full_name || 'Member';
+    document.getElementById('approve-username').textContent = '@' + (pm.username || '');
+    document.getElementById('approve-phone').textContent = pm.phone || '';
+    document.getElementById('approve-plan').value = pm.membership_plan || 'Standard Monthly';
+    document.getElementById('approve-fee').value = pm.monthly_fee || 5000;
+    document.getElementById('approve-member-modal').style.display = 'flex';
+  }
+  function closeApproveModal() {
+    document.getElementById('approve-member-modal').style.display = 'none';
+  }
+
+  function openMemberPwdModal(memberId, name, username) {
+    const form = document.getElementById('reset-member-pwd-form');
+    form.action = `/owner/members/${memberId}/reset-password`;
+    document.getElementById('pwd-member-name').textContent = name || 'Member';
+    document.getElementById('pwd-member-user').textContent = '@' + (username || '');
+    document.getElementById('reset-member-pwd-modal').style.display = 'flex';
+  }
+  function closeMemberPwdModal() {
+    document.getElementById('reset-member-pwd-modal').style.display = 'none';
+  }
+</script>
 {% endblock %}

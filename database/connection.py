@@ -244,6 +244,30 @@ def init_db(schema_file=None, force=False):
                         CONSTRAINT unique_trainer_attendance_per_day UNIQUE (trainer_id, attendance_date)
                     );
                 """)
+                execute_statement("""
+                    CREATE TABLE IF NOT EXISTS equipment (
+                        id VARCHAR(36) PRIMARY KEY,
+                        name VARCHAR(100) NOT NULL,
+                        category VARCHAR(50) NOT NULL,
+                        target_muscle VARCHAR(100),
+                        quantity INT NOT NULL DEFAULT 1,
+                        status VARCHAR(20) NOT NULL DEFAULT 'operational',
+                        description TEXT,
+                        instructions TEXT,
+                        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    );
+                """)
+                # Alter column check_out_time on attendance if missing
+                try:
+                    execute_statement("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS check_out_time TIMESTAMPTZ;")
+                except Exception:
+                    pass
+                # Alter column terminal_qr_token on gym_settings if missing
+                try:
+                    execute_statement("ALTER TABLE gym_settings ADD COLUMN IF NOT EXISTS terminal_qr_token VARCHAR(64) DEFAULT 'VANGUARD-TERMINAL-DESK-STATION';")
+                except Exception:
+                    pass
             else:
                 execute_statement("""
                     CREATE TABLE IF NOT EXISTS trainer_attendance (
@@ -260,8 +284,37 @@ def init_db(schema_file=None, force=False):
                         CONSTRAINT unique_trainer_attendance_per_day UNIQUE (trainer_id, attendance_date)
                     );
                 """)
+                execute_statement("""
+                    CREATE TABLE IF NOT EXISTS equipment (
+                        id TEXT PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        category TEXT NOT NULL,
+                        target_muscle TEXT,
+                        quantity INTEGER NOT NULL DEFAULT 1,
+                        status TEXT NOT NULL DEFAULT 'operational',
+                        description TEXT,
+                        instructions TEXT,
+                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    );
+                """)
+                # SQLite column additions
+                try:
+                    execute_statement("ALTER TABLE attendance ADD COLUMN check_out_time TIMESTAMP;")
+                except Exception:
+                    pass
+                try:
+                    execute_statement("ALTER TABLE gym_settings ADD COLUMN terminal_qr_token TEXT DEFAULT 'VANGUARD-TERMINAL-DESK-STATION';")
+                except Exception:
+                    pass
+
+            try:
+                from services.equipment_service import seed_default_equipment_if_empty
+                seed_default_equipment_if_empty()
+            except Exception:
+                pass
         except Exception as e:
-            logger.warning("Could not auto-ensure trainer_attendance: %s", e)
+            logger.warning("Could not auto-ensure tables and columns: %s", e)
         return
     if backend == "postgres":
         if schema_file is None:
@@ -279,6 +332,12 @@ def init_db(schema_file=None, force=False):
         with get_db_connection() as conn:
             conn.executescript(sql)
     logger.info("Database schema applied successfully.")
+
+    try:
+        from services.equipment_service import seed_default_equipment_if_empty
+        seed_default_equipment_if_empty()
+    except Exception:
+        pass
 
 def check_db_health():
     """Verify database health."""
