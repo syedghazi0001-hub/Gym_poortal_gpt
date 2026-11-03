@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Access Denied — {{ gym_settings.gym_name }}{% endblock %}
+{% block page_title %}403 Forbidden{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 500px; margin: 40px auto; text-align: center;">
+  <div class="empty-state">
+    <div class="empty-icon" style="color:var(--danger); font-size:1.8rem;">🚫</div>
+    <h2 class="empty-title">Access Denied</h2>
+    <p class="empty-desc">You do not have the required role or authorization to access this gym resource.</p>
+    <a href="/" class="btn btn-primary">Return to Home</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}{{ member.full_name }} — Trainer View{% endblock %}
+{% block page_title %}Trainee Progress & Log{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+  <div>
+    <h2 style="font-size:1.3rem; font-weight:700;">{{ member.full_name }}</h2>
+    <div style="display:flex; gap:10px; align-items:center; margin-top:4px;">
+      <code>{{ member.member_code }}</code>
+      <span>•</span>
+      <span>📞 {{ member.phone }}</span>
+      <span>•</span>
+      <span class="badge badge-active">Assigned Trainee</span>
+    </div>
+  </div>
+  <a href="{{ url_for('trainer.dashboard') }}" class="btn btn-secondary btn-sm">← Back to Trainees</a>
+</div>
+
+<!-- Trainee Attendance Summary -->
+<div class="grid-cols-3 mb-6" style="grid-template-columns: repeat(3, 1fr);">
+  <div class="stat-card">
+    <div class="stat-header"><span class="stat-title">Days Attended</span></div>
+    <div class="stat-value" style="color:#34D399;">{{ stats.total_attended }}</div>
+    <div class="stat-subtext">Total verified sessions</div>
+  </div>
+
+  <div class="stat-card variant-warning">
+    <div class="stat-header"><span class="stat-title">Current Streak</span></div>
+    <div class="stat-value" style="color:#FBBF24;">{{ stats.streak }} Days 🔥</div>
+    <div class="stat-subtext">Consecutive active streak</div>
+  </div>
+
+  <div class="stat-card variant-danger">
+    <div class="stat-header"><span class="stat-title">Days Absent</span></div>
+    <div class="stat-value" style="color:#F87171;">{{ stats.total_absent }}</div>
+    <div class="stat-subtext">Missed calendar days</div>
+  </div>
+</div>
+
+<div class="grid-cols-2">
+  <!-- Training Notes & Workout Logs -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title">Coaching & Workout Notes</h3>
+        <p class="card-subtitle">Log progression, routine adjustments, or form feedback</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('trainer.add_note', member_id=member.id) }}" class="mb-6">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="form-group">
+          <label class="form-label">Add New Note</label>
+          <textarea name="note" class="form-textarea" placeholder="e.g. Completed 5x5 Squats at 100kg. Focus on hip drive..." required></textarea>
+        </div>
+        <div style="text-align:right;">
+          <button type="submit" class="btn btn-primary btn-sm">+ Save Workout Note</button>
+        </div>
+      </form>
+
+      <div style="font-size:0.8rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:12px;">Previous Coaching Notes</div>
+
+      {% if notes %}
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          {% for n in notes %}
+            <div style="background:var(--bg-surface-2); padding:14px; border-radius:var(--radius-md); border-left:3px solid var(--accent-primary);">
+              <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                <strong style="font-size:0.85rem; color:var(--text-primary);">{{ n.trainer_name }}</strong>
+                <span style="font-size:0.75rem; color:var(--text-muted);">{{ n.created_at|date_format("%b %d, %I:%M %p") }}</span>
+              </div>
+              <p style="font-size:0.88rem; color:var(--text-secondary); line-height:1.4;">{{ n.note }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state" style="padding:20px 0;">
+          <p class="empty-desc">No coaching notes logged yet for this trainee.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Trainee Attendance History -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Recent Attendance Log</h3>
+      <span class="badge badge-active">{{ attendance_history|length }} Sessions</span>
+    </div>
+    <div class="card-body" style="padding:0;">
+      {% if attendance_history %}
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Check-in Time</th>
+                <th>Method</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for a in attendance_history %}
+                <tr>
+                  <td><strong>{{ a.attendance_date|date_format("%b %d, %Y") }}</strong></td>
+                  <td>{{ a.check_in_time|date_format("%I:%M %p") }}</td>
+                  <td><span class="badge badge-neutral">{{ a.method }}</span></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <p class="empty-desc">No attendance records logged yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

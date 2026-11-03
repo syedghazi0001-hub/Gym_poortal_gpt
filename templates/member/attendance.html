@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}My Attendance History — {{ gym_settings.gym_name }}{% endblock %}
+{% block page_title %}Personal Attendance Record{% endblock %}
+
+{% block content %}
+<div class="grid-cols-3 mb-6" style="grid-template-columns: repeat(3, 1fr);">
+  <div class="stat-card">
+    <div class="stat-header"><span class="stat-title">Attended Days</span></div>
+    <div class="stat-value" style="color:#34D399;">{{ stats.total_attended }}</div>
+    <div class="stat-subtext">Verified gym workouts</div>
+  </div>
+
+  <div class="stat-card variant-warning">
+    <div class="stat-header"><span class="stat-title">Current Streak</span></div>
+    <div class="stat-value" style="color:#FBBF24;">{{ stats.streak }} Days 🔥</div>
+    <div class="stat-subtext">Active consistency streak</div>
+  </div>
+
+  <div class="stat-card variant-danger">
+    <div class="stat-header"><span class="stat-title">Missed Days</span></div>
+    <div class="stat-value" style="color:#F87171;">{{ stats.total_absent }}</div>
+    <div class="stat-subtext">Calendar absence count</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h3 class="card-title">Full Attendance Log</h3>
+      <p class="card-subtitle">Every gym session recorded for {{ member.full_name }}</p>
+    </div>
+  </div>
+  <div class="card-body" style="padding:0;">
+    {% if history %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Check-in Time</th>
+              <th>Check-in Method</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in history %}
+              <tr>
+                <td><strong>{{ a.attendance_date|date_format("%A, %B %d, %Y") }}</strong></td>
+                <td>{{ a.check_in_time|date_format("%I:%M:%S %p") }}</td>
+                <td><span class="badge badge-neutral">{{ a.method }}</span></td>
+                <td><span class="badge badge-active">Present</span></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p class="empty-title">No Attendance Recorded</p>
+        <p class="empty-desc">Scan your digital pass at the front desk when you arrive.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
