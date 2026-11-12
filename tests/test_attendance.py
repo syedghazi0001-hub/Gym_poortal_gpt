@@ -21,12 +21,13 @@ def test_attendance_operations(app):
         shift="Morning", username=rec_username, password="DeskPass123!"
     )
 
+    from datetime import timedelta
     # Ensure an active member exists
     member = create_member(
         full_name="Attendance Test Member",
         phone=f"+9230{secrets.randbelow(90000000)+10000000}",
         start_date=today.strftime("%Y-%m-%d"),
-        end_date="2026-11-25",
+        end_date=(today + timedelta(days=30)).strftime("%Y-%m-%d"),
         monthly_fee=5000,
         username=f"att_test_{secrets.token_hex(4)}",
         password="Pass123!",
@@ -79,7 +80,7 @@ def test_attendance_operations(app):
         full_name="Manual Checkin Member 2",
         phone="+923008883333",
         start_date=today.strftime("%Y-%m-%d"),
-        end_date="2026-11-01",
+        end_date=(today + timedelta(days=30)).strftime("%Y-%m-%d"),
         monthly_fee=5000,
         username="manual_user_test_2",
         password="Password123!",
