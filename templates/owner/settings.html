@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Gym Settings — {{ gym_settings.gym_name }}{% endblock %}
+{% block page_title %}Gym Branding & Configurations{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+  <div class="card animate-slide-up">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">Gym Profile & Operational Settings</h2>
+        <p class="card-subtitle">Configure your gym identity, currency, local timezone, and automated alert thresholds.</p>
+      </div>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('owner.settings') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div style="font-size:0.82rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--accent-primary); margin-bottom:14px;">
+          1. Branding & Identity
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Gym Club Name *</label>
+            <input type="text" name="gym_name" class="form-input" required value="{{ settings.gym_name }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tagline / Motto</label>
+            <input type="text" name="gym_tagline" class="form-input" value="{{ settings.gym_tagline or '' }}" placeholder="Elite Strength & Performance">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Currency Symbol / Code *</label>
+            <input type="text" name="currency" class="form-input" required value="{{ settings.currency }}" placeholder="PKR, USD, EUR">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Brand Accent Color</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <input type="color" name="accent_color" value="{{ settings.accent_color or '#10B981' }}" style="height:44px; width:60px; background:var(--bg-surface-2); border:1px solid var(--border-medium); border-radius:var(--radius-md); cursor:pointer;">
+              <span style="font-family:var(--font-mono); font-size:0.9rem; color:var(--text-secondary);">Muted Emerald / Accent</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size:0.82rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--accent-primary); margin:24px 0 14px;">
+          2. Localization & Automation Thresholds
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Timezone *</label>
+            <input type="text" name="timezone" class="form-input" required value="{{ settings.timezone }}">
+            <span class="form-hint">Standard IANA timezone (e.g. Asia/Karachi, Asia/Dubai, UTC).</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Absence Alert Threshold (Days) *</label>
+            <input type="number" name="absence_threshold_days" class="form-input" required value="{{ settings.absence_threshold_days or 10 }}" min="3" max="60">
+            <span class="form-hint">Consecutive absent days before generating alerts (Default: 10).</span>
+          </div>
+        </div>
+
+        <div style="font-size:0.82rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--accent-primary); margin:24px 0 14px;">
+          3. Contact & Address Details
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Official Phone</label>
+            <input type="tel" name="contact_phone" class="form-input" value="{{ settings.contact_phone or '' }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Official Email</label>
+            <input type="email" name="contact_email" class="form-input" value="{{ settings.contact_email or '' }}">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Gym Physical Address</label>
+          <textarea name="address" class="form-textarea" placeholder="Full gym facility address...">{{ settings.address or '' }}</textarea>
+        </div>
+
+        <div style="margin-top:28px; display:flex; justify-content:flex-end;">
+          <button type="submit" class="btn btn-primary btn-lg">Save Gym Settings</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

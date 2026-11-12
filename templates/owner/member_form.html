@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}
+  {% if member %}Edit Member — {{ member.full_name }}{% else %}New Member Registration{% endif %} — {{ gym_settings.gym_name }}
+{% endblock %}
+
+{% block page_title %}
+  {% if member %}Edit Member Profile{% else %}Register New Gym Member{% endif %}
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 0 auto;">
+  <div class="card animate-slide-up">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">
+          {% if member %}Update Details for {{ member.full_name }} ({{ member.member_code }}){% else %}New Member Onboarding Form{% endif %}
+        </h2>
+        <p class="card-subtitle">
+          {% if member %}Modify profile, membership schedule, and trainer assignments.{% else %}Creates membership record, auto-generates QR code badge, and sets up secure portal login.{% endif %}
+        </p>
+      </div>
+      <a href="{{ url_for('owner.members') }}" class="btn btn-secondary btn-sm">← Back to List</a>
+    </div>
+
+    <div class="card-body">
+      <form method="POST" action="{% if member %}{{ url_for('owner.edit_member', member_id=member.id) }}{% else %}{{ url_for('owner.new_member') }}{% endif %}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        
+        <!-- Section 1: Personal Details -->
+        <div style="font-size:0.82rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--accent-primary); margin-bottom:14px;">
+          1. Personal Information
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input type="text" name="full_name" class="form-input" required placeholder="e.g. Bilal Hassan" value="{{ member.full_name if member else '' }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone Number *</label>
+            <input type="tel" name="phone" class="form-input" required placeholder="0300-1234567" value="{{ member.phone if member else '' }}">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Email Address (Optional)</label>
+            <input type="email" name="email" class="form-input" placeholder="bilal@example.com" value="{{ member.email if member and member.email else '' }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date of Birth (Optional)</label>
+            <input type="date" name="dob" class="form-input" value="{{ member.dob if member and member.dob else '' }}">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Emergency Contact Phone / Name (Optional)</label>
+          <input type="text" name="emergency_contact" class="form-input" placeholder="e.g. Brother: 0321-9876543" value="{{ member.emergency_contact if member and member.emergency_contact else '' }}">
+        </div>
+
+        <!-- Section 2: Membership Details -->
+        <div style="font-size:0.82rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--accent-primary); margin:24px 0 14px;">
+          2. Membership Schedule & Fees
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Plan Name *</label>
+            <input type="text" name="membership_plan" class="form-input" required value="{{ member.membership_plan if member else 'Monthly Standard' }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Monthly Fee ({{ gym_settings.currency }}) *</label>
+            <input type="number" step="100" name="monthly_fee" class="form-input" required value="{{ member.monthly_fee if member else '5000' }}">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Start Date *</label>
+            <input type="date" name="membership_start_date" class="form-input" required value="{{ member.membership_start_date if member else '' }}" id="start-date-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">End Date / Expiry *</label>
+            <input type="date" name="membership_end_date" class="form-input" required value="{{ member.membership_end_date if member else '' }}" id="end-date-input">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Membership Status *</label>
+            <select name="membership_status" class="form-select">
+              <option value="active" {% if not member or member.membership_status == 'active' %}selected{% endif %}>Active</option>
+              <option value="inactive" {% if member and member.membership_status == 'inactive' %}selected{% endif %}>Inactive</option>
+              <option value="suspended" {% if member and member.membership_status == 'suspended' %}selected{% endif %}>Suspended</option>
+              <option value="expired" {% if member and member.membership_status == 'expired' %}selected{% endif %}>Expired</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Assign Personal Trainer</label>
+            <select name="assigned_trainer_id" class="form-select">
+              <option value="">-- No Trainer Assigned --</option>
+              {% for t in trainers %}
+                <option value="{{ t.id }}" {% if member and member.assigned_trainer_id == t.id %}selected{% endif %}>
+                  {{ t.full_name }} ({{ t.specialization }})
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Medical / Fitness Notes (Optional)</label>
+          <textarea name="notes" class="form-textarea" placeholder="Injury history, fitness goals, medical clearance...">{{ member.notes if member and member.notes else '' }}</textarea>
+        </div>
+
+        <!-- Section 3: Portal Login Credentials (Only for new registrations) -->
+        {% if not member %}
+          <div style="font-size:0.82rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--accent-primary); margin:24px 0 14px;">
+            3. Member Portal Credentials
+          </div>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px;">
+            The member will use these credentials to log in to their personal portal and view their attendance history, payment receipts, and QR badge.
+          </p>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Portal Username *</label>
+              <input type="text" name="username" class="form-input" required placeholder="e.g. bilal.hassan" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Portal Password *</label>
+              <input type="password" name="password" class="form-input" required minlength="6" placeholder="At least 6 chars" autocomplete="new-password">
+            </div>
+          </div>
+        {% endif %}
+
+        <div style="margin-top:32px; display:flex; justify-content:flex-end; gap:12px;">
+          <a href="{{ url_for('owner.members') }}" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary btn-lg">
+            {% if member %}Save Changes{% else %}Register Member & Generate QR Code →{% endif %}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Auto-fill default dates for new registration if blank
+  document.addEventListener("DOMContentLoaded", () => {
+    const startInput = document.getElementById("start-date-input");
+    const endInput = document.getElementById("end-date-input");
+    if (startInput && !startInput.value) {
+      const today = new Date();
+      startInput.value = today.toISOString().split("T")[0];
+      
+      const nextMonth = new Date(today);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      endInput.value = nextMonth.toISOString().split("T")[0];
+    }
+  });
+</script>
+{% endblock %}

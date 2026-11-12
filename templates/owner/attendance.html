@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Logs — {{ gym_settings.gym_name }}{% endblock %}
+{% block page_title %}Daily Attendance Records{% endblock %}
+
+{% block content %}
+<div class="card mb-6">
+  <div class="card-body">
+    <form method="GET" action="{{ url_for('owner.attendance') }}" style="display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap;">
+      <div style="min-width:220px;">
+        <label class="form-label">Filter by Date</label>
+        <input type="date" name="date" class="form-input" value="{{ date_filter }}">
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button type="submit" class="btn btn-secondary">Load Date</button>
+        <a href="{{ url_for('owner.attendance', date=today) }}" class="btn btn-outline">Today</a>
+      </div>
+      <div style="margin-left:auto; display:flex; gap:10px;">
+        <button type="button" onclick="window.print()" class="btn btn-outline">🖨️ Print Report</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h3 class="card-title">Attendance for {{ date_filter|date_format("%A, %B %d, %Y") }}</h3>
+      <p class="card-subtitle">{{ logs|length }} Total Verified Check-ins Recorded</p>
+    </div>
+  </div>
+  <div class="card-body" style="padding:0;">
+    {% if logs %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Member Name</th>
+              <th>Member Code</th>
+              <th>Contact Phone</th>
+              <th>Check-in Time</th>
+              <th>Method</th>
+              <th>Status</th>
+              <th>Recorded By</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in logs %}
+              <tr>
+                <td>
+                  <a href="{{ url_for('owner.member_detail', member_id=a.member_id) }}" style="font-weight:600;">
+                    {{ a.full_name }}
+                  </a>
+                </td>
+                <td><code>{{ a.member_code }}</code></td>
+                <td>{{ a.phone }}</td>
+                <td><strong>{{ a.check_in_time|date_format("%I:%M:%S %p") }}</strong></td>
+                <td>
+                  <span class="badge badge-neutral">{{ a.method }}</span>
+                </td>
+                <td>
+                  <span class="badge badge-active">{{ a.status|upper }}</span>
+                </td>
+                <td><small>{{ a.recorded_by_name or 'System' }}</small></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">📅</div>
+        <p class="empty-title">No Attendance Recorded for This Date</p>
+        <p class="empty-desc">No members checked in on {{ date_filter }}.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

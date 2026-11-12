@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications — {{ gym_settings.gym_name }}{% endblock %}
+{% block page_title %}Notification Center{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+    <div>
+      <h2 style="font-size:1.2rem; font-weight:700;">Your Notifications</h2>
+      <p style="font-size:0.85rem; color:var(--text-muted);">Absence warnings, payment receipts, and gym updates</p>
+    </div>
+    {% if notifications %}
+      <form method="POST" action="{{ url_for('auth.read_all_notifications') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn-secondary btn-sm">Mark All as Read</button>
+      </form>
+    {% endif %}
+  </div>
+
+  {% if notifications %}
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      {% for n in notifications %}
+        <div class="card" style="padding:16px 20px; display:flex; gap:16px; align-items:flex-start; {% if not n.is_read %}border-left: 4px solid var(--accent-primary); background-color: var(--bg-surface-2);{% endif %}">
+          <div style="width:36px; height:36px; border-radius:50%; background:var(--bg-surface-3); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            {% if n.category == 'absence' %}
+              <span style="color:#F59E0B; font-weight:bold;">⚠️</span>
+            {% elif n.category == 'payment' %}
+              <span style="color:#10B981; font-weight:bold;">💳</span>
+            {% else %}
+              <span style="color:#3B82F6; font-weight:bold;">📢</span>
+            {% endif %}
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+              <h3 style="font-size:0.95rem; font-weight:600; color:var(--text-primary);">{{ n.title }}</h3>
+              <span style="font-size:0.75rem; color:var(--text-muted);">{{ n.created_at|date_format("%b %d, %I:%M %p") }}</span>
+            </div>
+            <p style="font-size:0.88rem; color:var(--text-secondary); line-height:1.4;">{{ n.message }}</p>
+            {% if n.link_url %}
+              <div style="margin-top:10px;">
+                <a href="{{ n.link_url }}" class="btn btn-outline btn-sm">View Details →</a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card">
+      <div class="empty-state">
+        <div class="empty-icon">✓</div>
+        <h3 class="empty-title">You're All Caught Up</h3>
+        <p class="empty-desc">No new notifications in your inbox at this time.</p>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

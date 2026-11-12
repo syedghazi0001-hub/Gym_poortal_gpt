@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Ten-Day Absence Alerts — {{ gym_settings.gym_name }}{% endblock %}
+{% block page_title %}Ten-Day Absence Alert Engine{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+  <div>
+    <h2 style="font-size:1.3rem; font-weight:700;">Member Retention & Absence Alerts</h2>
+    <p style="font-size:0.85rem; color:var(--text-muted);">
+      Members who have not checked in for {{ gym_settings.absence_threshold_days or 10 }}+ consecutive days automatically trigger an alert here and a warning in their personal portal.
+    </p>
+  </div>
+  <div>
+    <form method="POST" action="{{ url_for('owner.trigger_check') }}" style="display:inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit" class="btn btn-primary">
+        ⚡ Run Absence Check Now
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Active Alerts Section -->
+<div class="card mb-8">
+  <div class="card-header">
+    <div>
+      <h3 class="card-title">Active Unresolved Alerts ({{ active_alerts|length }})</h3>
+      <p class="card-subtitle">These members require follow-up calls or outreach from gym management.</p>
+    </div>
+    {% if active_alerts %}
+      <span class="badge badge-warning">{{ active_alerts|length }} Requiring Action</span>
+    {% endif %}
+  </div>
+  <div class="card-body" style="padding:0;">
+    {% if active_alerts %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Member Name</th>
+              <th>Member Code</th>
+              <th>Authorized Phone</th>
+              <th>Days Absent</th>
+              <th>Last Checked In</th>
+              <th>Trainer</th>
+              <th>Alert Date</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in active_alerts %}
+              <tr>
+                <td>
+                  <a href="{{ url_for('owner.member_detail', member_id=a.member_id) }}" style="font-weight:600;">
+                    {{ a.full_name }}
+                  </a>
+                </td>
+                <td><code>{{ a.member_code }}</code></td>
+                <td>
+                  <a href="tel:{{ a.phone }}" style="color:var(--accent-primary); font-weight:600;">
+                    📞 {{ a.phone }}
+                  </a>
+                </td>
+                <td>
+                  <span class="badge badge-danger" style="font-size:0.85rem; font-weight:700;">
+                    {{ a.consecutive_days_absent }} Days Absent
+                  </span>
+                </td>
+                <td>
+                  {% if a.last_attendance_date %}
+                    {{ a.last_attendance_date|date_format("%b %d, %Y") }}
+                  {% else %}
+                    <span style="color:var(--text-muted);">Never Attended</span>
+                  {% endif %}
+                </td>
+                <td>{{ a.trainer_name or 'None' }}</td>
+                <td><small>{{ a.alert_date|date_format("%b %d, %Y") }}</small></td>
+                <td>
+                  {% if not a.acknowledged_by_owner %}
+                    <form method="POST" action="{{ url_for('owner.acknowledge', alert_id=a.id) }}" style="display:inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                      <button type="submit" class="btn btn-secondary btn-sm">
+                        ✓ Acknowledge
+                      </button>
+                    </form>
+                  {% else %}
+                    <span class="badge badge-neutral">Acknowledged</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">✓</div>
+        <h3 class="empty-title">All Members Are Active & Attending</h3>
+        <p class="empty-desc">No active members have been absent for 10 or more consecutive calendar days.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Historical Alert Logs -->
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Recent Absence Alert History</h3>
+    <p class="card-subtitle">Includes automatically resolved episodes when members attended again</p>
+  </div>
+  <div class="card-body" style="padding:0;">
+    {% if history_alerts %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Member Name</th>
+              <th>Member Code</th>
+              <th>Phone</th>
+              <th>Consecutive Days</th>
+              <th>Alert Date</th>
+              <th>Status</th>
+              <th>Resolved Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for h in history_alerts %}
+              <tr>
+                <td style="font-weight:600;">{{ h.full_name }}</td>
+                <td><code>{{ h.member_code }}</code></td>
+                <td>{{ h.phone }}</td>
+                <td>{{ h.consecutive_days_absent }} Days</td>
+                <td>{{ h.alert_date|date_format("%b %d, %Y") }}</td>
+                <td>
+                  {% if h.is_resolved %}
+                    <span class="badge badge-active">Resolved (Attended)</span>
+                  {% else %}
+                    <span class="badge badge-warning">Active Warning</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if h.resolved_date %}
+                    {{ h.resolved_date|date_format("%b %d, %Y") }}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p class="empty-title">No Historical Alerts</p>
+        <p class="empty-desc">Past alert episodes will appear here.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

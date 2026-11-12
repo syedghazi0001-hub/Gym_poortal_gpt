@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Attendance — {{ gym_settings.gym_name }}{% endblock %}
+{% block page_title %}Front Desk Attendance Logs{% endblock %}
+
+{% block content %}
+<div class="card mb-6">
+  <div class="card-header">
+    <div>
+      <h3 class="card-title">Today's Attendance: {{ today_date }}</h3>
+      <p class="card-subtitle">Verified gym check-ins for the day</p>
+    </div>
+    <a href="{{ url_for('receptionist.desk') }}" class="btn btn-primary btn-sm">← Back to Scanner Terminal</a>
+  </div>
+  <div class="card-body" style="padding:0;">
+    {% if today_records %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Member Name</th>
+              <th>Member Code</th>
+              <th>Contact Phone</th>
+              <th>Check-in Time</th>
+              <th>Method</th>
+              <th>Recorded By</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in today_records %}
+              <tr>
+                <td style="font-weight:600;">{{ r.full_name }}</td>
+                <td><code>{{ r.member_code }}</code></td>
+                <td>{{ r.phone }}</td>
+                <td><strong>{{ r.check_in_time|date_format("%I:%M:%S %p") }}</strong></td>
+                <td><span class="badge badge-neutral">{{ r.method }}</span></td>
+                <td><small>{{ r.recorded_by_name or 'Front Desk' }}</small></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">📅</div>
+        <p class="empty-title">No Check-ins Today Yet</p>
+        <p class="empty-desc">Head over to the Scanner Terminal to scan incoming member badges.</p>
+        <a href="{{ url_for('receptionist.desk') }}" class="btn btn-primary">Open Scanner Terminal</a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

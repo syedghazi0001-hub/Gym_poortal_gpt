@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}My Fee Receipts — {{ gym_settings.gym_name }}{% endblock %}
+{% block page_title %}Membership Dues & Receipts{% endblock %}
+
+{% block content %}
+<div class="card mb-6">
+  <div class="card-header">
+    <div>
+      <h3 class="card-title">Membership Plan Overview</h3>
+      <p class="card-subtitle">Current subscription and fee structure</p>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="grid-cols-3" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+      <div>
+        <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Membership Plan</div>
+        <div style="font-size:1.1rem; font-weight:700;">{{ member.membership_plan }}</div>
+      </div>
+      <div>
+        <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Monthly Rate</div>
+        <div style="font-size:1.1rem; font-weight:700; color:var(--accent-primary);">
+          {{ member.monthly_fee|currency(gym_settings.currency) }}
+        </div>
+      </div>
+      <div>
+        <div style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Pass Expiry Date</div>
+        <div style="font-size:1.1rem; font-weight:700;">
+          {{ member.membership_end_date|date_format("%b %d, %Y") }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Payment Receipts History</h3>
+  </div>
+  <div class="card-body" style="padding:0;">
+    {% if history %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Billing Month</th>
+              <th>Amount Paid</th>
+              <th>Payment Date</th>
+              <th>Receipt Number</th>
+              <th>Method</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in history %}
+              <tr>
+                <td><strong>{{ p.billing_month }}</strong></td>
+                <td style="color:var(--accent-primary); font-weight:600;">
+                  {{ p.amount|currency(p.currency) }}
+                </td>
+                <td>{{ p.payment_date|date_format("%B %d, %Y") }}</td>
+                <td><code>{{ p.receipt_number }}</code></td>
+                <td>{{ p.payment_method }}</td>
+                <td>
+                  {% if p.status == 'paid' %}
+                    <span class="badge badge-paid">Paid</span>
+                  {% else %}
+                    <span class="badge badge-danger">{{ p.status }}</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">💳</div>
+        <p class="empty-title">No Payment Records</p>
+        <p class="empty-desc">Receipts will appear here as soon as your monthly dues are paid at the desk.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

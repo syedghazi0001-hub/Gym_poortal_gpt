@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Server Error — {{ gym_settings.gym_name }}{% endblock %}
+{% block page_title %}500 Internal Error{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 500px; margin: 40px auto; text-align: center;">
+  <div class="empty-state">
+    <div class="empty-icon" style="color:var(--danger); font-size:1.8rem;">⚠️</div>
+    <h2 class="empty-title">Internal Server Error</h2>
+    <p class="empty-desc">An unexpected error occurred while communicating with the database. Please try again or check the system logs.</p>
+    <a href="/" class="btn btn-primary">Return to Portal</a>
+  </div>
+</div>
+{% endblock %}
